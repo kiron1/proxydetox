@@ -1,0 +1,3 @@
+[workspace]
+
+members = ["duktape-sys", "duktape", "paclib", "paceval", "proxydetox"]
