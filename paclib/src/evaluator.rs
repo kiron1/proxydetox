@@ -1,6 +1,5 @@
 use crate::Proxies;
 use duktape::Context;
-use duktape_sys::duk_context;
 use std::fmt::{Error, Formatter};
 use std::result::Result;
 use url::Url;

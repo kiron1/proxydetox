@@ -1,0 +1,18 @@
+[package]
+name = "proxydetox"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+env_logger = "0.7"
+futures-util = { version = "0.3", default-features = false }
+http = "0.2"
+hyper = "0.13"
+hyper-proxy = "0.6"
+log ="0.4"
+paclib = { path = "../paclib" }
+structopt = "0.3"
+tokio = { version = "0.2", features = ["full"] }
+url = "2.1"
