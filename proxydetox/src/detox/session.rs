@@ -8,6 +8,8 @@ use std::sync::Arc;
 use std::task::{self, Poll};
 
 use futures_util::future::try_join;
+use http::header::HOST;
+use http::HeaderValue;
 use http::{Request, Response, StatusCode};
 use hyper::service::Service;
 use hyper::upgrade::Upgraded;
@@ -111,11 +113,18 @@ impl DetoxSessionInner {
     async fn forward_connect(
         &mut self,
         proxy: url::Url,
-        req: Request<Body>,
+        mut req: Request<Body>,
     ) -> Result<Response<Body>, hyper::Error> {
         // Make a client CONNECT request to the parent proxy to upgrade the connection
         let uri: http::Uri = proxy.as_str().parse().unwrap(); //.map_err(|_| hyper::Error::new(hyper::error::Kind::User(hyper::error::User::Service))?;
-        let parent_req = hyper::Request::connect(uri).body(Body::empty()).unwrap();
+        let mut parent_req = hyper::Request::connect(uri).body(Body::empty()).unwrap();
+        let host = if let Some(host) = req.headers_mut().get(HOST) {
+            host.clone()
+        } else {
+            HeaderValue::from_str(req.uri().host().unwrap()).unwrap()
+        };
+        parent_req.headers_mut().insert(HOST, host);
+
         let parent_res = hyper::Client::new().request(parent_req).await?;
         if parent_res.status() == StatusCode::OK {
             // Upgrade connection to parent proxy
