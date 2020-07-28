@@ -1,8 +1,8 @@
 use crate::Proxies;
 use duktape::Context;
+use http::Uri;
 use std::fmt::{Error, Formatter};
 use std::result::Result;
-use url::Url;
 
 const PAC_UTILS: &str = include_str!("pac_utils.js");
 
@@ -34,20 +34,15 @@ impl Evaluator {
         Ok(Evaluator { js: ctx })
     }
 
-    pub fn find_proxy(&mut self, url: &Url) -> Result<Proxies, FindProxyError> {
-        let host = url.host_str().ok_or(FindProxyError::NoHost)?;
-        //let result = self.js.eval(&format!(
-        //    "FindProxyForURL(\"{}\", \"{}\");",
-        //    url.as_str(),
-        //    host
-        //));
+    pub fn find_proxy(&mut self, uri: &Uri) -> Result<Proxies, FindProxyError> {
+        let host = uri.host().ok_or(FindProxyError::NoHost)?;
         // FIXME: when something goes wrong here we need to clean up the stack!
         let result = {
             self.js
                 .get_global_string("FindProxyForURL")
                 .map_err(|_| FindProxyError::InternalError)?;
             self.js
-                .push_string(url.as_str())
+                .push_string(&uri.to_string())
                 .map_err(|_| FindProxyError::InternalError)?;
             self.js
                 .push_string(host)
@@ -55,6 +50,7 @@ impl Evaluator {
             self.js.call(2);
             self.js.pop()
         };
+
         match &result {
             Ok(duktape::Value::String(ref result)) => {
                 Ok(Proxies::parse(result).map_err(|_| FindProxyError::InvalidResult)?)
@@ -103,16 +99,16 @@ impl std::fmt::Display for FindProxyError {
 #[cfg(test)]
 mod tests {
     use super::Evaluator;
+    use super::Uri;
     use crate::Proxies;
     use crate::ProxyDesc;
-    use url::Url;
 
     const TEST_PAC_SCRIPT: &str = "function FindProxyForURL(url, host) { return \"DIRECT\"; }";
     #[test]
     fn find_proxy() -> Result<(), Box<dyn std::error::Error>> {
         let mut eval = Evaluator::new(TEST_PAC_SCRIPT)?;
         assert_eq!(
-            eval.find_proxy(&Url::parse("http://localhost:3128/").unwrap())?,
+            eval.find_proxy(&"http://localhost:3128/".parse::<Uri>().unwrap())?,
             Proxies::new(vec![ProxyDesc::Direct])
         );
         Ok(())

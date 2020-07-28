@@ -1,14 +1,13 @@
 use super::http_proxy_stream::HttpProxyStream;
-use hyper::{service::Service, Uri};
+use http::Uri;
+use hyper::service::Service;
 use std::fmt::{Error, Formatter};
 use std::{
     future::Future,
-    net::{IpAddr, SocketAddr},
     pin::Pin,
     task::{self, Poll},
 };
 use tokio::net::TcpStream;
-use url::Url;
 
 #[derive(Debug)]
 pub enum HttpProxyConnectorError {
@@ -29,33 +28,28 @@ impl std::fmt::Display for HttpProxyConnectorError {
 
 #[derive(Clone)]
 pub struct HttpProxyConnector {
-    proxy_url: Url,
+    proxy_uri: Uri,
 }
 
 impl HttpProxyConnector {
-    pub fn new(proxy_url: Url) -> Self {
-        Self { proxy_url }
+    pub fn new(proxy_uri: Uri) -> Self {
+        Self { proxy_uri }
     }
 
     async fn call_async(
         &mut self,
         _: Uri,
     ) -> std::result::Result<HttpProxyStream, HttpProxyConnectorError> {
-        let port = self.proxy_url.port().unwrap_or(3128);
-        let addr = match self.proxy_url.host() {
-            None => Err(HttpProxyConnectorError::LookupError)?,
-            Some(url::Host::Domain(host)) => {
-                let mut addr = tokio::net::lookup_host(format!("{}:{}", host, port))
-                    .await
-                    .map_err(|_| HttpProxyConnectorError::LookupError)?;
-                addr.next().ok_or(HttpProxyConnectorError::LookupError)?
-            }
-            Some(url::Host::Ipv4(addr)) => SocketAddr::new(IpAddr::V4(addr), port),
-            Some(url::Host::Ipv6(addr)) => SocketAddr::new(IpAddr::V6(addr), port),
-        };
-        let stream = TcpStream::connect(addr)
+        let port = self.proxy_uri.port_u16().unwrap_or(3128);
+        let host = self
+            .proxy_uri
+            .host()
+            .ok_or(HttpProxyConnectorError::LookupError)?;
+
+        let stream = TcpStream::connect((host, port))
             .await
             .map_err(|e| HttpProxyConnectorError::ConnectError(e))?;
+
         Ok(HttpProxyStream::new(stream))
     }
 }

@@ -7,5 +7,5 @@ edition = "2018"
 
 [dependencies]
 structopt = "0.3"
-url = "2.1"
+http = "0.2"
 paclib = { path = "../paclib" }

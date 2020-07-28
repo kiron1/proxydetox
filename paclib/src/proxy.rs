@@ -1,11 +1,11 @@
+use http::Uri;
 use std::fmt;
 use std::fmt::{Error, Formatter};
-use url::Url;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum ProxyDesc {
     Direct,
-    Proxy(Url),
+    Proxy(Uri),
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -16,8 +16,9 @@ impl ProxyDesc {
         let input = input.trim();
         if input.starts_with("PROXY") {
             let input = &input[5..];
-            let url = Url::parse(&input).map_err(|_| ParserError)?;
-            Ok(ProxyDesc::Proxy(url))
+            let input = input.trim();
+            let uri = input.parse::<Uri>().map_err(|_| ParserError)?;
+            Ok(ProxyDesc::Proxy(uri))
         } else if input == "DIRECT" {
             Ok(ProxyDesc::Direct)
         } else {
@@ -88,6 +89,7 @@ impl std::fmt::Display for ParserError {
 mod tests {
     use super::Proxies;
     use super::ProxyDesc;
+    use super::Uri;
 
     #[test]
     fn proxy_desc_parse() -> Result<(), Box<dyn std::error::Error>> {
@@ -98,7 +100,7 @@ mod tests {
         assert_eq!(ProxyDesc::parse(" DIRECT ")?, ProxyDesc::Direct);
         assert_eq!(
             ProxyDesc::parse("PROXY http://127.0.0.1:3128")?,
-            ProxyDesc::Proxy(super::Url::parse("http://127.0.0.1:3128/").unwrap())
+            ProxyDesc::Proxy("http://127.0.0.1:3128/".parse::<Uri>().unwrap())
         );
         Ok(())
     }
@@ -118,7 +120,7 @@ mod tests {
         assert_eq!(
             Proxies::parse("PROXY http://localhost:3128/; DIRECT")?,
             Proxies::new(vec![
-                ProxyDesc::Proxy(super::Url::parse("http://localhost:3128/").unwrap()),
+                ProxyDesc::Proxy("http://localhost:3128/".parse::<Uri>().unwrap()),
                 ProxyDesc::Direct
             ])
         );

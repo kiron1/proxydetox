@@ -15,4 +15,3 @@ log ="0.4"
 paclib = { path = "../paclib" }
 structopt = "0.3"
 tokio = { version = "0.2", features = ["full"] }
-url = "2.1"
