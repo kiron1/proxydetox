@@ -18,6 +18,7 @@ use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::net;
 use tokio::net::TcpStream;
 use tokio::sync::Mutex;
+use tokio::net::ToSocketAddrs;
 
 use crate::client::HttpProxyConnector;
 use paclib::proxy::ProxyDesc;
@@ -116,16 +117,26 @@ impl DetoxSessionInner {
         mut req: Request<Body>,
     ) -> Result<Response<Body>, hyper::Error> {
         // Make a client CONNECT request to the parent proxy to upgrade the connection
-        let uri: http::Uri = proxy.as_str().parse().unwrap(); //.map_err(|_| hyper::Error::new(hyper::error::Kind::User(hyper::error::User::Service))?;
-        let mut parent_req = hyper::Request::connect(uri).body(Body::empty()).unwrap();
+        //let uri: http::Uri = proxy.as_str().parse().unwrap(); //.map_err(|_| hyper::Error::new(hyper::error::Kind::User(hyper::error::User::Service))?;
         let host = if let Some(host) = req.headers_mut().get(HOST) {
             host.clone()
         } else {
             HeaderValue::from_str(req.uri().host().unwrap()).unwrap()
         };
-        parent_req.headers_mut().insert(HOST, host);
 
-        let parent_res = hyper::Client::new().request(parent_req).await?;
+        let (req_parts, req_body) = req.into_parts();
+        assert_eq!(req_parts.method, http::Method::CONNECT);
+
+        let mut req = Request::connect(req_parts.uri).version(http::version::Version::HTTP_11/*req_parts.version*/).body(Body::empty()).unwrap();
+        //req.headers_mut().extend(req_parts.headers.iter());
+        req.headers_mut().insert(HOST, host);
+        // let mut parent_req = hyper::Request::connect(uri).body(Body::empty()).unwrap();
+        // parent_req.headers_mut().insert(HOST, host);
+
+        log::debug!("forward_connect req: {:?}", req);
+        let client = hyper::Client::builder().build(HttpProxyConnector::new(proxy));
+        let parent_res = client.request(req).await?;
+
         if parent_res.status() == StatusCode::OK {
             // Upgrade connection to parent proxy
             match parent_res.into_body().on_upgrade().await {
@@ -134,7 +145,7 @@ impl DetoxSessionInner {
                     // On a successful upgrade to the parent proxy, upgrade the
                     // request of the client (the original request maker)
                     tokio::task::spawn(async move {
-                        match req.into_body().on_upgrade().await {
+                        match req_body.on_upgrade().await {
                             Ok(client_upgraded) => {
                                 log::debug!("client_upgraded: {:?}", client_upgraded);
 
