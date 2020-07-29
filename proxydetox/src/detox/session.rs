@@ -10,7 +10,7 @@ use std::{
 };
 
 use futures_util::future::try_join;
-use http::header::{HOST, PROXY_AUTHORIZATION};
+use http::header::{HOST, PROXY_AUTHORIZATION, VIA};
 use http::HeaderValue;
 use http::Uri;
 use http::{Request, Response, StatusCode};
@@ -70,7 +70,6 @@ impl DetoxSession {
         let direct_client = Default::default();
         let proxy_clients = Default::default();
         let auth_store = AuthStore::new().unwrap();
-        eprintln!("auth store: {:?}", auth_store);
         let auth = Arc::new(Mutex::new(auth_store));
         Self {
             eval,
@@ -231,12 +230,23 @@ impl DetoxSession {
         let _proxy_auth = req.headers_mut().remove(http::header::PROXY_AUTHORIZATION);
         let _proxy_conn = req.headers_mut().remove(proxy_connection);
 
-        match (proxy, is_connect) {
+        let mut res = match (proxy, is_connect) {
             (ProxyDesc::Direct, true) => self.direct_connect(req).await,
             (ProxyDesc::Direct, false) => self.direct_http(req).await,
             (ProxyDesc::Proxy(proxy), true) => self.forward_connect(proxy, req).await,
             (ProxyDesc::Proxy(proxy), false) => self.forward_http(proxy, req).await,
+        };
+
+        if let Ok(ref mut res) = res {
+            let via = HeaderValue::from_str(&format!(
+                "{}/{}",
+                env!("CARGO_PKG_NAME"),
+                env!("CARGO_PKG_VERSION")
+            ))
+            .unwrap();
+            res.headers_mut().insert(VIA, via);
         }
+        res
     }
 }
 
