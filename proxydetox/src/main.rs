@@ -41,7 +41,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     if let Err(e) = server.await {
         log::error!("server error: {}", e);
-        Err(e)?;
+        return Err(e.into());
     }
 
     Ok(())

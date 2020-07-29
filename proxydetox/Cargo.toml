@@ -12,6 +12,7 @@ http = "0.2"
 hyper = "0.13"
 hyper-proxy = "0.6"
 log ="0.4"
+netrc = { git = "https://github.com/kiron1/netrc-rs", branch = "modernize" }
 paclib = { path = "../paclib" }
 structopt = "0.3"
 tokio = { version = "0.2", features = ["full"] }

@@ -109,10 +109,11 @@ impl DetoxSession {
         if let Ok(stream) = dial(req.uri()).await {
             tokio::task::spawn(async move {
                 match req.into_body().on_upgrade().await {
-                    Ok(upgraded) => match tunnel(upgraded, stream).await {
-                        Err(e) => log::error!("tunnel error: {}", e),
-                        Ok(_) => (),
-                    },
+                    Ok(upgraded) => {
+                        if let Err(e) = tunnel(upgraded, stream).await {
+                            log::error!("tunnel error: {}", e)
+                        }
+                    }
                     Err(e) => log::error!("upgrade error: {}", e),
                 }
             });
@@ -169,9 +170,8 @@ impl DetoxSession {
                         match req_body.on_upgrade().await {
                             Ok(client_upgraded) => {
                                 log::debug!("client_upgraded: {:?}", client_upgraded);
-                                match tunnel(parent_upgraded, client_upgraded).await {
-                                    Err(e) => log::error!("tunnel error: {}", e),
-                                    Ok(_) => (),
+                                if let Err(e) = tunnel(parent_upgraded, client_upgraded).await {
+                                    log::error!("tunnel error: {}", e)
                                 }
                             }
                             Err(e) => log::error!("upgrade error: {}", e),

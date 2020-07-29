@@ -52,7 +52,7 @@ impl Proxies {
     }
 
     pub fn first(&self) -> ProxyDesc {
-        self.0.iter().nth(0).unwrap().clone()
+        self.0.get(0).unwrap().clone()
     }
 }
 

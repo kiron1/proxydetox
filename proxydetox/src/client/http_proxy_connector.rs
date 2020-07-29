@@ -48,7 +48,7 @@ impl HttpProxyConnector {
 
         let stream = TcpStream::connect((host, port))
             .await
-            .map_err(|e| HttpProxyConnectorError::ConnectError(e))?;
+            .map_err(HttpProxyConnectorError::ConnectError)?;
 
         Ok(HttpProxyStream::new(stream))
     }
