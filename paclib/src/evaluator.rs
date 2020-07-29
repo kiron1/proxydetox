@@ -104,6 +104,7 @@ mod tests {
     use crate::ProxyDesc;
 
     const TEST_PAC_SCRIPT: &str = "function FindProxyForURL(url, host) { return \"DIRECT\"; }";
+
     #[test]
     fn find_proxy() -> Result<(), Box<dyn std::error::Error>> {
         let mut eval = Evaluator::new(TEST_PAC_SCRIPT)?;

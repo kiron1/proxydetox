@@ -1,6 +1,8 @@
 pub mod auth;
 pub mod client;
 pub mod detox;
+pub mod io;
+pub mod net;
 
 use std::boxed::Box;
 use std::fs::File;

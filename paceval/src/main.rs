@@ -1,9 +1,9 @@
+use http::Uri;
 use paclib::Evaluator;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
 use structopt::StructOpt;
-use http::Uri;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "paceval", about = "Evaluate a PAC JavaSciript file.")]

@@ -9,15 +9,12 @@ use std::{
     task::{self, Poll},
 };
 
-use futures_util::future::try_join;
-use http::header::{HOST, PROXY_AUTHORIZATION, VIA};
+use http::header::{PROXY_AUTHORIZATION, VIA};
 use http::HeaderValue;
 use http::Uri;
-use http::{Request, Response, StatusCode};
+use http::{Request, Response};
 use hyper::service::Service;
 use hyper::Body;
-use tokio::io::{AsyncRead, AsyncWrite, Error, ErrorKind};
-use tokio::net::TcpStream;
 use tokio::sync::Mutex;
 
 use crate::auth::AuthStore;
@@ -54,7 +51,8 @@ impl From<std::io::Error> for SessionError {
     }
 }
 
-type ProxyClient = hyper::Client<crate::client::HttpProxyConnector>;
+//type ProxyClient = hyper::Client<crate::client::HttpProxyConnector>;
+type ProxyClient = crate::client::Client;
 
 #[derive(Clone)]
 pub struct DetoxSession {
@@ -90,130 +88,21 @@ impl DetoxSession {
         match proxies.get(&uri) {
             Some(proxy) => proxy.clone(),
             None => {
+                let mut headers = hyper::HeaderMap::new();
+                if let Some(auth) = self.auth.lock().await.find(&uri.host().unwrap()) {
+                    log::debug!("auth for {:?}", uri.host());
+                    let auth = HeaderValue::from_str(&auth.as_basic()).unwrap();
+                    headers.insert(PROXY_AUTHORIZATION, auth);
+                } else {
+                    log::debug!("no auth for {:?}", uri.host());
+                }
+
                 let client = hyper::Client::builder().build(HttpProxyConnector::new(uri.clone()));
+                let client = ProxyClient::new(client, headers);
                 proxies.insert(uri, client.clone());
                 client
             }
         }
-    }
-
-    async fn direct_connect(&mut self, req: Request<Body>) -> Result<Response<Body>, SessionError> {
-        // Received an HTTP request like:
-        // ```
-        // CONNECT www.domain.com:443 HTTP/1.1
-        // Host: www.domain.com:443
-        // Proxy-Connection: Keep-Alive
-        // ```
-        //
-        // When HTTP method is CONNECT we should return an empty body
-        // then we can eventually upgrade the connection and talk a new protocol.
-        //
-        // Note: only after client received an empty body with STATUS_OK can the
-        // connection be upgraded, so we can't return a response inside
-        // `on_upgrade` future.
-        if let Ok(stream) = dial(req.uri()).await {
-            tokio::task::spawn(async move {
-                match req.into_body().on_upgrade().await {
-                    Ok(upgraded) => {
-                        if let Err(e) = tunnel(upgraded, stream).await {
-                            log::error!("tunnel error: {}", e)
-                        }
-                    }
-                    Err(e) => log::error!("upgrade error: {}", e),
-                }
-            });
-
-            Ok(Response::new(Body::empty()))
-        } else {
-            log::error!("CONNECT host is not socket addr: {:?}", req.uri());
-            let mut resp = Response::new(Body::from("CONNECT must be to a socket address"));
-            *resp.status_mut() = http::StatusCode::BAD_REQUEST;
-
-            Ok(resp)
-        }
-    }
-
-    async fn direct_http(&mut self, req: Request<Body>) -> Result<Response<Body>, SessionError> {
-        log::debug!("request {:?}", req);
-        let res = self.direct_client.request(req).await?;
-        Ok(res)
-    }
-
-    async fn forward_connect(
-        &mut self,
-        proxy: Uri,
-        mut req: Request<Body>,
-    ) -> Result<Response<Body>, SessionError> {
-        // Make a client CONNECT request to the parent proxy to upgrade the connection
-        //let uri: http::Uri = proxy.as_str().parse().unwrap(); //.map_err(|_| hyper::Error::new(hyper::error::Kind::User(hyper::error::User::Service))?;
-        let host = if let Some(host) = req.headers_mut().get(HOST) {
-            host.clone()
-        } else {
-            HeaderValue::from_str(req.uri().host().unwrap()).unwrap()
-        };
-
-        let (req_parts, req_body) = req.into_parts();
-        assert_eq!(req_parts.method, http::Method::CONNECT);
-
-        let mut req = Request::connect(req_parts.uri.clone())
-            .version(http::version::Version::HTTP_11 /*req_parts.version*/)
-            .body(Body::empty())
-            .unwrap();
-        req.headers_mut().insert(HOST, host);
-        if let Some(auth) = self.auth.lock().await.find(&proxy.host().unwrap()) {
-            log::debug!("auth for {:?}", proxy.host());
-            let auth = HeaderValue::from_str(&auth.as_basic()).unwrap();
-            req.headers_mut().insert(PROXY_AUTHORIZATION, auth);
-        } else {
-            log::debug!("no auth for {:?}", proxy.host());
-        }
-
-        log::debug!("forward_connect req: {:?}", req);
-        let parent_res = self.proxy_client(proxy).await.request(req).await?;
-
-        if parent_res.status() == StatusCode::OK {
-            // Upgrade connection to parent proxy
-            match parent_res.into_body().on_upgrade().await {
-                Ok(parent_upgraded) => {
-                    log::debug!("parent_upgraded: {:?}", parent_upgraded);
-                    // On a successful upgrade to the parent proxy, upgrade the
-                    // request of the client (the original request maker)
-                    tokio::task::spawn(async move {
-                        match req_body.on_upgrade().await {
-                            Ok(client_upgraded) => {
-                                log::debug!("client_upgraded: {:?}", client_upgraded);
-                                if let Err(e) = tunnel(parent_upgraded, client_upgraded).await {
-                                    log::error!("tunnel error: {}", e)
-                                }
-                            }
-                            Err(e) => log::error!("upgrade error: {}", e),
-                        }
-                    });
-                    // Response with a OK to the client
-                    Ok(Response::new(Body::empty()))
-                }
-                Err(e) => bad_request(&format!("upgrade failed: {}", e)),
-            }
-        } else {
-            bad_request("CONNECT failed")
-        }
-    }
-
-    async fn forward_http(
-        &mut self,
-        proxy: http::Uri,
-        mut req: Request<Body>,
-    ) -> Result<Response<Body>, SessionError> {
-        if let Some(auth) = self.auth.lock().await.find(&proxy.host().unwrap()) {
-            log::debug!("auth for {:?}", proxy.host());
-            let auth = HeaderValue::from_str(&auth.as_basic()).unwrap();
-            req.headers_mut().insert(PROXY_AUTHORIZATION, auth);
-        } else {
-            log::debug!("no auth for {:?}", proxy.host());
-        }
-        log::debug!("forward_http req: {:?}", req);
-        let res = self.proxy_client(proxy).await.request(req).await?;
-        Ok(res)
     }
 
     pub async fn process(
@@ -225,16 +114,22 @@ impl DetoxSession {
 
         log::info!("{} {} via {}", req.method(), req.uri(), proxy);
 
-        let proxy_connection = http::header::HeaderName::from_static("proxy-connection");
-
         let _proxy_auth = req.headers_mut().remove(http::header::PROXY_AUTHORIZATION);
-        let _proxy_conn = req.headers_mut().remove(proxy_connection);
 
-        let mut res = match (proxy, is_connect) {
-            (ProxyDesc::Direct, true) => self.direct_connect(req).await,
-            (ProxyDesc::Direct, false) => self.direct_http(req).await,
-            (ProxyDesc::Proxy(proxy), true) => self.forward_connect(proxy, req).await,
-            (ProxyDesc::Proxy(proxy), false) => self.forward_http(proxy, req).await,
+        let client: &(dyn crate::client::ForwardClient + Send + Sync);
+        let proxy_client;
+        match proxy {
+            ProxyDesc::Direct => client = &self.direct_client,
+            ProxyDesc::Proxy(proxy) => {
+                proxy_client = self.proxy_client(proxy).await;
+                client = &proxy_client;
+            }
+        }
+
+        let mut res = if is_connect {
+            client.connect(req).await
+        } else {
+            client.http(req).await
         };
 
         if let Ok(ref mut res) = res {
@@ -246,56 +141,8 @@ impl DetoxSession {
             .unwrap();
             res.headers_mut().insert(VIA, via);
         }
-        res
+        res.map_err(SessionError::Hyper)
     }
-}
-
-async fn dial(uri: &http::Uri) -> std::io::Result<TcpStream> {
-    log::debug!("uri {:?}", uri);
-    match (uri.host(), uri.port_u16()) {
-        (Some(host), Some(port)) => TcpStream::connect((host, port)).await,
-        (_, _) => Err(Error::new(ErrorKind::AddrNotAvailable, "invalid URI")),
-    }
-}
-
-// Bidirectionl copy two async streams
-async fn tunnel<T1, T2>(server: T1, client: T2) -> std::io::Result<()>
-where
-    T1: AsyncRead + AsyncWrite,
-    T2: AsyncRead + AsyncWrite,
-{
-    // Proxying data
-    let amounts = {
-        let (mut server_rd, mut server_wr) = tokio::io::split(server);
-        let (mut client_rd, mut client_wr) = tokio::io::split(client);
-
-        let client_to_server = tokio::io::copy(&mut client_rd, &mut server_wr);
-        let server_to_client = tokio::io::copy(&mut server_rd, &mut client_wr);
-
-        try_join(client_to_server, server_to_client).await
-    };
-
-    // Print message when done
-    match amounts {
-        Ok((from_client, from_server)) => {
-            log::trace!(
-                "client wrote {} bytes and received {} bytes",
-                from_client,
-                from_server
-            );
-        }
-        Err(e) => {
-            log::error!("tunnel error: {:?}", e);
-        }
-    };
-    Ok(())
-}
-
-fn bad_request(slice: &str) -> Result<Response<Body>, SessionError> {
-    let mut resp = Response::new(Body::from(String::from(slice)));
-    *resp.status_mut() = http::StatusCode::BAD_REQUEST;
-
-    Ok(resp)
 }
 
 fn make_error_response<E>(error: &E) -> Response<Body>

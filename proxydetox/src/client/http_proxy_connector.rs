@@ -26,7 +26,7 @@ impl std::fmt::Display for HttpProxyConnectorError {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct HttpProxyConnector {
     proxy_uri: Uri,
 }
