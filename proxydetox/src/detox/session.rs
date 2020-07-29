@@ -10,7 +10,7 @@ use std::{
 };
 
 use futures_util::future::try_join;
-use http::header::HOST;
+use http::header::{HOST, PROXY_AUTHORIZATION};
 use http::HeaderValue;
 use http::Uri;
 use http::{Request, Response, StatusCode};
@@ -20,6 +20,7 @@ use tokio::io::{AsyncRead, AsyncWrite, Error, ErrorKind};
 use tokio::net::TcpStream;
 use tokio::sync::Mutex;
 
+use crate::auth::AuthStore;
 use crate::client::HttpProxyConnector;
 use paclib::proxy::ProxyDesc;
 use paclib::Evaluator;
@@ -60,6 +61,7 @@ pub struct DetoxSession {
     eval: Arc<Mutex<paclib::Evaluator>>,
     direct_client: hyper::Client<hyper::client::HttpConnector>,
     proxy_clients: Arc<Mutex<HashMap<Uri, ProxyClient>>>,
+    auth: Arc<Mutex<AuthStore>>,
 }
 
 impl DetoxSession {
@@ -67,10 +69,14 @@ impl DetoxSession {
         let eval = Arc::new(Mutex::new(Evaluator::new(pac_script).unwrap()));
         let direct_client = Default::default();
         let proxy_clients = Default::default();
+        let auth_store = AuthStore::new().unwrap();
+        eprintln!("auth store: {:?}", auth_store);
+        let auth = Arc::new(Mutex::new(auth_store));
         Self {
             eval,
             direct_client,
             proxy_clients,
+            auth,
         }
     }
 
@@ -150,11 +156,18 @@ impl DetoxSession {
         let (req_parts, req_body) = req.into_parts();
         assert_eq!(req_parts.method, http::Method::CONNECT);
 
-        let mut req = Request::connect(req_parts.uri)
+        let mut req = Request::connect(req_parts.uri.clone())
             .version(http::version::Version::HTTP_11 /*req_parts.version*/)
             .body(Body::empty())
             .unwrap();
         req.headers_mut().insert(HOST, host);
+        if let Some(auth) = self.auth.lock().await.find(&proxy.host().unwrap()) {
+            log::debug!("auth for {:?}", proxy.host());
+            let auth = HeaderValue::from_str(&auth.as_basic()).unwrap();
+            req.headers_mut().insert(PROXY_AUTHORIZATION, auth);
+        } else {
+            log::debug!("no auth for {:?}", proxy.host());
+        }
 
         log::debug!("forward_connect req: {:?}", req);
         let parent_res = self.proxy_client(proxy).await.request(req).await?;
@@ -190,8 +203,16 @@ impl DetoxSession {
     async fn forward_http(
         &mut self,
         proxy: http::Uri,
-        req: Request<Body>,
+        mut req: Request<Body>,
     ) -> Result<Response<Body>, SessionError> {
+        if let Some(auth) = self.auth.lock().await.find(&proxy.host().unwrap()) {
+            log::debug!("auth for {:?}", proxy.host());
+            let auth = HeaderValue::from_str(&auth.as_basic()).unwrap();
+            req.headers_mut().insert(PROXY_AUTHORIZATION, auth);
+        } else {
+            log::debug!("no auth for {:?}", proxy.host());
+        }
+        log::debug!("forward_http req: {:?}", req);
         let res = self.proxy_client(proxy).await.request(req).await?;
         Ok(res)
     }
