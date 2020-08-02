@@ -1,0 +1,14 @@
+#
+# 1. Copy this file to `~/.config/systemd/user/proxydetox.service`
+# 2. Run: systemctl --user enable proxydetox.service
+# 3. Run: systemctl --user start proxydetox.service
+#
+
+[Unit]
+Description=Proxydetox Daemon
+
+[Service]
+ExecStart=%h/.cargo/bin/proxydetox %h/.config/proxydetox/proxy.pac 8080
+
+[Install]
+WantedBy=default.target
