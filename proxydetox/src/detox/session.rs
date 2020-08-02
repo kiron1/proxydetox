@@ -51,7 +51,6 @@ impl From<std::io::Error> for SessionError {
     }
 }
 
-//type ProxyClient = hyper::Client<crate::client::HttpProxyConnector>;
 type ProxyClient = crate::client::Client;
 
 #[derive(Clone)]
@@ -77,9 +76,8 @@ impl DetoxSession {
         }
     }
 
-    // For now just support one single proxy
+    // For now just use the first reportet proxy
     async fn find_proxy(&mut self, uri: &http::Uri) -> paclib::proxy::ProxyDesc {
-        log::debug!("find proxy for {:?}", &uri);
         self.eval.lock().await.find_proxy(&uri).unwrap().first()
     }
 
@@ -172,7 +170,6 @@ impl DetoxSession {
             http::header::CONTENT_TYPE,
             http::header::HeaderValue::from_static("text/html"),
         );
-        //*resp.status_mut() = http::StatusCode::INTERNAL_SERVER_ERROR;
         Ok(resp)
     }
 }

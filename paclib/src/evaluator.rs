@@ -1,7 +1,6 @@
 use crate::Proxies;
+use crate::Uri;
 use duktape::{Context, ContextRef, Stack};
-use http::Uri;
-use std::fmt::{Error, Formatter};
 use std::result::Result;
 
 const PAC_UTILS: &str = include_str!("pac_utils.js");
@@ -17,14 +16,10 @@ unsafe extern "C" fn dns_resolve(ctx: *mut duktape_sys::duk_context) -> i32 {
     use std::net::ToSocketAddrs;
     let mut ctx = ContextRef::from(ctx);
     ctx.require_stack(1);
-    eprintln!("dns_resolve");
 
     let value = if let Ok(host) = ctx.get_string(-1) {
-        eprintln!("dnsResolve({})", host);
         let host_port = (&host[..], 0u16);
         if let Ok(mut addrs) = host_port.to_socket_addrs() {
-            eprintln!("addres: {:?}", addrs);
-
             if let Some(addr) = addrs.next() {
                 Some(addr.to_string())
             } else {
@@ -36,7 +31,6 @@ unsafe extern "C" fn dns_resolve(ctx: *mut duktape_sys::duk_context) -> i32 {
     } else {
         None
     };
-    eprintln!("dnsResolve -> {:?}", value);
 
     if let Some(value) = value {
         if !ctx.push_string(&value).is_ok() {
@@ -111,7 +105,7 @@ pub enum CreateEvaluatorError {
 impl std::error::Error for CreateEvaluatorError {}
 
 impl std::fmt::Display for CreateEvaluatorError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         match *self {
             CreateEvaluatorError::CreateContext => write!(f, "failed to create JS context"),
             CreateEvaluatorError::EvalPacFile => write!(f, "failed to evaluate PAC"),
@@ -129,7 +123,7 @@ pub enum FindProxyError {
 impl std::error::Error for FindProxyError {}
 
 impl std::fmt::Display for FindProxyError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         match *self {
             FindProxyError::NoHost => write!(f, "no host in URL"),
             FindProxyError::InvalidResult => write!(f, "invalid result from PAC script"),

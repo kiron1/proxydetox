@@ -2,7 +2,7 @@ use futures_util::future::try_join;
 use tokio::io::{AsyncRead, AsyncWrite};
 
 // Bidirectionl copy two async streams
-pub async fn tunnel<T1, T2>(server: T1, client: T2) -> tokio::io::Result<()>
+pub async fn tunnel<T1, T2>(server: T1, client: T2) -> tokio::io::Result<(u64, u64)>
 where
     T1: AsyncRead + AsyncWrite,
     T2: AsyncRead + AsyncWrite,
@@ -18,7 +18,6 @@ where
         try_join(client_to_server, server_to_client).await
     };
 
-    // Print message when done
     match amounts {
         Ok((from_client, from_server)) => {
             log::trace!(
@@ -27,9 +26,9 @@ where
                 from_server
             );
         }
-        Err(e) => {
-            log::error!("tunnel error: {:?}", e);
+        Err(ref cause) => {
+            log::error!("tunnel error: {:?}", cause);
         }
     };
-    Ok(())
+    amounts
 }
