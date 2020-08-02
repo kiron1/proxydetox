@@ -104,8 +104,23 @@ impl DetoxSession {
             }
         }
     }
-
     pub async fn process(
+        &mut self,
+        req: hyper::Request<Body>,
+    ) -> Result<Response<Body>, SessionError> {
+        let res = if req.uri().authority().is_some() {
+            self.dispatch(req).await
+        } else if req.method() == hyper::Method::GET {
+            self.management(req).await
+        } else {
+            let mut resp = Response::new(Body::from(String::from("Invalid Requst")));
+            *resp.status_mut() = http::StatusCode::BAD_REQUEST;
+            Ok(resp)
+        };
+        res
+    }
+
+    pub async fn dispatch(
         &mut self,
         mut req: hyper::Request<Body>,
     ) -> Result<Response<Body>, SessionError> {
@@ -116,15 +131,14 @@ impl DetoxSession {
 
         let _proxy_auth = req.headers_mut().remove(http::header::PROXY_AUTHORIZATION);
 
-        let client: &(dyn crate::client::ForwardClient + Send + Sync);
         let proxy_client;
-        match proxy {
-            ProxyDesc::Direct => client = &self.direct_client,
+        let client: &(dyn crate::client::ForwardClient + Send + Sync) = match proxy {
+            ProxyDesc::Direct => &self.direct_client,
             ProxyDesc::Proxy(proxy) => {
                 proxy_client = self.proxy_client(proxy).await;
-                client = &proxy_client;
+                &proxy_client
             }
-        }
+        };
 
         let mut res = if is_connect {
             client.connect(req).await
@@ -142,6 +156,24 @@ impl DetoxSession {
             res.headers_mut().insert(VIA, via);
         }
         res.map_err(SessionError::Hyper)
+    }
+
+    pub async fn management(
+        &mut self,
+        _req: hyper::Request<Body>,
+    ) -> Result<Response<Body>, SessionError> {
+        let body = format!(
+            "<!DOCTYPE html><html><h1>{}/{}</h1></html>",
+            env!("CARGO_PKG_NAME"),
+            env!("CARGO_PKG_VERSION")
+        );
+        let mut resp = Response::new(Body::from(body));
+        resp.headers_mut().insert(
+            http::header::CONTENT_TYPE,
+            http::header::HeaderValue::from_static("text/html"),
+        );
+        //*resp.status_mut() = http::StatusCode::INTERNAL_SERVER_ERROR;
+        Ok(resp)
     }
 }
 
