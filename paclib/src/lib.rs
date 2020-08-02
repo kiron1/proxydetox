@@ -4,3 +4,5 @@ pub mod proxy;
 pub use crate::evaluator::Evaluator;
 pub use crate::proxy::Proxies;
 pub use crate::proxy::ProxyDesc;
+
+pub use http::Uri;

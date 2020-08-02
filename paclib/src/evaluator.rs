@@ -1,5 +1,5 @@
 use crate::Proxies;
-use duktape::Context;
+use duktape::{Context, ContextRef, Stack};
 use http::Uri;
 use std::fmt::{Error, Formatter};
 use std::result::Result;
@@ -13,21 +13,46 @@ pub struct Evaluator {
 // To register:
 // let idx = duk_push_c_function(ctx, /* func pointer */ dns_resolve, /* nargs: */ 1);
 // duk_put_global_string(ctx, "dnsResolve");
-//unsafe extern "C" fn dns_resolve(ctx: *mut duk_context) -> () {
-//    use std::net::ToSocketAddrs;
-//    let host = "asdf";
-//    let host_port = (host, 0);
-//    if let Ok(ref mut ip_iter) = host_port.to_socket_addrs() {
-//        if let Some(ref mut addr) = ip_iter.next() {
-//            // TODO push string on context
-//            let s = appr.to_string();
-//        }
-//    }
-//}
+unsafe extern "C" fn dns_resolve(ctx: *mut duktape_sys::duk_context) -> i32 {
+    use std::net::ToSocketAddrs;
+    let mut ctx = ContextRef::from(ctx);
+    ctx.require_stack(1);
+    eprintln!("dns_resolve");
+
+    let value = if let Ok(host) = ctx.get_string(-1) {
+        eprintln!("dnsResolve({})", host);
+        let host_port = (&host[..], 0u16);
+        if let Ok(mut addrs) = host_port.to_socket_addrs() {
+            eprintln!("addres: {:?}", addrs);
+
+            if let Some(addr) = addrs.next() {
+                Some(addr.to_string())
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+    eprintln!("dnsResolve -> {:?}", value);
+
+    if let Some(value) = value {
+        if !ctx.push_string(&value).is_ok() {
+            ctx.push_null();
+        }
+    } else {
+        ctx.push_null();
+    }
+    1
+}
 
 impl Evaluator {
     pub fn new(pac_script: &str) -> Result<Self, CreateEvaluatorError> {
         let mut ctx = Context::new().map_err(|_| CreateEvaluatorError::CreateContext)?;
+        ctx.push_c_function("dnsResolve", dns_resolve, 1)
+            .map_err(|_| CreateEvaluatorError::CreateContext)?;
         ctx.eval(PAC_UTILS).expect("eval pac_utils.js");
         ctx.eval(pac_script)
             .map_err(|_| CreateEvaluatorError::EvalPacFile)?;
@@ -56,6 +81,23 @@ impl Evaluator {
                 Ok(Proxies::parse(result).map_err(|_| FindProxyError::InvalidResult)?)
             }
             _ => Err(FindProxyError::InvalidResult),
+        }
+    }
+
+    #[cfg(test)]
+    fn dns_resolve(&mut self, host: &str) -> Option<String> {
+        // FIXME: when something goes wrong here we need to clean up the stack!
+        let result = {
+            self.js.get_global_string("dnsResolve").unwrap();
+            self.js.push_string(host).unwrap();
+            self.js.call(1);
+            self.js.pop()
+        };
+
+        match result {
+            Ok(duktape::Value::String(result)) => Some(result),
+            Ok(duktape::Value::Null) => None,
+            _ => panic!("invalid result type"),
         }
     }
 }
@@ -112,6 +154,14 @@ mod tests {
             eval.find_proxy(&"http://localhost:3128/".parse::<Uri>().unwrap())?,
             Proxies::new(vec![ProxyDesc::Direct])
         );
+        Ok(())
+    }
+
+    #[test]
+    fn dns_resolve() -> Result<(), Box<dyn std::error::Error>> {
+        let mut eval = Evaluator::new(TEST_PAC_SCRIPT)?;
+        assert_ne!(eval.dns_resolve("localhost"), None);
+        assert_eq!(eval.dns_resolve("thishostdoesnotexist"), None);
         Ok(())
     }
 }
