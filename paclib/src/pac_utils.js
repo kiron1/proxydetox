@@ -15,7 +15,7 @@ function dnsDomainLevels(host) {
 }
 
 function isValidIpAddress(ipchars) {
-    var matches = /^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})$/.exec(ipchars);
+    var matches = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(ipchars);
     if (matches == null) {
         return false;
     } else if (matches[1] > 255 || matches[2] > 255 ||
