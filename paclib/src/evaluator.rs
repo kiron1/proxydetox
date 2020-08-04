@@ -9,36 +9,72 @@ pub struct Evaluator {
     js: Context,
 }
 
-// To register:
-// let idx = duk_push_c_function(ctx, /* func pointer */ dns_resolve, /* nargs: */ 1);
-// duk_put_global_string(ctx, "dnsResolve");
-unsafe extern "C" fn dns_resolve(ctx: *mut duktape_sys::duk_context) -> i32 {
+// Resolve the host name and return the IP address as string, if resolvable.
+fn resolve(host: &str) -> Option<String> {
     use std::net::ToSocketAddrs;
-    let mut ctx = ContextRef::from(ctx);
-    ctx.require_stack(1);
 
-    let value = if let Ok(host) = ctx.get_string(-1) {
-        let host_port = (&host[..], 0u16);
-        if let Ok(mut addrs) = host_port.to_socket_addrs() {
-            if let Some(addr) = addrs.next() {
-                Some(addr.to_string())
-            } else {
-                None
-            }
+    let host_port = (&host[..], 0u16);
+    if let Ok(mut addrs) = host_port.to_socket_addrs() {
+        if let Some(addr) = addrs.next() {
+            let ip = addr.ip();
+            Some(ip.to_string())
         } else {
             None
         }
     } else {
         None
-    };
+    }
+}
 
-    if let Some(value) = value {
-        if !ctx.push_string(&value).is_ok() {
+unsafe extern "C" fn dns_resolve(ctx: *mut duktape_sys::duk_context) -> i32 {
+    let mut ctx = ContextRef::from(ctx);
+    ctx.require_stack(4);
+
+    ctx.push_global_stash();
+    ctx.dup(0); // stack: [ host, stash, host ]
+
+    // get already resolved host, or undefined
+    // stack will be: [ host, stash, ip|undefined ]
+    ctx.get_prop(1);
+
+    if ctx.is_undefined(-1) {
+        // remove the undefined from top of the stack
+        ctx.drop(); // stack: [ host, stash ]
+        assert_eq!(2, ctx.top());
+
+        // we need to resolve the hostname for the first time
+        let value = if let Ok(host) = ctx.get_string(0) {
+            resolve(&host)
+        } else {
+            None
+        };
+
+        // stack will be: [ host, stash, ip ]
+        if let Some(value) = value {
+            if !ctx.push_string(&value).is_ok() {
+                ctx.push_null();
+            }
+        } else {
             ctx.push_null();
         }
+
+        // stack will be: [ host, stash, ip, host, ip ]
+        ctx.dup(0);
+        ctx.dup(2);
+        assert_eq!(5, ctx.top());
+
+        // store result in stash
+        // before: [ host, stash, ip, host, ip ]
+        // after: [ host, stash, ip ]
+        ctx.put_prop(1);
+        assert_eq!(3, ctx.top());
     } else {
-        ctx.push_null();
+        // already resolved, re-use it.
+        // the current value on the stack is the result, we are done here.
+        ctx.dup(-1);
     }
+
+    // number return values from this JavaScript function (will be consumed from top of stack)
     1
 }
 
