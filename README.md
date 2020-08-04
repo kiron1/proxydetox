@@ -13,11 +13,13 @@ require authentication which can mean that the user name and password is stored
 in plain text in environment variables.
 
 This *Proxydetox* software is meant to help in this situation: the Proxydetox
-provides a local proxy without authentication. Uppon receiving a request
+provides a local proxy without authentication. Upon receiving a request
 Proxydetox will evaluate the PAC configuration and forward to the correct
 parent proxy and also optionally authenticate with them. With Proxydetox it is
 enough to set a single proxy running on localhost. This should be compatible
 with most tools.
+
+Installation instructions are provided in the [INSTALL.md](./INSTALL.md) file.
 
 [mdnpac]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Proxy_servers_and_tunneling/Proxy_Auto-Configuration_(PAC)_file "Proxy Auto-Configuration (PAC) file"
 
