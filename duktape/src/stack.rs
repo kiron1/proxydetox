@@ -1,8 +1,10 @@
 use duktape_sys::{
-    duk_call, duk_context, duk_eval_string, duk_get_boolean, duk_get_global_string, duk_get_number,
-    duk_get_string, duk_get_type, duk_pop, duk_push_boolean, duk_push_c_function, duk_push_null,
-    duk_push_string, duk_put_global_string, duk_require_stack, duk_ret_t, DUK_TYPE_BOOLEAN,
-    DUK_TYPE_NONE, DUK_TYPE_NULL, DUK_TYPE_NUMBER, DUK_TYPE_STRING, DUK_TYPE_UNDEFINED,
+    duk_call, duk_context, duk_dup, duk_eval_string, duk_get_boolean, duk_get_global_string,
+    duk_get_number, duk_get_prop, duk_get_string, duk_get_top, duk_get_type, duk_is_undefined,
+    duk_pop, duk_push_boolean, duk_push_c_function, duk_push_global_stash, duk_push_null,
+    duk_push_string, duk_put_global_string, duk_put_prop, duk_require_stack, duk_ret_t,
+    duk_swap_top, DUK_TYPE_BOOLEAN, DUK_TYPE_NONE, DUK_TYPE_NULL, DUK_TYPE_NUMBER, DUK_TYPE_STRING,
+    DUK_TYPE_UNDEFINED,
 };
 use std::ffi::{CStr, CString};
 
@@ -70,6 +72,48 @@ pub trait Stack {
             );
         }
         self.pop()
+    }
+
+    fn push_global_stash(&mut self) {
+        unsafe {
+            duk_push_global_stash(self.ptr());
+        }
+    }
+
+    fn dup(&mut self, from_idx: i32) {
+        unsafe {
+            duk_dup(self.ptr(), from_idx);
+        }
+    }
+
+    fn drop(&mut self) {
+        unsafe { duk_pop(self.ptr()) }
+    }
+
+    fn top(&mut self) -> i32 {
+        unsafe { duk_get_top(self.ptr()) as i32 }
+    }
+
+    fn swap_top(&mut self, idx: i32) {
+        unsafe {
+            duk_swap_top(self.ptr(), idx);
+        }
+    }
+
+    fn get_prop(&mut self, obj_idx: i32) {
+        unsafe {
+            duk_get_prop(self.ptr(), obj_idx);
+        }
+    }
+
+    fn put_prop(&mut self, obj_idx: i32) {
+        unsafe {
+            duk_put_prop(self.ptr(), obj_idx);
+        }
+    }
+
+    fn is_undefined(&mut self, idx: i32) -> bool {
+        unsafe { duk_is_undefined(self.ptr(), idx) != 0u32 }
     }
 
     fn get_global_string(&mut self, name: &str) -> Result<(), TypeError> {

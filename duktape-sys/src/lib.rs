@@ -6,7 +6,7 @@ use std::ffi::CStr;
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
-pub unsafe fn duke_create_heap_default() -> *mut duk_context {
+pub unsafe fn duk_create_heap_default() -> *mut duk_context {
     duk_create_heap(None, None, None, std::ptr::null_mut(), None)
 }
 
@@ -26,7 +26,7 @@ mod tests {
     #[test]
     fn it_works() {
         unsafe {
-            let ctx = duke_create_heap_default();
+            let ctx = duk_create_heap_default();
             let prog = CString::new("1+2").expect("CString");
             duk_eval_string(ctx, &prog);
             assert_eq!(3, duk_get_int(ctx, -1));

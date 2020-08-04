@@ -1,5 +1,6 @@
 use crate::Stack;
-use duktape_sys::{duk_context, duk_destroy_heap, duke_create_heap_default};
+use duktape_sys::{duk_context, duk_create_heap, duk_destroy_heap};
+use std::ffi::{c_void, CStr};
 use std::fmt::{Error, Formatter};
 use std::ptr::null_mut;
 use std::result::Result;
@@ -15,13 +16,26 @@ impl std::fmt::Display for CreateContextError {
     }
 }
 
+unsafe extern "C" fn fatal_handler(_udata: *mut c_void, msg: *const i8) {
+    // Note that 'msg' may be NULL.
+    let msg = if !msg.is_null() {
+        CStr::from_ptr(msg as *mut i8)
+            .to_owned()
+            .into_string()
+            .unwrap()
+    } else {
+        String::from("unknown")
+    };
+    panic!("duk error: {}", msg);
+}
+
 pub struct Context {
     ptr: *mut duk_context,
 }
 
 impl Context {
     pub fn new() -> Result<Self, CreateContextError> {
-        let ptr = unsafe { duke_create_heap_default() };
+        let ptr = unsafe { duk_create_heap(None, None, None, null_mut(), Some(fatal_handler)) };
         if ptr == null_mut() {
             Err(CreateContextError)
         } else {
