@@ -8,6 +8,7 @@ edition = "2018"
 homepage = "https://github.com/kiron1/proxydetox"
 
 [dependencies]
+argh = "0.1"
 base64 = "0.12"
 dirs = "2.0"
 env_logger = "0.7"
@@ -17,5 +18,4 @@ hyper = "0.13"
 log ="0.4"
 netrc = { git = "https://github.com/kiron1/netrc-rs", branch = "modernize" }
 paclib = { path = "paclib" }
-structopt = "0.3"
 tokio = { version = "0.2", features = ["full"] }

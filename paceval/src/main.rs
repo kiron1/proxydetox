@@ -1,20 +1,24 @@
+use argh::FromArgs;
 use http::Uri;
 use paclib::Evaluator;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
-use structopt::StructOpt;
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = "paceval", about = "Evaluate a PAC JavaSciript file.")]
+#[derive(Debug, FromArgs)]
+/// Evaluate a PAC JavaSciript file
 struct Opt {
-    #[structopt(parse(from_os_str))]
+    /// path to a PAC file
+    #[argh(positional)]
     pac_file: PathBuf,
+
+    /// list of URIs to evaluate
+    #[argh(positional)]
     urls: Vec<String>,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let opt = Opt::from_args();
+    let opt: Opt = argh::from_env();
 
     let pac_content = {
         let mut pac_file = File::open(&opt.pac_file)?;

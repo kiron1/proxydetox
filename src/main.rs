@@ -11,17 +11,20 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::result::Result;
 
+use argh::FromArgs;
 use hyper::Server;
-use structopt::StructOpt;
 
 use crate::detox::DetoxService;
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = "proxydetox", about = "Proxy tamer")]
+#[derive(Debug, FromArgs)]
+/// Proxy tamer
 struct Opt {
-    #[structopt(parse(from_os_str))]
+    /// path to a PAC file
+    #[argh(positional)]
     pac_file: PathBuf,
-    #[structopt(default_value = "3128")]
+
+    /// listening port
+    #[argh(positional, default = "3128")]
     port: u16,
 }
 
@@ -29,7 +32,7 @@ struct Opt {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
 
-    let opt = Opt::from_args();
+    let opt: Opt = argh::from_env();
 
     let pac_script = {
         let mut pac_file = File::open(&opt.pac_file)?;
