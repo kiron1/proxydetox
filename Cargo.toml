@@ -14,7 +14,6 @@ env_logger = "0.7"
 futures-util = { version = "0.3", default-features = false }
 http = "0.2"
 hyper = "0.13"
-hyper-proxy = "0.6"
 log ="0.4"
 netrc = { git = "https://github.com/kiron1/netrc-rs", branch = "modernize" }
 paclib = { path = "paclib" }
