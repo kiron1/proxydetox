@@ -8,8 +8,14 @@ workdir=$(mktemp -dt proxydetox-debbuild.XXXXXXXX)
 
 trap "rm -rf ${workdir}" EXIT INT
 
-mkdir -p "${workdir}/usr"
-cargo install --path "${root}" --root "${workdir}/usr" --no-track
+mkdir -p "${workdir}/usr/bin"
+if [ -n "${1:-}" ]; then
+  cp "${1}" "${workdir}/usr/bin"
+  strip "${workdir}/usr/bin/$(basename ${1})"
+else
+  cargo install --path "${root}" --root "${workdir}/usr" --no-track
+fi
+
 mkdir -p "${workdir}/usr/lib/systemd/user"
 cat > "${workdir}/usr/lib/systemd/user/proxydetox.service" <<EOF
 [Unit]
@@ -22,7 +28,8 @@ ExecStart=/usr/bin/proxydetox %h/.config/proxydetox/proxy.pac 3128
 WantedBy=default.target
 EOF
 
-version=$("${workdir}/usr/bin/proxydetox" --version | sed -n 's/proxydetox \([0-9.]*\)/\1/p')
+version=$(sed -n 's/^version\s*=\s*"\([0-9.]*\)"/\1/p' "${root}/Cargo.toml")
+echo "::set-output name=version::${version}"
 
 debfile=proxydetox-${version}-x86_64-linux.deb
 echo "::set-output name=debfile::${debfile}"

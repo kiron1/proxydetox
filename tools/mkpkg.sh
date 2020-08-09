@@ -11,7 +11,8 @@ trap "rm -rf ${workdir}" EXIT ERR
 
 
 cargo install --path "${root}" --root "${workdir}" --no-track
-version=$("${workdir}/bin/proxydetox" --version | sed -n 's/proxydetox \([0-9.]*\)/\1/p')
+version=$(sed -n 's/^version[ \t]*=[ \t]*"\([0-9.]*\)"/\1/p' "${root}/Cargo.toml")
+echo "::set-output name=version::${version}"
 
 pkgfile=proxydetox-${version}-x86_64-apple-darwin.pkg
 echo "::set-output name=pkgfile::${pkgfile}"
