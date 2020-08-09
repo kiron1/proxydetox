@@ -41,7 +41,7 @@ Components in this repository
   (Just enough which is needed in this product context).
 - [paclib](./paclib/) - Functions needed to implement `FindProxyForURL` and wrap it in Rust.
 - [paceval](./paceval/) - A utility to evaluate PAC files for a given URL and print the result.
-- [proxydetox](./proxydetox/) - The actual Proxydetox software.
+- [proxydetox](./src/) - The actual Proxydetox software.
 
 Third party source code in this repository
 ------------------------------------------
