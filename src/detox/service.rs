@@ -3,6 +3,8 @@ use std::task::{self, Poll};
 
 use futures_util::future;
 use hyper::service::Service;
+use tracing::{event, Level};
+use tracing_attributes::instrument;
 
 use crate::detox::DetoxSession;
 
@@ -11,6 +13,12 @@ use crate::detox::DetoxSession;
 pub struct DetoxService {
     /// The master session where we take clones from
     session: DetoxSession,
+}
+
+impl std::fmt::Debug for DetoxService {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DetoxService").finish()
+    }
 }
 
 impl DetoxService {
@@ -29,8 +37,13 @@ impl<'a> Service<&'a hyper::server::conn::AddrStream> for DetoxService {
         Ok(()).into()
     }
 
+    #[instrument]
     fn call(&mut self, socket: &hyper::server::conn::AddrStream) -> Self::Future {
-        log::trace!("New client {}", socket.remote_addr());
+        event!(
+            Level::DEBUG,
+            remote_addr = %socket.remote_addr(),
+            "New client {}", socket.remote_addr()
+        );
         future::ok(self.session.clone())
     }
 }

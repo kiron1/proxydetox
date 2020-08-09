@@ -1,5 +1,7 @@
 use tokio::net::TcpStream;
+use tracing_attributes::instrument;
 
+#[instrument]
 pub async fn dial(uri: &http::Uri) -> tokio::io::Result<TcpStream> {
     match (uri.host(), uri.port_u16()) {
         (Some(host), Some(port)) => TcpStream::connect((host, port)).await,

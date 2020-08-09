@@ -16,6 +16,7 @@ use http::{Request, Response};
 use hyper::service::Service;
 use hyper::Body;
 use tokio::sync::Mutex;
+use tracing_attributes::instrument;
 
 use crate::auth::AuthStore;
 use crate::client::HttpProxyConnector;
@@ -61,6 +62,12 @@ pub struct DetoxSession {
     auth: Arc<Mutex<AuthStore>>,
 }
 
+impl std::fmt::Debug for DetoxSession {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DetoxSession").finish()
+    }
+}
+
 impl DetoxSession {
     pub fn new(pac_script: &str) -> Self {
         let eval = Arc::new(Mutex::new(Evaluator::new(pac_script).unwrap()));
@@ -88,11 +95,11 @@ impl DetoxSession {
             None => {
                 let mut headers = hyper::HeaderMap::new();
                 if let Some(auth) = self.auth.lock().await.find(&uri.host().unwrap()) {
-                    log::debug!("auth for {:?}", uri.host());
+                    tracing::debug!("auth for {:?}", uri.host());
                     let auth = HeaderValue::from_str(&auth.as_basic()).unwrap();
                     headers.insert(PROXY_AUTHORIZATION, auth);
                 } else {
-                    log::debug!("no auth for {:?}", uri.host());
+                    tracing::debug!("no auth for {:?}", uri.host());
                 }
 
                 let client = hyper::Client::builder().build(HttpProxyConnector::new(uri.clone()));
@@ -103,6 +110,7 @@ impl DetoxSession {
         }
     }
 
+    #[instrument]
     pub async fn process(
         &mut self,
         req: hyper::Request<Body>,
@@ -126,7 +134,7 @@ impl DetoxSession {
         let proxy = self.find_proxy(&req.uri()).await;
         let is_connect = req.method() == hyper::Method::CONNECT;
 
-        log::info!("{} {} via {}", req.method(), req.uri(), proxy);
+        tracing::info!(%proxy);
 
         let _proxy_auth = req.headers_mut().remove(http::header::PROXY_AUTHORIZATION);
 
@@ -210,7 +218,7 @@ impl Service<Request<Body>> for DetoxSession {
 
         let resp = async move {
             let resp = detox.process(req).await;
-            log::trace!("response {:?}", resp);
+            tracing::trace!("response {:?}", resp);
             let out = match resp {
                 Err(ref error) => make_error_response(error),
                 Ok(resp) => resp,

@@ -15,7 +15,10 @@ env_logger = "0.7"
 futures-util = { version = "0.3", default-features = false }
 http = "0.2"
 hyper = "0.13"
-log ="0.4"
 netrc = { git = "https://github.com/kiron1/netrc-rs", branch = "modernize" }
 paclib = { path = "paclib" }
 tokio = { version = "0.2", features = ["full"] }
+tracing = "0.1"
+tracing-attributes = "0.1"
+tracing-subscriber = "0.2"
+tracing-futures = "0.2"

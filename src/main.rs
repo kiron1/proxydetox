@@ -61,15 +61,15 @@ fn load_pac_file(opt: &Opt) -> (Option<PathBuf>, std::io::Result<String>) {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::init();
+    tracing_subscriber::fmt::init();
 
     let opt: Opt = argh::from_env();
 
     let (pac_path, pac_script) = load_pac_file(&opt);
     if let Some(path) = pac_path {
-        log::info!("PAC path: {}", path.canonicalize()?.display());
+        tracing::info!("PAC path: {}", path.canonicalize()?.display());
     } else {
-        log::info!(
+        tracing::info!(
             "Using inline PAC config: {}",
             pac_script.as_ref().expect("inline PAC config")
         );
@@ -77,10 +77,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let addr = SocketAddr::from(([127, 0, 0, 1], opt.port));
     let server = Server::bind(&addr).serve(DetoxService::new(&pac_script?));
-    log::info!("Listening on http://{}", addr);
+    tracing::info!("Listening on http://{}", addr);
 
     if let Err(e) = server.await {
-        log::error!("server error: {}", e);
+        tracing::error!("server error: {}", e);
         return Err(e.into());
     }
 

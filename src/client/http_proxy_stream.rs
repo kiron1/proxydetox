@@ -1,5 +1,6 @@
 use hyper::client::connect::{Connected, Connection};
 use std::{
+    net::SocketAddr,
     pin::Pin,
     task::{self, Poll},
 };
@@ -7,6 +8,24 @@ use tokio::{
     io::{AsyncRead, AsyncWrite},
     net::TcpStream,
 };
+
+#[derive(Clone, Debug)]
+pub struct HttpProxyInfo {
+    remote_addr: SocketAddr,
+    local_addr: SocketAddr,
+}
+
+impl HttpProxyInfo {
+    /// Get the remote address of the transport used.
+    pub fn remote_addr(&self) -> SocketAddr {
+        self.remote_addr
+    }
+
+    /// Get the local address of the transport used.
+    pub fn local_addr(&self) -> SocketAddr {
+        self.local_addr
+    }
+}
 
 pub struct HttpProxyStream {
     inner: TcpStream,
@@ -22,12 +41,13 @@ impl Connection for HttpProxyStream {
     fn connected(&self) -> Connected {
         let connected = Connected::new();
         let connected = connected.proxy(true);
-        // if let Ok(remote_addr) = self.inner.peer_addr() {
-        //     connected.extra(HttpInfo { remote_addr })
-        // } else {
-        //     connected
-        // }
-        connected
+        match (self.inner.local_addr(), self.inner.peer_addr()) {
+            (Ok(local_addr), Ok(remote_addr)) => connected.extra(HttpProxyInfo {
+                remote_addr,
+                local_addr,
+            }),
+            _ => connected,
+        }
     }
 }
 
