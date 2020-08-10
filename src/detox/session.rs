@@ -102,6 +102,7 @@ impl DetoxSession {
             }
         }
     }
+
     pub async fn process(
         &mut self,
         req: hyper::Request<Body>,
@@ -161,9 +162,10 @@ impl DetoxSession {
         _req: hyper::Request<Body>,
     ) -> Result<Response<Body>, SessionError> {
         let body = format!(
-            "<!DOCTYPE html><html><h1>{}/{}</h1></html>",
+            "<!DOCTYPE html><html><h1>{}/{}</h1><h2>DNS Cache</h2><code>{:?}</code></html>",
             env!("CARGO_PKG_NAME"),
-            env!("CARGO_PKG_VERSION")
+            env!("CARGO_PKG_VERSION"),
+            self.eval.lock().await.cache()
         );
         let mut resp = Response::new(Body::from(body));
         resp.headers_mut().insert(

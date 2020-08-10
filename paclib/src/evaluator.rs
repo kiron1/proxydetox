@@ -1,92 +1,32 @@
+use crate::DnsCache;
 use crate::Proxies;
-use crate::Uri;
-use duktape::{Context, ContextRef, Stack};
+use crate::{Uri, DNS_CACHE_NAME, DNS_RESOLVE_NAME};
+use duktape::{Context, Stack};
 use std::result::Result;
 
 const PAC_UTILS: &str = include_str!("pac_utils.js");
 
 pub struct Evaluator {
     js: Context,
-}
-
-// Resolve the host name and return the IP address as string, if resolvable.
-fn resolve(host: &str) -> Option<String> {
-    use std::net::ToSocketAddrs;
-
-    let host_port = (&host[..], 0u16);
-    if let Ok(mut addrs) = host_port.to_socket_addrs() {
-        if let Some(addr) = addrs.next() {
-            let ip = addr.ip();
-            Some(ip.to_string())
-        } else {
-            None
-        }
-    } else {
-        None
-    }
-}
-
-unsafe extern "C" fn dns_resolve(ctx: *mut duktape_sys::duk_context) -> i32 {
-    let mut ctx = ContextRef::from(ctx);
-    ctx.require_stack(4);
-
-    ctx.push_global_stash();
-    ctx.dup(0); // stack: [ host, stash, host ]
-
-    // get already resolved host, or undefined
-    // stack will be: [ host, stash, ip|undefined ]
-    ctx.get_prop(1);
-
-    if ctx.is_undefined(-1) {
-        // remove the undefined from top of the stack
-        ctx.drop(); // stack: [ host, stash ]
-        assert_eq!(2, ctx.top());
-
-        // we need to resolve the hostname for the first time
-        let value = if let Ok(host) = ctx.get_string(0) {
-            resolve(&host)
-        } else {
-            None
-        };
-
-        // stack will be: [ host, stash, ip ]
-        if let Some(value) = value {
-            if !ctx.push_string(&value).is_ok() {
-                ctx.push_null();
-            }
-        } else {
-            ctx.push_null();
-        }
-
-        // stack will be: [ host, stash, ip, host, ip ]
-        ctx.dup(0);
-        ctx.dup(2);
-        assert_eq!(5, ctx.top());
-
-        // store result in stash
-        // before: [ host, stash, ip, host, ip ]
-        // after: [ host, stash, ip ]
-        ctx.put_prop(1);
-        assert_eq!(3, ctx.top());
-    } else {
-        // already resolved, re-use it.
-        // the current value on the stack is the result, we are done here.
-        ctx.dup(-1);
-    }
-
-    // number return values from this JavaScript function (will be consumed from top of stack)
-    1
+    dns_cache: Box<DnsCache>,
 }
 
 impl Evaluator {
     pub fn new(pac_script: &str) -> Result<Self, CreateEvaluatorError> {
         let mut ctx = Context::new().map_err(|_| CreateEvaluatorError::CreateContext)?;
-        ctx.push_c_function("dnsResolve", dns_resolve, 1)
+        let mut dns_cache: Box<DnsCache> = Default::default();
+
+        ctx.put_global_pointer(DNS_CACHE_NAME, *&mut dns_cache.as_mut() as *mut _)
             .map_err(|_| CreateEvaluatorError::CreateContext)?;
+
+        ctx.push_c_function(DNS_RESOLVE_NAME, crate::dns::dns_resolve, 1)
+            .map_err(|_| CreateEvaluatorError::CreateContext)?;
+
         ctx.eval(PAC_UTILS).expect("eval pac_utils.js");
         ctx.eval(pac_script)
             .map_err(|_| CreateEvaluatorError::EvalPacFile)?;
-        Ok(Evaluator { js: ctx })
+
+        Ok(Evaluator { js: ctx, dns_cache })
     }
 
     pub fn find_proxy(&mut self, uri: &Uri) -> Result<Proxies, FindProxyError> {
@@ -114,11 +54,15 @@ impl Evaluator {
         }
     }
 
+    pub fn cache(&mut self) -> crate::dns::DnsMap {
+        self.dns_cache.map()
+    }
+
     #[cfg(test)]
     fn dns_resolve(&mut self, host: &str) -> Option<String> {
         // FIXME: when something goes wrong here we need to clean up the stack!
         let result = {
-            self.js.get_global_string("dnsResolve").unwrap();
+            self.js.get_global_string(DNS_RESOLVE_NAME).unwrap();
             self.js.push_string(host).unwrap();
             self.js.call(1);
             self.js.pop()

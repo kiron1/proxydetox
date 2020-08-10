@@ -19,6 +19,10 @@ pub unsafe fn duk_eval_string(ctx: *mut duk_context, src: &CStr) -> () {
     );
 }
 
+pub unsafe fn duk_push_external_buffer(ctx: *mut duk_context) -> () {
+    duk_push_buffer_raw(ctx, 0, DUK_BUF_FLAG_DYNAMIC | DUK_BUF_FLAG_EXTERNAL);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

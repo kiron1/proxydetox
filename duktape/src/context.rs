@@ -49,6 +49,7 @@ impl Stack for Context {
         self.ptr
     }
 }
+
 unsafe impl Send for Context {}
 
 impl Drop for Context {
