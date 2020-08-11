@@ -11,9 +11,7 @@ cat > /Library/LaunchAgents/com.github.kiron1.proxydetox.plit <<EOF
     <true/>
     <key>ProgramArguments</key>
     <array>
-      <string>/bin/sh</string>
-      <string>-c</string>
-      <string>exec "/usr/local/bin/proxydetox" "\$HOME/.config/proxydetox/proxy.pac" 3128</string>
+      <string>/usr/local/bin/proxydetox</string>
     </array>
     <key>EnvironmentVariables</key>
     <dict>

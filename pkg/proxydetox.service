@@ -8,7 +8,7 @@
 Description=Proxydetox Daemon
 
 [Service]
-ExecStart=%h/.cargo/bin/proxydetox %h/.config/proxydetox/proxy.pac 3128
+ExecStart=%h/.cargo/bin/proxydetox
 
 [Install]
 WantedBy=default.target

@@ -22,7 +22,7 @@ cat > "${workdir}/usr/lib/systemd/user/proxydetox.service" <<EOF
 Description=Proxydetox Daemon
 
 [Service]
-ExecStart=/usr/bin/proxydetox %h/.config/proxydetox/proxy.pac 3128
+ExecStart=/usr/bin/proxydetox
 
 [Install]
 WantedBy=default.target

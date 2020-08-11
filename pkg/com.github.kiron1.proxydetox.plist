@@ -11,7 +11,7 @@
       <string>/bin/sh</string>
       <string>-c</string>
       <string>-c</string>
-      <string>exec "$HOME/.cargo/bin/proxydetox" "$HOME/.config/proxydetox/proxy.pac" 3128</string>
+      <string>exec "$HOME/.cargo/bin/proxydetox"</string>
     </array>
     <key>EnvironmentVariables</key>
     <dict>
