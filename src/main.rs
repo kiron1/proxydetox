@@ -4,6 +4,9 @@ pub mod detox;
 pub mod io;
 pub mod net;
 
+#[cfg(target_family = "unix")]
+mod limit;
+
 use std::boxed::Box;
 use std::fs::File;
 use std::io::prelude::*;
@@ -64,6 +67,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
 
     let opt: Opt = argh::from_env();
+
+    #[cfg(target_family = "unix")]
+    limit::update_limits();
 
     let (pac_path, pac_script) = load_pac_file(&opt);
     if let Some(path) = pac_path {

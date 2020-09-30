@@ -3,9 +3,12 @@ members = ["duktape-sys", "duktape", "paclib", "paceval"]
 
 [package]
 name = "proxydetox"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2018"
 homepage = "https://github.com/kiron1/proxydetox"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
 
 [dependencies]
 argh = "0.1"
