@@ -49,6 +49,7 @@ register it with `systemd(8)` on Linux or `launchd(8) on macOS.
 
 ```sh
 cp pkg/proxydetox.service ~/.config/systemd/user/proxydetox.service
+systemctl --user daemon-reload
 systemctl --user enable proxydetox.service
 systemctl --user start proxydetox.service
 ```

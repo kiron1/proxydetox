@@ -20,12 +20,19 @@ mkdir -p "${workdir}/usr/lib/systemd/user"
 cat > "${workdir}/usr/lib/systemd/user/proxydetox.service" <<EOF
 [Unit]
 Description=Proxydetox Daemon
+Documentation=https://github.com/kiron1/proxydetox
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 ExecStart=/usr/bin/proxydetox
+KillMode=process
+RestartSec=5s
+Restart=on-failure
 
 [Install]
-WantedBy=default.target
+WantedBy=multi-user.target
+
 EOF
 
 version=$(sed -n 's/^version\s*=\s*"\([0-9.]*\)"/\1/p' "${root}/Cargo.toml")
