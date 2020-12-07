@@ -3,7 +3,7 @@ members = ["duktape-sys", "duktape", "paclib", "paceval"]
 
 [package]
 name = "proxydetox"
-version = "0.3.3"
+version = "0.3.4"
 edition = "2018"
 homepage = "https://github.com/kiron1/proxydetox"
 
@@ -12,9 +12,9 @@ libc = "0.2"
 
 [dependencies]
 argh = "0.1"
-base64 = "0.12"
+base64 = "0.13"
 dirs = "3.0"
-env_logger = "0.7"
+env_logger = "0.8"
 futures-util = { version = "0.3", default-features = false }
 http = "0.2"
 hyper = "0.13"
