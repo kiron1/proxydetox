@@ -3,7 +3,7 @@ members = ["duktape-sys", "duktape", "paclib", "paceval"]
 
 [package]
 name = "proxydetox"
-version = "0.3.4"
+version = "0.3.5"
 edition = "2018"
 homepage = "https://github.com/kiron1/proxydetox"
 
@@ -17,11 +17,11 @@ dirs = "3.0"
 env_logger = "0.8"
 futures-util = { version = "0.3", default-features = false }
 http = "0.2"
-hyper = "0.13"
-inotify = "0.8"
+hyper = { version = "0.14", features = ["full"] }
+inotify = { git = "https://github.com/kiron1/inotify", branch = "tokio-1.0" }
 netrc = { git = "https://github.com/kiron1/netrc-rs", branch = "modernize" }
 paclib = { path = "paclib" }
-tokio = { version = "0.2", features = ["full"] }
+tokio = { version = "1.0", features = ["full"] }
 tracing = "0.1"
 tracing-attributes = "0.1"
 tracing-subscriber = "0.2"

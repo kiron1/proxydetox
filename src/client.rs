@@ -41,7 +41,7 @@ impl ForwardClient for hyper::Client<hyper::client::HttpConnector, Body> {
         let resp = async move {
             if let Ok(stream) = crate::net::dial(req.uri()).await {
                 tokio::task::spawn(async move {
-                    match req.into_body().on_upgrade().await {
+                    match hyper::upgrade::on(req).await {
                         Ok(upgraded) => {
                             if let Err(e) = crate::io::tunnel(upgraded, stream).await {
                                 tracing::error!("tunnel error: {}", e)
@@ -86,18 +86,17 @@ impl ForwardClient for Client {
                 HeaderValue::from_str(host).unwrap()
             };
 
-            let (req_parts, req_body) = req.into_parts();
-            assert_eq!(req_parts.method, http::Method::CONNECT);
+            assert_eq!(req.method(), http::Method::CONNECT);
 
-            let mut req = Request::connect(req_parts.uri.clone())
+            let mut parent_req = Request::connect(req.uri().clone())
                 .version(http::version::Version::HTTP_11)
                 .body(Body::empty())
                 .unwrap();
-            req.headers_mut().insert(HOST, host);
-            req.headers_mut().extend(this.extra);
+            parent_req.headers_mut().insert(HOST, host);
+            parent_req.headers_mut().extend(this.extra);
 
             tracing::debug!("forward_connect req: {:?}", req);
-            let parent_res = this.inner.request(req).await?;
+            let parent_res = this.inner.request(parent_req).await?;
 
             if parent_res.status() == StatusCode::OK {
                 let http_proxy_info = parent_res
@@ -106,12 +105,12 @@ impl ForwardClient for Client {
                     .map(|i| i.clone());
 
                 // Upgrade connection to parent proxy
-                match parent_res.into_body().on_upgrade().await {
+                match hyper::upgrade::on(parent_res).await {
                     Ok(parent_upgraded) => {
                         // On a successful upgrade to the parent proxy, upgrade the
                         // request of the client (the original request maker)
                         tokio::task::spawn(async move {
-                            match req_body.on_upgrade().await {
+                            match hyper::upgrade::on(&mut req).await {
                                 Ok(client_upgraded) => {
                                     if let Err(cause) =
                                         crate::io::tunnel(parent_upgraded, client_upgraded).await
