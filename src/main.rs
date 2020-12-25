@@ -110,7 +110,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 }
 
-async fn monitor_path(path: &Path, mut tx: tokio::sync::mpsc::Sender<()>) {
+async fn monitor_path(path: &Path, tx: tokio::sync::mpsc::Sender<()>) {
     use futures_util::StreamExt;
     use inotify::{EventMask, Inotify, WatchMask};
     use tokio::time::{self, Duration};

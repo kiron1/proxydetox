@@ -84,8 +84,8 @@ impl AsyncRead for HttpProxyStream {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut task::Context<'_>,
-        buf: &mut [u8],
-    ) -> Poll<std::io::Result<usize>> {
+        buf: &mut tokio::io::ReadBuf<'_>,
+    ) -> Poll<std::io::Result<()>> {
         Pin::new(&mut self.get_mut().inner).poll_read(cx, buf)
     }
 }

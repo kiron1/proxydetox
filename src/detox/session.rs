@@ -26,7 +26,7 @@ use paclib::Evaluator;
 #[derive(Debug)]
 pub enum SessionError {
     Io(std::io::Error),
-    Hyper(hyper::error::Error),
+    Hyper(hyper::Error),
 }
 
 impl std::error::Error for SessionError {}
@@ -40,8 +40,8 @@ impl std::fmt::Display for SessionError {
     }
 }
 
-impl From<hyper::error::Error> for SessionError {
-    fn from(cause: hyper::error::Error) -> SessionError {
+impl From<hyper::Error> for SessionError {
+    fn from(cause: hyper::Error) -> SessionError {
         SessionError::Hyper(cause)
     }
 }
