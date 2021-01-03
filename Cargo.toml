@@ -10,6 +10,9 @@ homepage = "https://github.com/kiron1/proxydetox"
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
 
+[target.'cfg(target_os = "linux")'.dependencies]
+inotify = { git = "https://github.com/kiron1/inotify", branch = "tokio-1.0" }
+
 [dependencies]
 argh = "0.1"
 base64 = "0.13"
@@ -17,11 +20,10 @@ dirs = "3.0"
 env_logger = "0.8"
 futures-util = { version = "0.3", default-features = false }
 http = "0.2"
-hyper = { version = "0.14", features = ["full"] }
-inotify = { git = "https://github.com/kiron1/inotify", branch = "tokio-1.0" }
+hyper = { version = "0.14", features = ["http1", "http2", "client", "server", "tcp"] }
 netrc = { git = "https://github.com/kiron1/netrc-rs", branch = "modernize" }
 paclib = { path = "paclib" }
-tokio = { version = "1.0", features = ["full"] }
+tokio = { version = "1.0", features = ["rt-multi-thread", "net", "macros", "sync", "signal"] }
 tracing = "0.1"
 tracing-attributes = "0.1"
 tracing-subscriber = "0.2"

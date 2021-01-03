@@ -16,6 +16,7 @@ use std::result::Result;
 
 use argh::FromArgs;
 use hyper::Server;
+use tokio::signal::unix::{signal, SignalKind};
 
 use crate::detox::DetoxService;
 
@@ -93,6 +94,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             rx.recv().await.unwrap();
         });
 
+        #[cfg(target_family = "unix")]
+        {
+            let tx = tx.clone();
+            let mut stream = signal(SignalKind::hangup())?;
+            tokio::spawn(async move {
+                stream.recv().await;
+                tx.send(()).await.unwrap();
+            });
+        }
+
+        #[cfg(target_os = "linux")]
         {
             let mut netrc_path = dirs::home_dir().expect("home");
             netrc_path.push(".netrc");
@@ -110,6 +122,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 }
 
+#[cfg(target_os = "linux")]
 async fn monitor_path(path: &Path, tx: tokio::sync::mpsc::Sender<()>) {
     use futures_util::StreamExt;
     use inotify::{EventMask, Inotify, WatchMask};
