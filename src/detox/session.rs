@@ -110,7 +110,7 @@ impl DetoxSession {
         }
     }
 
-    #[instrument]
+    #[instrument(skip(req), fields(method=?req.method(), uri=?req.uri()))]
     pub async fn process(
         &mut self,
         req: hyper::Request<Body>,
