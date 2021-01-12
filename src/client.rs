@@ -19,7 +19,7 @@ pub struct Client {
 
 impl Client {
     pub fn new(client: hyper::Client<HttpProxyConnector, Body>, proxy_uri: &http::Uri) -> Self {
-        let auth = Authenticator::netrc_for(proxy_uri);
+        let auth = Authenticator::gss_for(proxy_uri);
         Self {
             inner: client,
             auth,
