@@ -8,22 +8,28 @@ use hyper::Body;
 use std::{future::Future, pin::Pin};
 use tracing_attributes::instrument;
 
+use crate::auth::Authenticator;
+
 #[derive(Clone, Debug)]
 pub struct Client {
     inner: hyper::Client<HttpProxyConnector, Body>,
-    extra: hyper::HeaderMap,
+    //auth: Box<dyn crate::auth::Authenticator>,
+    auth: Authenticator,
 }
 
 impl Client {
-    pub fn new(client: hyper::Client<HttpProxyConnector, Body>, extra: hyper::HeaderMap) -> Self {
+    pub fn new(client: hyper::Client<HttpProxyConnector, Body>, proxy_uri: &http::Uri) -> Self {
+        let auth = Authenticator::netrc_for(proxy_uri);
         Self {
             inner: client,
-            extra,
+            auth,
         }
     }
 
     pub fn send(&self, mut req: hyper::Request<Body>) -> hyper::client::ResponseFuture {
-        req.headers_mut().extend(self.extra.clone());
+        //req.headers_mut().extend(self.extra.clone());
+        let headers = self.auth.step(None);
+        req.headers_mut().extend(headers);
         self.inner.request(req)
     }
 }
@@ -93,10 +99,11 @@ impl ForwardClient for Client {
                 .body(Body::empty())
                 .unwrap();
             parent_req.headers_mut().insert(HOST, host);
-            parent_req.headers_mut().extend(this.extra);
+            //parent_req.headers_mut().extend(this.extra);
 
             tracing::debug!("forward_connect req: {:?}", req);
-            let parent_res = this.inner.request(parent_req).await?;
+            //let parent_res = this.inner.request(parent_req).await?;
+            let parent_res = this.send(parent_req).await?;
 
             if parent_res.status() == StatusCode::OK {
                 let http_proxy_info = parent_res
@@ -139,12 +146,12 @@ impl ForwardClient for Client {
     }
 
     #[instrument]
-    fn http(&self, mut req: hyper::Request<Body>) -> ResponseFuture {
+    fn http(&self, req: hyper::Request<Body>) -> ResponseFuture {
         let this = self.clone();
         let resp = async move {
-            req.headers_mut().extend(this.extra);
+            //req.headers_mut().extend(this.extra);
             tracing::debug!("forward_http req: {:?}", req);
-            let res = this.inner.request(req).await?;
+            let res = this.send(req).await?;
             Ok(res)
         };
         Box::pin(resp)

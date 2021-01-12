@@ -9,16 +9,16 @@ use std::{
     task::{self, Poll},
 };
 
-use http::header::{PROXY_AUTHORIZATION, VIA};
+use http::header::VIA;
 use http::HeaderValue;
 use http::Uri;
 use http::{Request, Response};
 use hyper::service::Service;
 use hyper::Body;
+use proxydetox::auth::Authenticator;
 use tokio::sync::Mutex;
 use tracing_attributes::instrument;
 
-use crate::auth::AuthStore;
 use crate::client::HttpProxyConnector;
 use paclib::proxy::ProxyDesc;
 use paclib::Evaluator;
@@ -59,7 +59,7 @@ pub struct DetoxSession {
     eval: Arc<Mutex<paclib::Evaluator>>,
     direct_client: hyper::Client<hyper::client::HttpConnector>,
     proxy_clients: Arc<Mutex<HashMap<Uri, ProxyClient>>>,
-    auth: Arc<Mutex<AuthStore>>,
+    auth: Arc<Mutex<Authenticator>>,
 }
 
 impl std::fmt::Debug for DetoxSession {
@@ -73,7 +73,7 @@ impl DetoxSession {
         let eval = Arc::new(Mutex::new(Evaluator::new(pac_script).unwrap()));
         let direct_client = Default::default();
         let proxy_clients = Default::default();
-        let auth_store = AuthStore::new().unwrap();
+        let auth_store = Authenticator::none();
         let auth = Arc::new(Mutex::new(auth_store));
         Self {
             eval,
@@ -93,17 +93,9 @@ impl DetoxSession {
         match proxies.get(&uri) {
             Some(proxy) => proxy.clone(),
             None => {
-                let mut headers = hyper::HeaderMap::new();
-                if let Some(auth) = self.auth.lock().await.find(&uri.host().unwrap()) {
-                    tracing::debug!("auth for {:?}", uri.host());
-                    let auth = HeaderValue::from_str(&auth.as_basic()).unwrap();
-                    headers.insert(PROXY_AUTHORIZATION, auth);
-                } else {
-                    tracing::debug!("no auth for {:?}", uri.host());
-                }
-
+                tracing::debug!("new proxy client for {:?}", uri.host());
                 let client = hyper::Client::builder().build(HttpProxyConnector::new(uri.clone()));
-                let client = ProxyClient::new(client, headers);
+                let client = ProxyClient::new(client, &uri);
                 proxies.insert(uri, client.clone());
                 client
             }
@@ -154,6 +146,8 @@ impl DetoxSession {
         };
 
         if let Ok(ref mut res) = res {
+            if res.status() == http::StatusCode::PROXY_AUTHENTICATION_REQUIRED {}
+
             let via = HeaderValue::from_str(&format!(
                 "{}/{}",
                 env!("CARGO_PKG_NAME"),
