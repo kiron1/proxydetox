@@ -13,13 +13,11 @@ use crate::auth::Authenticator;
 #[derive(Clone, Debug)]
 pub struct Client {
     inner: hyper::Client<HttpProxyConnector, Body>,
-    //auth: Box<dyn crate::auth::Authenticator>,
     auth: Authenticator,
 }
 
 impl Client {
-    pub fn new(client: hyper::Client<HttpProxyConnector, Body>, proxy_uri: &http::Uri) -> Self {
-        let auth = Authenticator::gss_for(proxy_uri);
+    pub fn new(client: hyper::Client<HttpProxyConnector, Body>, auth: Authenticator) -> Self {
         Self {
             inner: client,
             auth,
@@ -27,7 +25,6 @@ impl Client {
     }
 
     pub async fn send(&self, mut req: hyper::Request<Body>) -> hyper::Result<Response<Body>> {
-        //req.headers_mut().extend(self.extra.clone());
         let headers = self.auth.step(None).await;
         req.headers_mut().extend(headers);
         self.inner.request(req).await
@@ -99,10 +96,8 @@ impl ForwardClient for Client {
                 .body(Body::empty())
                 .unwrap();
             parent_req.headers_mut().insert(HOST, host);
-            //parent_req.headers_mut().extend(this.extra);
 
             tracing::debug!("forward_connect req: {:?}", req);
-            //let parent_res = this.inner.request(parent_req).await?;
             let parent_res = this.send(parent_req).await?;
 
             if parent_res.status() == StatusCode::OK {
@@ -149,7 +144,6 @@ impl ForwardClient for Client {
     fn http(&self, req: hyper::Request<Body>) -> ResponseFuture {
         let this = self.clone();
         let resp = async move {
-            //req.headers_mut().extend(this.extra);
             tracing::debug!("forward_http req: {:?}", req);
             let res = this.send(req).await?;
             Ok(res)

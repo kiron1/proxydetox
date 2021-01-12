@@ -25,6 +25,7 @@ use crate::detox::DetoxService;
 /// Proxy tamer
 struct Options {
     /// use GSSAPI instead of netrc to authenticate against proxies
+    #[cfg(feature = "gssapi")]
     #[argh(switch)]
     use_gss: bool,
 
@@ -68,6 +69,7 @@ fn load_config() -> Options {
             let rcopt = Options::from_args(&[&name], &args).expect("valid proxydetoxrc file");
             // Return merged options, priotize command line flags over file.
             return Options {
+                #[cfg(feature = "gssapi")]
                 use_gss: if opt.use_gss { true } else { rcopt.use_gss },
                 pac_file: opt.pac_file.or(rcopt.pac_file),
                 port: opt.port.or(rcopt.port),
@@ -126,11 +128,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Prepare some signal for when the server should start shutting down...
         let (tx, mut rx) = tokio::sync::mpsc::channel::<()>(32);
 
+        #[cfg(feature = "gssapi")]
         let auth = if config.use_gss {
             AuthenticatorFactory::gss()
         } else {
             AuthenticatorFactory::netrc()
         };
+
+        #[cfg(not(feature = "gssapi"))]
+        let auth = AuthenticatorFactory::netrc();
 
         let addr = SocketAddr::from(([127, 0, 0, 1], config.port.unwrap_or(3128)));
         let server = Server::bind(&addr).serve(DetoxService::new(&pac_script.clone(), auth));
