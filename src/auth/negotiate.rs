@@ -6,6 +6,7 @@ use http::{
 use libgssapi::{
     context::{ClientCtx, CtxFlags},
     credential::{Cred, CredUsage},
+    error::MajorFlags,
     name::Name,
     oid::{OidSet, GSS_MECH_KRB5, GSS_NT_HOSTBASED_SERVICE},
 };
@@ -54,22 +55,18 @@ impl GssAuthenticator {
 
     // Extract the server token from "Proxy-Authenticate: Negotiate <base64>" header value
     fn server_token(response: &http::Response<hyper::Body>) -> Option<Vec<u8>> {
-        let mut server_tok: Option<Vec<u8>> = None;
-
-        for auth in response.headers().get_all(PROXY_AUTHENTICATE) {
-            if let Ok(auth) = auth.to_str() {
-                let mut split = auth.splitn(2, ' ');
-                if let Some(method) = split.next() {
-                    if method == "Negotiate" {
-                        if let Some(token) = split.next() {
-                            if let Ok(token) = base64::decode(token) {
-                                server_tok = Some(token);
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        let server_tok = response
+            .headers()
+            .get_all(PROXY_AUTHENTICATE)
+            .iter()
+            .map(HeaderValue::to_str)
+            .filter_map(std::result::Result::ok)
+            .map(|s| s.splitn(2, ' '))
+            .map(|mut i| (i.next(), i.next()))
+            .filter_map(|k| if Some("Negotiate") == k.0 { k.1 } else { None })
+            .map(base64::decode)
+            .filter_map(std::result::Result::ok)
+            .next();
 
         server_tok
     }
@@ -116,10 +113,8 @@ impl GssAuthenticator {
             }
             Err(ref err) => {
                 // When authentication is not supported, do not try again.
-                if err
-                    .major
-                    .contains(libgssapi::error::MajorFlags::GSS_S_BAD_MECH)
-                {
+                let bad_mech = err.major.contains(MajorFlags::GSS_S_BAD_MECH);
+                if bad_mech {
                     self.supports_auth.store(false, Ordering::Relaxed);
                 } else {
                     tracing::error!(
@@ -133,5 +128,24 @@ impl GssAuthenticator {
         }
 
         headers
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::GssAuthenticator;
+    use super::PROXY_AUTHENTICATE;
+    #[test]
+    fn server_token_test() -> Result<(), Box<dyn std::error::Error>> {
+        let response = http::Response::builder()
+            .header(PROXY_AUTHENTICATE, "Negotiate SGVsbG8gV29ybGQh")
+            .body(hyper::Body::empty())?;
+
+        assert_eq!(
+            GssAuthenticator::server_token(&response),
+            Some(b"Hello World!".to_vec())
+        );
+
+        Ok(())
     }
 }
