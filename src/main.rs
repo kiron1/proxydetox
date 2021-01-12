@@ -23,7 +23,7 @@ use crate::detox::DetoxService;
 
 #[derive(Debug, FromArgs)]
 /// Proxy tamer
-struct Opt {
+struct Options {
     /// use GSSAPI instead of netrc to authenticate against proxies
     #[argh(switch)]
     use_gss: bool,
@@ -33,8 +33,8 @@ struct Opt {
     pac_file: Option<PathBuf>,
 
     /// listening port
-    #[argh(option, default = "3128")]
-    port: u16,
+    #[argh(option)]
+    port: Option<u16>,
 }
 
 fn read_file<P: AsRef<Path>>(path: P) -> std::io::Result<String> {
@@ -44,10 +44,9 @@ fn read_file<P: AsRef<Path>>(path: P) -> std::io::Result<String> {
     return Ok(contents);
 }
 
-/*
 /// Load config file, but command line flags will override config file values.
-fn load_config(opt: &Opt) -> Opt {
-    let mut rcopt = Default::default();
+fn load_config() -> Options {
+    let opt: Options = argh::from_env();
     let user_config = dirs::config_dir()
         .unwrap_or("".into())
         .join("proxydetox/proxydetoxrc");
@@ -59,15 +58,26 @@ fn load_config(opt: &Opt) -> Opt {
     for path in config_locations {
         if let Ok(content) = read_file(&path) {
             let name = std::env::args().next().expect("argv[0]");
-            let args = content.split('\n').collect::<Vec<_>>();
-            rcopt = Opt::from_args(&[&name], &args).expect("valid proxydetoxrc file");
+            // todo: this will fail with arguments which require a space (e.g. path of pac_file)
+            let args = content
+                .split('\n')
+                .map(str::split_ascii_whitespace)
+                .flatten()
+                .filter(|s| !s.is_empty())
+                .collect::<Vec<_>>();
+            let rcopt = Options::from_args(&[&name], &args).expect("valid proxydetoxrc file");
+            // Return merged options, priotize command line flags over file.
+            return Options {
+                use_gss: if opt.use_gss { true } else { rcopt.use_gss },
+                pac_file: opt.pac_file.or(rcopt.pac_file),
+                port: opt.port.or(rcopt.port),
+            };
         }
     }
-    Op
+    opt
 }
-*/
 
-fn load_pac_file(opt: &Opt) -> (Option<PathBuf>, std::io::Result<String>) {
+fn load_pac_file(opt: &Options) -> (Option<PathBuf>, std::io::Result<String>) {
     if let Some(pac_path) = &opt.pac_file {
         return (Some(pac_path.clone()), read_file(pac_path));
     } else {
@@ -95,12 +105,12 @@ fn load_pac_file(opt: &Opt) -> (Option<PathBuf>, std::io::Result<String>) {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
 
-    let opt: Opt = argh::from_env();
+    let config = load_config();
 
     #[cfg(target_family = "unix")]
     limit::update_limits();
 
-    let (pac_path, pac_script) = load_pac_file(&opt);
+    let (pac_path, pac_script) = load_pac_file(&config);
     if let Some(path) = pac_path {
         tracing::info!("PAC path: {}", path.canonicalize()?.display());
     } else {
@@ -116,13 +126,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Prepare some signal for when the server should start shutting down...
         let (tx, mut rx) = tokio::sync::mpsc::channel::<()>(32);
 
-        let auth = if opt.use_gss {
+        let auth = if config.use_gss {
             AuthenticatorFactory::gss()
         } else {
             AuthenticatorFactory::netrc()
         };
 
-        let addr = SocketAddr::from(([127, 0, 0, 1], opt.port));
+        let addr = SocketAddr::from(([127, 0, 0, 1], config.port.unwrap_or(3128)));
         let server = Server::bind(&addr).serve(DetoxService::new(&pac_script.clone(), auth));
         let server = server.with_graceful_shutdown(async {
             rx.recv().await.unwrap();
