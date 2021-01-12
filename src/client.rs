@@ -26,11 +26,11 @@ impl Client {
         }
     }
 
-    pub fn send(&self, mut req: hyper::Request<Body>) -> hyper::client::ResponseFuture {
+    pub async fn send(&self, mut req: hyper::Request<Body>) -> hyper::Result<Response<Body>> {
         //req.headers_mut().extend(self.extra.clone());
-        let headers = self.auth.step(None);
+        let headers = self.auth.step(None).await;
         req.headers_mut().extend(headers);
-        self.inner.request(req)
+        self.inner.request(req).await
     }
 }
 
