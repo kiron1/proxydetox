@@ -73,8 +73,6 @@ impl DetoxSession {
         let eval = Arc::new(Mutex::new(Evaluator::new(pac_script).unwrap()));
         let direct_client = Default::default();
         let proxy_clients = Default::default();
-        //let auth_store = Authenticator::none();
-        //let auth = Arc::new(Mutex::new(auth_store));
         Self {
             eval,
             direct_client,
@@ -94,8 +92,9 @@ impl DetoxSession {
             Some(proxy) => proxy.clone(),
             None => {
                 tracing::debug!("new proxy client for {:?}", uri.host());
+                let auth = self.auth.make(&uri);
                 let client = hyper::Client::builder().build(HttpProxyConnector::new(uri.clone()));
-                let client = ProxyClient::new(client, &uri);
+                let client = ProxyClient::new(client, auth);
                 proxies.insert(uri, client.clone());
                 client
             }

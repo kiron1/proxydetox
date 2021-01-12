@@ -11,23 +11,20 @@ use libgssapi::{
 };
 use std::sync::{
     atomic::{AtomicBool, Ordering},
-    Arc, Mutex,
+    Arc,
 };
 use tokio::task;
 
 #[derive(Debug, Clone)]
 pub struct GssAuthenticator {
     proxy_url: http::Uri,
-    //client: Arc<Mutex<ClientCtx>>,
     supports_auth: Arc<AtomicBool>,
 }
 
 impl GssAuthenticator {
     pub fn new(proxy_url: &http::Uri) -> Result<Self> {
-        //let client = GssAuthenticator::make_client(proxy_url)?;
         Ok(Self {
             proxy_url: proxy_url.clone(),
-            //client: Default::default(),
             supports_auth: Arc::new(AtomicBool::new(true)),
         })
     }
@@ -79,6 +76,9 @@ impl GssAuthenticator {
 
     // Call `step` `while request.status() == http::StatusCode::PROXY_AUTHENTICATION_REQUIRED {}`.
     pub async fn step(&self, response: Option<&http::Response<hyper::Body>>) -> hyper::HeaderMap {
+        // todo: actually the client context should be persistent across calls to step.
+        // but currently there is no way to know when the context is completed and a new one needs
+        // to be created. therefor we always create a fresh one (which seems to work).
         let mut headers = hyper::HeaderMap::new();
 
         if self.supports_auth.load(Ordering::Relaxed) == false {
@@ -90,13 +90,10 @@ impl GssAuthenticator {
         // Get client token, and create new gss client context.
         let token = {
             let proxy_url = self.proxy_url.clone();
-            //let client = self.client.clone();
             task::spawn_blocking(move || {
-                //let mut stepper = client.lock().unwrap();
                 let stepper = Self::make_client(&proxy_url).unwrap();
                 let token = server_tok.as_ref().map(|b| &**b);
                 let token = stepper.step(token);
-                //*stepper = GssAuthenticator::make_client(&proxy_url).expect("make_client");
                 token
             })
             .await
@@ -118,7 +115,7 @@ impl GssAuthenticator {
                 // finished with setting up the token, cannot re-use ClinetCtx
             }
             Err(ref err) => {
-                // When authentication is not supported, to not try again.
+                // When authentication is not supported, do not try again.
                 if err
                     .major
                     .contains(libgssapi::error::MajorFlags::GSS_S_BAD_MECH)
