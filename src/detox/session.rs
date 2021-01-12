@@ -15,11 +15,10 @@ use http::Uri;
 use http::{Request, Response};
 use hyper::service::Service;
 use hyper::Body;
-use proxydetox::auth::Authenticator;
 use tokio::sync::Mutex;
 use tracing_attributes::instrument;
 
-use crate::client::HttpProxyConnector;
+use crate::{auth::AuthenticatorFactory, client::HttpProxyConnector};
 use paclib::proxy::ProxyDesc;
 use paclib::Evaluator;
 
@@ -59,7 +58,8 @@ pub struct DetoxSession {
     eval: Arc<Mutex<paclib::Evaluator>>,
     direct_client: hyper::Client<hyper::client::HttpConnector>,
     proxy_clients: Arc<Mutex<HashMap<Uri, ProxyClient>>>,
-    auth: Arc<Mutex<Authenticator>>,
+    //auth: Arc<Mutex<Authenticator>>,
+    auth: AuthenticatorFactory,
 }
 
 impl std::fmt::Debug for DetoxSession {
@@ -69,12 +69,12 @@ impl std::fmt::Debug for DetoxSession {
 }
 
 impl DetoxSession {
-    pub fn new(pac_script: &str) -> Self {
+    pub fn new(pac_script: &str, auth: AuthenticatorFactory) -> Self {
         let eval = Arc::new(Mutex::new(Evaluator::new(pac_script).unwrap()));
         let direct_client = Default::default();
         let proxy_clients = Default::default();
-        let auth_store = Authenticator::none();
-        let auth = Arc::new(Mutex::new(auth_store));
+        //let auth_store = Authenticator::none();
+        //let auth = Arc::new(Mutex::new(auth_store));
         Self {
             eval,
             direct_client,

@@ -1,5 +1,6 @@
-use std::fs::File;
 use std::io::BufReader;
+use std::sync::Mutex;
+use std::{fs::File, sync::Arc};
 
 use http::{
     header::{PROXY_AUTHENTICATE, PROXY_AUTHORIZATION},
@@ -58,6 +59,7 @@ impl NetrcAuthenticator {
                 format!("{}", machine.login)
             };
             let token = format!("Basic {}", base64::encode(&token));
+            tracing::debug!("auth netrc {}@{}: ", &machine.login, &proxy_url);
             Some(token)
         } else {
             None
@@ -92,11 +94,20 @@ impl NetrcAuthenticator {
 
 #[derive(Debug, Clone)]
 pub struct GssAuthenticator {
-    client: ClientCtx,
+    proxy_url: http::Uri,
+    client: Arc<Mutex<ClientCtx>>,
 }
 
 impl GssAuthenticator {
     fn new(proxy_url: &http::Uri) -> Result<Self> {
+        let client = GssAuthenticator::make_client(proxy_url)?;
+        Ok(Self {
+            proxy_url: proxy_url.clone(),
+            client: Arc::new(Mutex::new(client)),
+        })
+    }
+
+    fn make_client(proxy_url: &http::Uri) -> Result<ClientCtx> {
         let desired_mechs = {
             let mut s = OidSet::new().expect("OidSet::new");
             s.add(&GSS_MECH_KRB5).expect("GSS_MECH_KRB5");
@@ -111,14 +122,12 @@ impl GssAuthenticator {
 
         let client_cred = Cred::acquire(None, None, CredUsage::Initiate, Some(&desired_mechs))?;
 
-        let client = ClientCtx::new(
+        Ok(ClientCtx::new(
             client_cred,
             name,
             CtxFlags::GSS_C_MUTUAL_FLAG,
             Some(&GSS_MECH_KRB5),
-        );
-
-        Ok(Self { client })
+        ))
     }
 
     fn step(&self, response: Option<&http::Response<hyper::Body>>) -> hyper::HeaderMap {
@@ -145,22 +154,34 @@ impl GssAuthenticator {
             }
         }
 
-        let token = self.client.step(server_tok.as_ref().map(|b| &**b));
-        dbg!(&token);
-        let token = token.unwrap();
+        let token = self
+            .client
+            .lock()
+            .unwrap()
+            .step(server_tok.as_ref().map(|b| &**b));
+        dbg!(&libgssapi::context::SecurityContext::info(
+            &*self.client.lock().unwrap()
+        ));
 
         match token {
-            Some(token) => {
-                let auth_str = format!("Negotiate {}", base64::encode(&*token));
+            Ok(Some(token)) => {
+                let b64token = base64::encode(&*token);
+                tracing::debug!("auth gss token: {}", &b64token);
+
+                let auth_str = format!("Negotiate {}", b64token);
                 headers.append(
                     PROXY_AUTHORIZATION,
                     HeaderValue::from_str(&auth_str).expect("valid header value"),
                 );
             }
-            None => {
+            Ok(None) => {
                 // finished with setting up the token, cannot re-use ClinetCtx
             }
+            Err(ref err) => tracing::error!("gss step error: {}", err),
         }
+
+        *self.client.lock().unwrap() =
+            GssAuthenticator::make_client(&self.proxy_url).expect("make_client");
 
         headers
     }
@@ -193,6 +214,31 @@ impl Authenticator {
             Self::None => Default::default(),
             Self::Netrc(ref netrc) => netrc.step(response),
             Self::Gss(ref gss) => gss.step(response),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum AuthenticatorFactory {
+    None,
+    Netrc,
+    Gss,
+}
+
+impl AuthenticatorFactory {
+    pub fn netrc() -> Self {
+        AuthenticatorFactory::Netrc
+    }
+
+    pub fn gss() -> Self {
+        AuthenticatorFactory::Gss
+    }
+
+    pub fn make(&self, proxy_url: &http::Uri) -> Authenticator {
+        match self {
+            Self::None => Authenticator::none(),
+            Self::Netrc => Authenticator::netrc_for(&proxy_url),
+            Self::Gss => Authenticator::gss_for(&proxy_url),
         }
     }
 }

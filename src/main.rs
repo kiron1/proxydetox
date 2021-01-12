@@ -15,6 +15,7 @@ use std::path::{Path, PathBuf};
 use std::result::Result;
 
 use argh::FromArgs;
+use auth::AuthenticatorFactory;
 use hyper::Server;
 use tokio::signal::unix::{signal, SignalKind};
 
@@ -23,6 +24,10 @@ use crate::detox::DetoxService;
 #[derive(Debug, FromArgs)]
 /// Proxy tamer
 struct Opt {
+    /// use GSSAPI instead of netrc to authenticate against proxies
+    #[argh(switch)]
+    use_gss: bool,
+
     /// path to a PAC file
     #[argh(option)]
     pac_file: Option<PathBuf>,
@@ -38,6 +43,29 @@ fn read_file<P: AsRef<Path>>(path: P) -> std::io::Result<String> {
     file.read_to_string(&mut contents)?;
     return Ok(contents);
 }
+
+/*
+/// Load config file, but command line flags will override config file values.
+fn load_config(opt: &Opt) -> Opt {
+    let mut rcopt = Default::default();
+    let user_config = dirs::config_dir()
+        .unwrap_or("".into())
+        .join("proxydetox/proxydetoxrc");
+    let config_locations = vec![
+        user_config,
+        PathBuf::from("/etc/proxydetox/proxydetoxrc"),
+        PathBuf::from("/usr/local/etc/proxydetox/proxydetoxrc"),
+    ];
+    for path in config_locations {
+        if let Ok(content) = read_file(&path) {
+            let name = std::env::args().next().expect("argv[0]");
+            let args = content.split('\n').collect::<Vec<_>>();
+            rcopt = Opt::from_args(&[&name], &args).expect("valid proxydetoxrc file");
+        }
+    }
+    Op
+}
+*/
 
 fn load_pac_file(opt: &Opt) -> (Option<PathBuf>, std::io::Result<String>) {
     if let Some(pac_path) = &opt.pac_file {
@@ -88,8 +116,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Prepare some signal for when the server should start shutting down...
         let (tx, mut rx) = tokio::sync::mpsc::channel::<()>(32);
 
+        let auth = if opt.use_gss {
+            AuthenticatorFactory::gss()
+        } else {
+            AuthenticatorFactory::netrc()
+        };
+
         let addr = SocketAddr::from(([127, 0, 0, 1], opt.port));
-        let server = Server::bind(&addr).serve(DetoxService::new(&pac_script.clone()));
+        let server = Server::bind(&addr).serve(DetoxService::new(&pac_script.clone(), auth));
         let server = server.with_graceful_shutdown(async {
             rx.recv().await.unwrap();
         });
