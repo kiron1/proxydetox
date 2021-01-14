@@ -17,7 +17,6 @@ use std::{fmt::Display, fs::File};
 use argh::FromArgs;
 use auth::AuthenticatorFactory;
 use hyper::{body::Buf, Server};
-use tokio::signal::unix::{signal, SignalKind};
 
 use crate::detox::DetoxService;
 
@@ -202,6 +201,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         #[cfg(target_family = "unix")]
         {
+            use tokio::signal::unix::{signal, SignalKind};
             let tx = tx.clone();
             let mut stream = signal(SignalKind::hangup())?;
             tokio::spawn(async move {
