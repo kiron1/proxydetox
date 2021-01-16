@@ -28,12 +28,12 @@ jobs:
     runs-on: macos-latest
     needs: mkrelease
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Build Pkg
+      - name: Build (pkg)
         id: buildpkg
         run: ./tools/mkpkg.sh
-      - name: Upload Release Asset
+      - name: Upload Release Asset (pkg)
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -48,13 +48,18 @@ jobs:
     runs-on: ubuntu-latest
     needs: mkrelease
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Build proxydetox
-        uses: ./.github/actions/rust-musl
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
         with:
-          args: -p proxydetox
-      - name: Build Deb
+          toolchain: stable
+          profile: minimal
+          override: true
+          target: x86_64-unknown-linux-musl
+      - name: Run cargo build
+        run: cargo build --release --target x86_64-unknown-linux-musl
+      - name: Build (deb)
         id: buildpkg
         run: ./tools/mkdeb.sh ./target/x86_64-unknown-linux-musl/release/proxydetox
       - name: Upload Release Asset (deb)
