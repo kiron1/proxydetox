@@ -10,7 +10,7 @@ workdir=$(mktemp -dt proxydetox-pkgbuild)
 trap "rm -rf ${workdir}" EXIT ERR
 
 
-cargo install --path "${root}" --root "${workdir}" --no-track
+cargo install --path "${root}" --root "${workdir}" --no-track --features gssapi
 version=$(sed -n 's/^version[ \t]*=[ \t]*"\([0-9.]*\)"/\1/p' "${root}/Cargo.toml")
 echo "::set-output name=version::${version}"
 
