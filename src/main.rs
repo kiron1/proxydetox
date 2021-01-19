@@ -7,12 +7,12 @@ pub mod net;
 #[cfg(target_family = "unix")]
 mod limit;
 
-use std::boxed::Box;
-use std::fs::File;
 use std::io::prelude::*;
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::result::Result;
+use std::{boxed::Box, str::FromStr};
+use std::{fmt::Display, fs::File};
 
 use argh::FromArgs;
 use auth::AuthenticatorFactory;
@@ -36,8 +36,38 @@ struct Options {
     /// listening port
     #[argh(option)]
     port: Option<u16>,
+
+    /// sets the maximum idle connection per host allowed in the pool
+    #[argh(option, default = "usize::MAX")]
+    pool_max_idle_per_host: usize,
+
+    /// set an optional timeout for idle sockets being kept-aliv.
+    #[argh(option)]
+    pool_idle_timeout: Option<Seconds>,
 }
 
+#[derive(Copy, Clone, Debug)]
+struct Seconds(u64);
+
+impl Display for Seconds {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}s", self.0)
+    }
+}
+impl FromStr for Seconds {
+    type Err = std::num::ParseIntError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let n = s.parse()?;
+        Ok(Seconds(n))
+    }
+}
+
+impl Into<std::time::Duration> for Seconds {
+    fn into(self) -> std::time::Duration {
+        std::time::Duration::from_secs(self.0)
+    }
+}
 fn read_file<P: AsRef<Path>>(path: P) -> std::io::Result<String> {
     let mut file = File::open(&path)?;
     let mut contents = String::new();
@@ -73,6 +103,10 @@ fn load_config() -> Options {
                 use_gss: if opt.use_gss { true } else { rcopt.use_gss },
                 pac_file: opt.pac_file.or(rcopt.pac_file),
                 port: opt.port.or(rcopt.port),
+                pool_max_idle_per_host: opt
+                    .pool_max_idle_per_host
+                    .min(rcopt.pool_max_idle_per_host),
+                pool_idle_timeout: opt.pool_idle_timeout.or(rcopt.pool_idle_timeout),
             };
         }
     }
@@ -138,8 +172,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         #[cfg(not(feature = "gssapi"))]
         let auth = AuthenticatorFactory::netrc();
 
+        let detox_config = detox::Config {
+            pool_idle_timeout: config.pool_idle_timeout.map(|x| x.into()),
+            pool_max_idle_per_host: config.pool_max_idle_per_host,
+        };
+
         let addr = SocketAddr::from(([127, 0, 0, 1], config.port.unwrap_or(3128)));
-        let server = Server::bind(&addr).serve(DetoxService::new(&pac_script.clone(), auth));
+        let server =
+            Server::bind(&addr).serve(DetoxService::new(&pac_script.clone(), auth, detox_config));
         let server = server.with_graceful_shutdown(async {
             rx.recv().await.unwrap();
         });
