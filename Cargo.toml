@@ -15,7 +15,7 @@ gssapi = ["libgssapi"]
 libc = "0.2"
 
 [target.'cfg(target_os = "linux")'.dependencies]
-inotify = { git = "https://github.com/kiron1/inotify", branch = "tokio-1.0" }
+inotify = "0.9"
 
 [dependencies]
 argh = "0.1"
