@@ -16,7 +16,7 @@ use std::{fmt::Display, fs::File};
 
 use argh::FromArgs;
 use auth::AuthenticatorFactory;
-use hyper::Server;
+use hyper::{body::Buf, Server};
 use tokio::signal::unix::{signal, SignalKind};
 
 use crate::detox::DetoxService;
@@ -29,9 +29,9 @@ struct Options {
     #[argh(switch)]
     use_gss: bool,
 
-    /// path to a PAC file
+    /// path to a PAC file or url of PAC file
     #[argh(option)]
-    pac_file: Option<PathBuf>,
+    pac_file: Option<String>,
 
     /// listening port
     #[argh(option)]
@@ -113,9 +113,23 @@ fn load_config() -> Options {
     opt
 }
 
-fn load_pac_file(opt: &Options) -> (Option<PathBuf>, std::io::Result<String>) {
+fn load_pac_file(opt: &Options) -> (Option<String>, std::io::Result<String>) {
     if let Some(pac_path) = &opt.pac_file {
-        return (Some(pac_path.clone()), read_file(pac_path));
+        if pac_path.starts_with("http://") {
+            let pac = futures::executor::block_on(async {
+                let client = hyper::Client::new();
+                let res = client
+                    .get(pac_path.parse().expect("URI"))
+                    .await
+                    .expect("get");
+                let body = hyper::body::aggregate(res).await.expect("aggregate");
+                let mut buffer = String::new();
+                body.reader().read_to_string(&mut buffer)?;
+                Ok(buffer)
+            });
+            return (Some(pac_path.to_string()), pac);
+        }
+        return (Some(pac_path.to_string()), read_file(pac_path));
     } else {
         let user_config = dirs::config_dir()
             .unwrap_or("".into())
@@ -127,7 +141,7 @@ fn load_pac_file(opt: &Options) -> (Option<PathBuf>, std::io::Result<String>) {
         ];
         for path in config_locations {
             if let Ok(content) = read_file(&path) {
-                return (Some(path), Ok(content));
+                return (Some(path.to_string_lossy().to_string()), Ok(content));
             }
         }
         return (
@@ -148,7 +162,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let (pac_path, pac_script) = load_pac_file(&config);
     if let Some(path) = pac_path {
-        tracing::info!("PAC path: {}", path.canonicalize()?.display());
+        tracing::info!("PAC path: {}", &path);
     } else {
         tracing::info!(
             "Using inline PAC config: {}",
