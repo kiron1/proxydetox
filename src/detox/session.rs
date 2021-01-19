@@ -88,7 +88,25 @@ impl DetoxSession {
 
     // For now just use the first reportet proxy
     async fn find_proxy(&mut self, uri: &http::Uri) -> paclib::proxy::ProxyDesc {
-        self.eval.lock().await.find_proxy(&uri).unwrap().first()
+        let eval = self.eval.clone();
+        let uri = uri.clone();
+        let proxy = tokio::task::spawn_blocking(move || {
+            futures::executor::block_on(async {
+                eval.lock().await.find_proxy(&uri).unwrap_or_else(|cause| {
+                    tracing::error!("failed to find_proxy: {:?}", cause);
+                    paclib::Proxies::direct()
+                })
+            })
+        })
+        .await;
+        match proxy {
+            Ok(proxy) => proxy,
+            Err(cause) => {
+                tracing::error!("failed to join: {:?}", cause);
+                paclib::Proxies::direct()
+            }
+        }
+        .first()
     }
 
     async fn proxy_client(&mut self, uri: http::Uri) -> ProxyClient {
