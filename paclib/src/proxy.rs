@@ -32,6 +32,10 @@ impl Proxies {
         Self(proxies)
     }
 
+    pub fn direct() -> Self {
+        Self::new(vec![ProxyDesc::Direct])
+    }
+
     pub fn parse(input: &str) -> Result<Proxies, ParserError> {
         let result: Result<Vec<_>, _> = input
             .split(';')
