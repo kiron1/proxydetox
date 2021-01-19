@@ -22,8 +22,8 @@ impl std::fmt::Debug for DetoxService {
 }
 
 impl DetoxService {
-    pub fn new(pac_script: &str, auth: AuthenticatorFactory) -> Self {
-        let session = DetoxSession::new(pac_script, auth);
+    pub fn new(pac_script: &str, auth: AuthenticatorFactory, config: super::Config) -> Self {
+        let session = DetoxSession::new(pac_script, auth, config);
         DetoxService { session }
     }
 }

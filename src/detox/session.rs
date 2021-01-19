@@ -60,6 +60,7 @@ pub struct DetoxSession {
     proxy_clients: Arc<Mutex<HashMap<Uri, ProxyClient>>>,
     //auth: Arc<Mutex<Authenticator>>,
     auth: AuthenticatorFactory,
+    config: super::Config,
 }
 
 impl std::fmt::Debug for DetoxSession {
@@ -69,15 +70,19 @@ impl std::fmt::Debug for DetoxSession {
 }
 
 impl DetoxSession {
-    pub fn new(pac_script: &str, auth: AuthenticatorFactory) -> Self {
+    pub fn new(pac_script: &str, auth: AuthenticatorFactory, config: super::Config) -> Self {
         let eval = Arc::new(Mutex::new(Evaluator::new(pac_script).unwrap()));
-        let direct_client = Default::default();
+        let direct_client = hyper::Client::builder()
+            .pool_max_idle_per_host(config.pool_max_idle_per_host)
+            .pool_idle_timeout(config.pool_idle_timeout)
+            .build_http();
         let proxy_clients = Default::default();
         Self {
             eval,
             direct_client,
             proxy_clients,
             auth,
+            config,
         }
     }
 
@@ -93,7 +98,10 @@ impl DetoxSession {
             None => {
                 tracing::debug!("new proxy client for {:?}", uri.host());
                 let auth = self.auth.make(&uri);
-                let client = hyper::Client::builder().build(HttpProxyConnector::new(uri.clone()));
+                let client = hyper::Client::builder()
+                    .pool_max_idle_per_host(self.config.pool_max_idle_per_host)
+                    .pool_idle_timeout(self.config.pool_idle_timeout)
+                    .build(HttpProxyConnector::new(uri.clone()));
                 let client = ProxyClient::new(client, auth);
                 proxies.insert(uri, client.clone());
                 client
