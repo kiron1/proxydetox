@@ -24,10 +24,10 @@ use crate::detox::DetoxService;
 #[derive(Debug, FromArgs)]
 /// Proxy tamer
 struct Options {
-    /// use GSSAPI instead of netrc to authenticate against proxies
+    /// use HTTP Negotiate instead of netrc to authenticate against proxies
     #[cfg(feature = "gssapi")]
     #[argh(switch)]
-    use_gss: bool,
+    negotiate: bool,
 
     /// path to a PAC file or url of PAC file
     #[argh(option)]
@@ -102,7 +102,7 @@ fn load_config() -> Options {
             // Return merged options, priotize command line flags over file.
             return Options {
                 #[cfg(feature = "gssapi")]
-                use_gss: if opt.use_gss { true } else { rcopt.use_gss },
+                negotiate: if opt.negotiate { true } else { rcopt.negotiate },
                 pac_file: opt.pac_file.or(rcopt.pac_file),
                 port: opt.port.or(rcopt.port),
                 pool_max_idle_per_host: opt
@@ -179,7 +179,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let (tx, mut rx) = tokio::sync::mpsc::channel::<()>(32);
 
         #[cfg(feature = "gssapi")]
-        let auth = if config.use_gss {
+        let auth = if config.negotiate {
             AuthenticatorFactory::negotiate()
         } else {
             AuthenticatorFactory::basic()
