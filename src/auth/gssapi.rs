@@ -17,12 +17,12 @@ use std::sync::{
 use tokio::task;
 
 #[derive(Debug, Clone)]
-pub struct GssAuthenticator {
+pub struct NegotiateAuthenticator {
     proxy_url: http::Uri,
     supports_auth: Arc<AtomicBool>,
 }
 
-impl GssAuthenticator {
+impl NegotiateAuthenticator {
     pub fn new(proxy_url: &http::Uri) -> Result<Self> {
         Ok(Self {
             proxy_url: proxy_url.clone(),

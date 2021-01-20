@@ -1,11 +1,11 @@
-pub mod basic;
 #[cfg(feature = "gssapi")]
-pub mod negotiate;
+pub mod gssapi;
+pub mod netrc;
 
-use basic::NetrcAuthenticator;
+use self::netrc::BasicAuthenticator;
 
 #[cfg(feature = "gssapi")]
-use negotiate::GssAuthenticator;
+use gssapi::NegotiateAuthenticator;
 
 #[derive(Debug)]
 pub enum Error {
@@ -42,9 +42,9 @@ type Result<T> = std::result::Result<T, Error>;
 #[derive(Clone, Debug)]
 pub enum Authenticator {
     None,
-    Netrc(NetrcAuthenticator),
+    Basic(BasicAuthenticator),
     #[cfg(feature = "gssapi")]
-    Gss(GssAuthenticator),
+    Negotiate(NegotiateAuthenticator),
 }
 
 impl Authenticator {
@@ -52,23 +52,23 @@ impl Authenticator {
         Self::None
     }
 
-    pub fn netrc_for(proxy_url: &http::Uri) -> Self {
-        let netrc = NetrcAuthenticator::new(&proxy_url).expect("netrc");
-        Self::Netrc(netrc)
+    pub fn basic_for(proxy_url: &http::Uri) -> Self {
+        let basic = BasicAuthenticator::new(&proxy_url).expect("netrc");
+        Self::Basic(basic)
     }
 
     #[cfg(feature = "gssapi")]
-    pub fn gss_for(proxy_url: &http::Uri) -> Self {
-        let gss = GssAuthenticator::new(&proxy_url).expect("gssapi");
-        Self::Gss(gss)
+    pub fn negotiate_for(proxy_url: &http::Uri) -> Self {
+        let negotiate = NegotiateAuthenticator::new(&proxy_url).expect("negotiate");
+        Self::Negotiate(negotiate)
     }
 
     pub async fn step(&self, response: Option<&http::Response<hyper::Body>>) -> hyper::HeaderMap {
         match self {
             Self::None => Default::default(),
-            Self::Netrc(ref netrc) => netrc.step(response),
+            Self::Basic(ref basic) => basic.step(response),
             #[cfg(feature = "gssapi")]
-            Self::Gss(ref gss) => gss.step(response).await,
+            Self::Negotiate(ref negotiate) => negotiate.step(response).await,
         }
     }
 }
@@ -76,27 +76,27 @@ impl Authenticator {
 #[derive(Clone, Debug)]
 pub enum AuthenticatorFactory {
     None,
-    Netrc,
+    Basic,
     #[cfg(feature = "gssapi")]
-    Gss,
+    Negotiate,
 }
 
 impl AuthenticatorFactory {
-    pub fn netrc() -> Self {
-        AuthenticatorFactory::Netrc
+    pub fn basic() -> Self {
+        AuthenticatorFactory::Basic
     }
 
     #[cfg(feature = "gssapi")]
-    pub fn gss() -> Self {
-        AuthenticatorFactory::Gss
+    pub fn negotiate() -> Self {
+        AuthenticatorFactory::Negotiate
     }
 
     pub fn make(&self, proxy_url: &http::Uri) -> Authenticator {
         match self {
             Self::None => Authenticator::none(),
-            Self::Netrc => Authenticator::netrc_for(&proxy_url),
+            Self::Basic => Authenticator::basic_for(&proxy_url),
             #[cfg(feature = "gssapi")]
-            Self::Gss => Authenticator::gss_for(&proxy_url),
+            Self::Negotiate => Authenticator::negotiate_for(&proxy_url),
         }
     }
 }

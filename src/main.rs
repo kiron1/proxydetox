@@ -180,13 +180,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         #[cfg(feature = "gssapi")]
         let auth = if config.use_gss {
-            AuthenticatorFactory::gss()
+            AuthenticatorFactory::negotiate()
         } else {
-            AuthenticatorFactory::netrc()
+            AuthenticatorFactory::basic()
         };
 
         #[cfg(not(feature = "gssapi"))]
-        let auth = AuthenticatorFactory::netrc();
+        let auth = AuthenticatorFactory::basic();
 
         let detox_config = detox::Config {
             pool_idle_timeout: config.pool_idle_timeout.map(|x| x.into()),
