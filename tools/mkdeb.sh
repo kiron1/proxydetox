@@ -10,10 +10,10 @@ trap "rm -rf ${workdir}" EXIT INT
 
 mkdir -p "${workdir}/usr/bin"
 if [ -n "${1:-}" ]; then
-  cp "${1}" "${workdir}/usr/bin"
-  strip "${workdir}/usr/bin/$(basename ${1})"
+  cp "${1}" "${workdir}/${prefix}/bin"
+  strip "${workdir}/${prefix}/bin/$(basename ${1})"
 else
-  cargo install --path "${root}" --root "${workdir}/usr" --no-track
+  cargo install --path "${root}" --root "${workdir}/${prefix}" --no-track
 fi
 
 mkdir -p "${workdir}/usr/lib/systemd/user"
@@ -25,7 +25,7 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-ExecStart=/usr/bin/proxydetox
+ExecStart=${prefix}/bin/proxydetox
 KillMode=process
 RestartSec=5s
 Restart=on-failure
