@@ -4,13 +4,13 @@ use std::fs::File;
 use std::io::BufReader;
 
 #[derive(Debug, Clone)]
-pub struct NetrcAuthenticator {
+pub struct BasicAuthenticator {
     token: Option<String>,
 }
 
-impl NetrcAuthenticator {
+impl BasicAuthenticator {
     pub fn new(proxy_url: &http::Uri) -> Result<Self> {
-        let netrc = NetrcAuthenticator::home_netrc()?;
+        let netrc = BasicAuthenticator::home_netrc()?;
         let host = proxy_url.host().expect("URI with host");
 
         let token = if let Some(&(_, ref machine)) = netrc.hosts.iter().find(|&x| x.0 == host) {
