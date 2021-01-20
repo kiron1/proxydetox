@@ -3,7 +3,7 @@
 ## proxydetox.service
 
 Configuration file for `systemd(8)`, which can be placed in the users home
-directroy.
+directory.
 
 See the comments inside the file.
 
