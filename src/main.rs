@@ -92,6 +92,8 @@ fn load_config() -> Options {
             // todo: this will fail with arguments which require a space (e.g. path of pac_file)
             let args = content
                 .split('\n')
+                .map(|s| s.trim())
+                .filter(|s| !s.starts_with('#'))
                 .map(str::split_ascii_whitespace)
                 .flatten()
                 .filter(|s| !s.is_empty())
