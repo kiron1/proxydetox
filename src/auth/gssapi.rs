@@ -139,7 +139,7 @@ impl NegotiateAuthenticator {
 
 #[cfg(test)]
 mod tests {
-    use super::GssAuthenticator;
+    use super::NegotiateAuthenticator;
     use super::PROXY_AUTHENTICATE;
     #[test]
     fn server_token_test() -> Result<(), Box<dyn std::error::Error>> {
@@ -148,7 +148,7 @@ mod tests {
             .body(hyper::Body::empty())?;
 
         assert_eq!(
-            GssAuthenticator::server_token(&response),
+            NegotiateAuthenticator::server_token(&response),
             Some(b"Hello World!".to_vec())
         );
 
