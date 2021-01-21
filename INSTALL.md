@@ -1,4 +1,4 @@
-# Install `proxydetox`
+# Build and Install `proxydetox`
 
 The easiest is, to use `cargo` from [rustup][rustup]. The next command will
 install the `proxydetox` binary in `~/.cargo/bin`.
@@ -14,24 +14,48 @@ If you have cloned this repository already, you can also do:
 cargo install --path .
 ```
 
+## Enable build features
+
+To enable the Negotiate authentication method on GNU/Linux or macoOS the
+[Generic Security Services Application Program Interface (GSSAPI)][gssapi] must
+be enabled during compile time using the `--features gssapi` feature flag when
+invoking cargo.
+
+To enable the Negotiate authentication method on Windows the [Security Support
+Provider Interface][sspi] is used and must be enable during compile time using
+the `--features sspi` feature flag when invoking cargo.
+
+[gssapi]: https://en.wikipedia.org/wiki/Generic_Security_Services_Application_Program_Interface
+[sspi]: https://en.wikipedia.org/wiki/Security_Support_Provider_Interface
+
 ## Configuration
 
 Two configuration files are needed, a) an optional `~/.netrc` file which will
 store the authentication credentials for the proxy (if required by the proxy),
 and b) a `proxy.pac` file in the `~/.config/proxydetox` directory.
 
-### .netrc file
+For macOS users, the configuration is stored in the `~/Library/Application\
+Support/proxydetox` directory. Please substitute accordingly.
 
-The `~/.netrc` file is only needed when any of the proxies requires an
-authentication header (currently only basic authentication is supported).
+### Negotiate authentication
 
-An example `~/.netrc` file will look as follows:
+To enable the Negotiate authentication the `--negotiate` flag must be added
+when calling `proxydetox` or added to the configuration file
+`~/.config/proxydetox/proxydetoxrc`.
+
+### Basic authentication
+
+When the basic authentication shall be used (default), the credentials are read
+from the `~/.netrc` file.  An example `~/.netrc` file will look as follows:
 
 ```
 machine proxy.example.org
 login ProxyUsername
 password ProxyPassword
 ```
+
+The basic authentication is insecure, since it required to store the
+password in clear text on disk and the password is transferred unencrypted.
 
 ### Proxy Auto-Configuration (PAC) file
 

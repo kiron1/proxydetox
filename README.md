@@ -1,7 +1,7 @@
 Proxydetox
 ==========
 
-A small proxy the relive the pain of some corporate proxy pain.
+A small proxy to relive the pain of some corporate proxies.
 
 Most utilities support the `http_proxy`, `https_proxy` and `no_proxy`
 environment variables to handle proxies. On the other side some corporate
@@ -19,7 +19,15 @@ parent proxy and also optionally authenticate with them. With Proxydetox it is
 enough to set a single proxy running on localhost. This should be compatible
 with most tools.
 
+The following authentication methods are supported:
+
+- Basic (use the username and password from `~/.netrc`)
+- Negotiate<sup>1</sup>
+
 Installation instructions are provided in the [INSTALL.md](./INSTALL.md) file.
+
+<sup>1)</sup> To enable the negotiate feature, please see the instructions in
+[INSTALL.md](./INSTALL.md).
 
 [mdnpac]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Proxy_servers_and_tunneling/Proxy_Auto-Configuration_(PAC)_file "Proxy Auto-Configuration (PAC) file"
 
