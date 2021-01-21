@@ -72,14 +72,17 @@ impl NegotiateAuthenticator {
     }
 
     // Call `step` `while request.status() == http::StatusCode::PROXY_AUTHENTICATION_REQUIRED {}`.
-    pub async fn step(&self, response: Option<&http::Response<hyper::Body>>) -> hyper::HeaderMap {
+    pub async fn step(
+        &self,
+        response: Option<&http::Response<hyper::Body>>,
+    ) -> Result<hyper::HeaderMap> {
         // todo: actually the client context should be persistent across calls to step.
         // but currently there is no way to know when the context is completed and a new one needs
         // to be created. therefor we always create a fresh one (which seems to work).
         let mut headers = hyper::HeaderMap::new();
 
         if self.supports_auth.load(Ordering::Relaxed) == false {
-            return headers;
+            return Ok(headers);
         }
 
         let server_tok = response.map(|r| Self::server_token(&r)).flatten();
@@ -88,13 +91,15 @@ impl NegotiateAuthenticator {
         let token = {
             let proxy_url = self.proxy_url.clone();
             task::spawn_blocking(move || {
-                let stepper = Self::make_client(&proxy_url).unwrap();
+                let stepper = Self::make_client(&proxy_url)?;
                 let token = server_tok.as_ref().map(|b| &**b);
-                let token = stepper.step(token);
+                let token = stepper
+                    .step(token)
+                    .map_err(|x| super::Error::GssApiError(x));
                 token
             })
             .await
-            .expect("spawn_blocking")
+            .expect("join")
         };
 
         match token {
@@ -111,7 +116,7 @@ impl NegotiateAuthenticator {
             Ok(None) => {
                 // finished with setting up the token, cannot re-use ClinetCtx
             }
-            Err(ref err) => {
+            Err(super::Error::GssApiError(ref err)) => {
                 // When authentication is not supported, do not try again.
                 let bad_mech = err.major.contains(MajorFlags::GSS_S_BAD_MECH);
                 if bad_mech {
@@ -125,9 +130,12 @@ impl NegotiateAuthenticator {
                     )
                 }
             }
+            Err(ref err) => {
+                tracing::error!("gss step error for {}: {}", &self.proxy_url, &err)
+            }
         }
 
-        headers
+        Ok(headers)
     }
 }
 

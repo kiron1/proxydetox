@@ -48,24 +48,27 @@ pub enum Authenticator {
 }
 
 impl Authenticator {
-    pub fn none() -> Self {
-        Self::None
+    pub fn none() -> Result<Self> {
+        Ok(Self::None)
     }
 
-    pub fn basic_for(proxy_url: &http::Uri) -> Self {
-        let basic = BasicAuthenticator::new(&proxy_url).expect("netrc");
-        Self::Basic(basic)
+    pub fn basic_for(proxy_url: &http::Uri) -> Result<Self> {
+        let basic = BasicAuthenticator::new(&proxy_url)?;
+        Ok(Self::Basic(basic))
     }
 
     #[cfg(feature = "gssapi")]
-    pub fn negotiate_for(proxy_url: &http::Uri) -> Self {
-        let negotiate = NegotiateAuthenticator::new(&proxy_url).expect("negotiate");
-        Self::Negotiate(negotiate)
+    pub fn negotiate_for(proxy_url: &http::Uri) -> Result<Self> {
+        let negotiate = NegotiateAuthenticator::new(&proxy_url)?;
+        Ok(Self::Negotiate(negotiate))
     }
 
-    pub async fn step(&self, response: Option<&http::Response<hyper::Body>>) -> hyper::HeaderMap {
+    pub async fn step(
+        &self,
+        response: Option<&http::Response<hyper::Body>>,
+    ) -> Result<hyper::HeaderMap> {
         match self {
-            Self::None => Default::default(),
+            Self::None => Ok(Default::default()),
             Self::Basic(ref basic) => basic.step(response),
             #[cfg(feature = "gssapi")]
             Self::Negotiate(ref negotiate) => negotiate.step(response).await,
@@ -91,7 +94,7 @@ impl AuthenticatorFactory {
         AuthenticatorFactory::Negotiate
     }
 
-    pub fn make(&self, proxy_url: &http::Uri) -> Authenticator {
+    pub fn make(&self, proxy_url: &http::Uri) -> Result<Authenticator> {
         match self {
             Self::None => Authenticator::none(),
             Self::Basic => Authenticator::basic_for(&proxy_url),

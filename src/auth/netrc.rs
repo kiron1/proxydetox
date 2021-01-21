@@ -41,7 +41,10 @@ impl BasicAuthenticator {
         Ok(netrc)
     }
 
-    pub fn step(&self, _response: Option<&http::Response<hyper::Body>>) -> hyper::HeaderMap {
+    pub fn step(
+        &self,
+        _response: Option<&http::Response<hyper::Body>>,
+    ) -> Result<hyper::HeaderMap> {
         let mut headers = hyper::HeaderMap::new();
         if let Some(ref token) = self.token {
             headers.append(
@@ -49,6 +52,6 @@ impl BasicAuthenticator {
                 HeaderValue::from_str(&token).expect("valid header value"),
             );
         }
-        headers
+        Ok(headers)
     }
 }
