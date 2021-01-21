@@ -130,9 +130,7 @@ impl NegotiateAuthenticator {
                     )
                 }
             }
-            Err(ref err) => {
-                tracing::error!("gss step error for {}: {}", &self.proxy_url, &err)
-            }
+            Err(ref err) => tracing::error!("gss step error for {}: {}", &self.proxy_url, &err),
         }
 
         Ok(headers)
