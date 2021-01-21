@@ -25,7 +25,8 @@ impl Client {
     }
 
     pub async fn send(&self, mut req: hyper::Request<Body>) -> hyper::Result<Response<Body>> {
-        let headers = self.auth.step(None).await;
+        // TODO: fix the unwrap here, need to propagade this any errors here to the user
+        let headers = self.auth.step(None).await.unwrap();
         req.headers_mut().extend(headers);
         self.inner.request(req).await
     }

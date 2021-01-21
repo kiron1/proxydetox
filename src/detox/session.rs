@@ -2,7 +2,7 @@ use std::convert::Infallible;
 use std::error::Error as StdError;
 use std::future::Future;
 use std::pin::Pin;
-use std::result::Result;
+use std::result::Result as StdResult;
 use std::sync::Arc;
 use std::{
     collections::HashMap,
@@ -26,16 +26,18 @@ use paclib::Evaluator;
 pub enum SessionError {
     Io(std::io::Error),
     Hyper(hyper::Error),
+    Auth(crate::auth::Error),
     ProxyAuthenticationRequired,
 }
 
 impl std::error::Error for SessionError {}
 
 impl std::fmt::Display for SessionError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> StdResult<(), std::fmt::Error> {
         match *self {
             SessionError::Io(ref err) => write!(f, "I/O error: {}", err),
             SessionError::Hyper(ref err) => write!(f, "hyper error: {}", err),
+            SessionError::Auth(ref err) => write!(f, "authentication mechanism error: {}", err),
             SessionError::ProxyAuthenticationRequired => {
                 write!(f, "upstream proxy requires authentication")
             }
@@ -54,6 +56,14 @@ impl From<std::io::Error> for SessionError {
         SessionError::Io(cause)
     }
 }
+
+impl From<crate::auth::Error> for SessionError {
+    fn from(cause: crate::auth::Error) -> SessionError {
+        SessionError::Auth(cause)
+    }
+}
+
+type Result<T> = std::result::Result<T, SessionError>;
 
 type ProxyClient = crate::client::Client;
 
@@ -113,29 +123,26 @@ impl DetoxSession {
         .first()
     }
 
-    async fn proxy_client(&mut self, uri: http::Uri) -> ProxyClient {
+    async fn proxy_client(&mut self, uri: http::Uri) -> Result<ProxyClient> {
         let mut proxies = self.proxy_clients.lock().await;
         match proxies.get(&uri) {
-            Some(proxy) => proxy.clone(),
+            Some(proxy) => Ok(proxy.clone()),
             None => {
                 tracing::debug!("new proxy client for {:?}", uri.host());
-                let auth = self.auth.make(&uri);
+                let auth = self.auth.make(&uri)?;
                 let client = hyper::Client::builder()
                     .pool_max_idle_per_host(self.config.pool_max_idle_per_host)
                     .pool_idle_timeout(self.config.pool_idle_timeout)
                     .build(HttpProxyConnector::new(uri.clone()));
                 let client = ProxyClient::new(client, auth);
                 proxies.insert(uri, client.clone());
-                client
+                Ok(client)
             }
         }
     }
 
     #[instrument(skip(req), fields(method=?req.method(), uri=?req.uri()))]
-    pub async fn process(
-        &mut self,
-        req: hyper::Request<Body>,
-    ) -> Result<Response<Body>, SessionError> {
+    pub async fn process(&mut self, req: hyper::Request<Body>) -> Result<Response<Body>> {
         let res = if req.uri().authority().is_some() {
             self.dispatch(req).await
         } else if req.method() == hyper::Method::GET {
@@ -148,10 +155,7 @@ impl DetoxSession {
         res
     }
 
-    pub async fn dispatch(
-        &mut self,
-        mut req: hyper::Request<Body>,
-    ) -> Result<Response<Body>, SessionError> {
+    pub async fn dispatch(&mut self, mut req: hyper::Request<Body>) -> Result<Response<Body>> {
         let proxy = self.find_proxy(&req.uri()).await;
         let is_connect = req.method() == hyper::Method::CONNECT;
 
@@ -163,7 +167,7 @@ impl DetoxSession {
         let client: &(dyn crate::client::ForwardClient + Send + Sync) = match proxy {
             ProxyDesc::Direct => &self.direct_client,
             ProxyDesc::Proxy(proxy) => {
-                proxy_client = self.proxy_client(proxy).await;
+                proxy_client = self.proxy_client(proxy).await?;
                 &proxy_client
             }
         };
@@ -190,10 +194,7 @@ impl DetoxSession {
         res.map_err(SessionError::Hyper)
     }
 
-    pub async fn management(
-        &mut self,
-        _req: hyper::Request<Body>,
-    ) -> Result<Response<Body>, SessionError> {
+    pub async fn management(&mut self, _req: hyper::Request<Body>) -> Result<Response<Body>> {
         let body = format!(
             "<!DOCTYPE html><html><h1>{}/{}</h1><h2>DNS Cache</h2><code>{:?}</code></html>",
             env!("CARGO_PKG_NAME"),
@@ -232,9 +233,9 @@ where
 impl Service<Request<Body>> for DetoxSession {
     type Response = Response<Body>;
     type Error = Infallible;
-    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
+    type Future = Pin<Box<dyn Future<Output = StdResult<Self::Response, Self::Error>> + Send>>;
 
-    fn poll_ready(&mut self, _cx: &mut task::Context<'_>) -> Poll<Result<(), Self::Error>> {
+    fn poll_ready(&mut self, _cx: &mut task::Context<'_>) -> Poll<StdResult<(), Self::Error>> {
         Poll::Ready(Ok(()))
     }
 
