@@ -26,6 +26,7 @@ use paclib::Evaluator;
 pub enum SessionError {
     Io(std::io::Error),
     Hyper(hyper::Error),
+    ProxyAuthenticationRequired,
 }
 
 impl std::error::Error for SessionError {}
@@ -35,6 +36,9 @@ impl std::fmt::Display for SessionError {
         match *self {
             SessionError::Io(ref err) => write!(f, "I/O error: {}", err),
             SessionError::Hyper(ref err) => write!(f, "hyper error: {}", err),
+            SessionError::ProxyAuthenticationRequired => {
+                write!(f, "upstream proxy requires authentication")
+            }
         }
     }
 }
@@ -171,7 +175,9 @@ impl DetoxSession {
         };
 
         if let Ok(ref mut res) = res {
-            if res.status() == http::StatusCode::PROXY_AUTHENTICATION_REQUIRED {}
+            if res.status() == http::StatusCode::PROXY_AUTHENTICATION_REQUIRED {
+                return Err(SessionError::ProxyAuthenticationRequired);
+            }
 
             let via = HeaderValue::from_str(&format!(
                 "{}/{}",
