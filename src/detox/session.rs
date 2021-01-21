@@ -1,8 +1,6 @@
 use std::convert::Infallible;
-use std::error::Error as StdError;
 use std::future::Future;
 use std::pin::Pin;
-use std::result::Result as StdResult;
 use std::sync::Arc;
 use std::{
     collections::HashMap,
@@ -33,7 +31,7 @@ pub enum SessionError {
 impl std::error::Error for SessionError {}
 
 impl std::fmt::Display for SessionError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> StdResult<(), std::fmt::Error> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         match *self {
             SessionError::Io(ref err) => write!(f, "I/O error: {}", err),
             SessionError::Hyper(ref err) => write!(f, "hyper error: {}", err),
@@ -60,6 +58,16 @@ impl From<std::io::Error> for SessionError {
 impl From<crate::auth::Error> for SessionError {
     fn from(cause: crate::auth::Error) -> SessionError {
         SessionError::Auth(cause)
+    }
+}
+
+impl From<crate::client::ClientError> for SessionError {
+    fn from(cause: crate::client::ClientError) -> SessionError {
+        use crate::client::ClientError;
+        match cause {
+            ClientError::Auth(cause) => SessionError::Auth(cause),
+            ClientError::Hyper(cause) => SessionError::Hyper(cause),
+        }
     }
 }
 
@@ -191,7 +199,7 @@ impl DetoxSession {
             .unwrap();
             res.headers_mut().insert(VIA, via);
         }
-        res.map_err(SessionError::Hyper)
+        Ok(res?)
     }
 
     pub async fn management(&mut self, _req: hyper::Request<Body>) -> Result<Response<Body>> {
@@ -212,7 +220,7 @@ impl DetoxSession {
 
 fn make_error_response<E>(error: &E) -> Response<Body>
 where
-    E: StdError + Send + Sync,
+    E: std::error::Error + Send + Sync,
 {
     let body = format!(
         include_str!("../500.html"),
@@ -233,9 +241,13 @@ where
 impl Service<Request<Body>> for DetoxSession {
     type Response = Response<Body>;
     type Error = Infallible;
-    type Future = Pin<Box<dyn Future<Output = StdResult<Self::Response, Self::Error>> + Send>>;
+    type Future =
+        Pin<Box<dyn Future<Output = std::result::Result<Self::Response, Self::Error>> + Send>>;
 
-    fn poll_ready(&mut self, _cx: &mut task::Context<'_>) -> Poll<StdResult<(), Self::Error>> {
+    fn poll_ready(
+        &mut self,
+        _cx: &mut task::Context<'_>,
+    ) -> Poll<std::result::Result<(), Self::Error>> {
         Poll::Ready(Ok(()))
     }
 

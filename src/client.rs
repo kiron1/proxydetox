@@ -10,6 +10,37 @@ use tracing_attributes::instrument;
 
 use crate::auth::Authenticator;
 
+#[derive(Debug)]
+pub enum ClientError {
+    Hyper(hyper::Error),
+    Auth(crate::auth::Error),
+}
+
+impl std::error::Error for ClientError {}
+
+impl std::fmt::Display for ClientError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+        match *self {
+            ClientError::Hyper(ref err) => write!(f, "hyper error: {}", err),
+            ClientError::Auth(ref err) => write!(f, "authentication mechanism error: {}", err),
+        }
+    }
+}
+
+impl From<hyper::Error> for ClientError {
+    fn from(cause: hyper::Error) -> ClientError {
+        ClientError::Hyper(cause)
+    }
+}
+
+impl From<crate::auth::Error> for ClientError {
+    fn from(cause: crate::auth::Error) -> ClientError {
+        ClientError::Auth(cause)
+    }
+}
+
+type Result<T> = std::result::Result<T, ClientError>;
+
 #[derive(Clone, Debug)]
 pub struct Client {
     inner: hyper::Client<HttpProxyConnector, Body>,
@@ -24,15 +55,15 @@ impl Client {
         }
     }
 
-    pub async fn send(&self, mut req: hyper::Request<Body>) -> hyper::Result<Response<Body>> {
-        // TODO: fix the unwrap here, need to propagade this any errors here to the user
-        let headers = self.auth.step(None).await.unwrap();
+    pub async fn send(&self, mut req: hyper::Request<Body>) -> Result<Response<Body>> {
+        let headers = self.auth.step(None).await?;
         req.headers_mut().extend(headers);
-        self.inner.request(req).await
+        let res = self.inner.request(req).await?;
+        Ok(res)
     }
 }
 
-type ResponseFuture = Pin<Box<dyn Future<Output = Result<Response<Body>, hyper::Error>> + Send>>;
+type ResponseFuture = Pin<Box<dyn Future<Output = Result<Response<Body>>> + Send>>;
 
 pub trait ForwardClient {
     fn connect(&self, req: hyper::Request<Body>) -> ResponseFuture;
@@ -70,7 +101,7 @@ impl ForwardClient for hyper::Client<hyper::client::HttpConnector, Body> {
     #[instrument]
     fn http(&self, req: http::Request<Body>) -> ResponseFuture {
         let this = self.clone();
-        let resp = async move { this.request(req).await };
+        let resp = async move { this.request(req).await.map_err(ClientError::Hyper) };
         Box::pin(resp)
     }
 }
@@ -153,7 +184,7 @@ impl ForwardClient for Client {
     }
 }
 
-fn bad_request(slice: &str) -> Result<Response<Body>, hyper::Error> {
+fn bad_request(slice: &str) -> Result<Response<Body>> {
     let mut resp = Response::new(Body::from(String::from(slice)));
     *resp.status_mut() = http::StatusCode::BAD_REQUEST;
     Ok(resp)
