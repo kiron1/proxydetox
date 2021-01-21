@@ -1,7 +1,7 @@
 # Install `proxydetox`
 
 The easiest is, to use `cargo` from [rustup][rustup]. The next command will
-install the `proxydetox` binary in `/.cargo/bin`.
+install the `proxydetox` binary in `~/.cargo/bin`.
 
 ```sh
 cargo install --git https://github.com/kiron1/proxydetox.git
@@ -43,7 +43,7 @@ can be retrieved from the settings of the pre-configured internet browser.
 ## Automatically start proxydetox with a user session
 
 To automatically start `proxydetox` when an user session is active, we can
-register it with `systemd(8)` on Linux or `launchd(8) on macOS.
+register it with `systemd(8)` on Linux or `launchd(8)` on macOS.
 
 ### Linux
 
