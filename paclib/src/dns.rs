@@ -45,7 +45,7 @@ impl DnsCache {
             resolve_and_insert(&mut self.map, host)
         };
 
-        if true || self.last_cleanup > ttl {
+        if self.last_cleanup > ttl {
             self.cleanup(&now);
             self.last_cleanup = ttl;
         };
@@ -104,7 +104,7 @@ pub unsafe extern "C" fn dns_resolve(ctx: *mut duktape_sys::duk_context) -> i32 
     };
 
     if let Some(value) = value {
-        if !ctx.push_string(&value).is_ok() {
+        if ctx.push_string(&value).is_err() {
             ctx.push_null();
         }
     } else {

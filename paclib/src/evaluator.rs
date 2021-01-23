@@ -16,7 +16,7 @@ impl Evaluator {
         let mut ctx = Context::new().map_err(|_| CreateEvaluatorError::CreateContext)?;
         let mut dns_cache: Box<DnsCache> = Default::default();
 
-        ctx.put_global_pointer(DNS_CACHE_NAME, *&mut dns_cache.as_mut() as *mut _)
+        ctx.put_global_pointer(DNS_CACHE_NAME, dns_cache.as_mut() as *mut _)
             .map_err(|_| CreateEvaluatorError::CreateContext)?;
 
         ctx.push_c_function(DNS_RESOLVE_NAME, crate::dns::dns_resolve, 1)
