@@ -10,7 +10,7 @@ pub unsafe fn duk_create_heap_default() -> *mut duk_context {
     duk_create_heap(None, None, None, std::ptr::null_mut(), None)
 }
 
-pub unsafe fn duk_eval_string(ctx: *mut duk_context, src: &CStr) -> () {
+pub unsafe fn duk_eval_string(ctx: *mut duk_context, src: &CStr) {
     duk_eval_raw(
         ctx,
         src.as_ptr(),
@@ -19,7 +19,7 @@ pub unsafe fn duk_eval_string(ctx: *mut duk_context, src: &CStr) -> () {
     );
 }
 
-pub unsafe fn duk_push_external_buffer(ctx: *mut duk_context) -> () {
+pub unsafe fn duk_push_external_buffer(ctx: *mut duk_context) {
     duk_push_buffer_raw(ctx, 0, DUK_BUF_FLAG_DYNAMIC | DUK_BUF_FLAG_EXTERNAL);
 }
 

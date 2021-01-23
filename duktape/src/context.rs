@@ -36,7 +36,7 @@ pub struct Context {
 impl Context {
     pub fn new() -> Result<Self, CreateContextError> {
         let ptr = unsafe { duk_create_heap(None, None, None, null_mut(), Some(fatal_handler)) };
-        if ptr == null_mut() {
+        if ptr.is_null() {
             Err(CreateContextError)
         } else {
             Ok(Context { ptr })

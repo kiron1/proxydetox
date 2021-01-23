@@ -14,10 +14,9 @@ pub struct Proxies(Vec<ProxyDesc>);
 impl ProxyDesc {
     pub fn parse(input: &str) -> Result<ProxyDesc, ParserError> {
         let input = input.trim();
-        if input.starts_with("PROXY") {
-            let input = &input[5..];
-            let input = input.trim();
-            let uri = input.parse::<Uri>().map_err(|_| ParserError)?;
+        if let Some(uri) = input.strip_prefix("PROXY") {
+            let uri = uri.trim();
+            let uri = uri.parse::<Uri>().map_err(|_| ParserError)?;
             Ok(ProxyDesc::Proxy(uri))
         } else if input == "DIRECT" {
             Ok(ProxyDesc::Direct)
