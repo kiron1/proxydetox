@@ -25,7 +25,7 @@ pub enum SessionError {
     Io(std::io::Error),
     Hyper(hyper::Error),
     Auth(crate::auth::Error),
-    ProxyAuthenticationRequired,
+    ProxyAuthenticationRequired(ProxyDesc),
 }
 
 impl std::error::Error for SessionError {}
@@ -36,8 +36,8 @@ impl std::fmt::Display for SessionError {
             SessionError::Io(ref err) => write!(f, "I/O error: {}", err),
             SessionError::Hyper(ref err) => write!(f, "hyper error: {}", err),
             SessionError::Auth(ref err) => write!(f, "authentication mechanism error: {}", err),
-            SessionError::ProxyAuthenticationRequired => {
-                write!(f, "upstream proxy requires authentication")
+            SessionError::ProxyAuthenticationRequired(ref proxy) => {
+                write!(f, "upstream proxy ({}) requires authentication", proxy)
             }
         }
     }
@@ -174,8 +174,8 @@ impl DetoxSession {
         let proxy_client;
         let client: &(dyn crate::client::ForwardClient + Send + Sync) = match proxy {
             ProxyDesc::Direct => &self.direct_client,
-            ProxyDesc::Proxy(proxy) => {
-                proxy_client = self.proxy_client(proxy).await?;
+            ProxyDesc::Proxy(ref proxy) => {
+                proxy_client = self.proxy_client(proxy.clone()).await?;
                 &proxy_client
             }
         };
@@ -188,11 +188,12 @@ impl DetoxSession {
 
         if let Ok(ref mut res) = res {
             if res.status() == http::StatusCode::PROXY_AUTHENTICATION_REQUIRED {
-                return Err(SessionError::ProxyAuthenticationRequired);
+                return Err(SessionError::ProxyAuthenticationRequired(proxy));
             }
 
             let via = HeaderValue::from_str(&format!(
-                "{}/{}",
+                "{}; {}/{}",
+                &proxy,
                 env!("CARGO_PKG_NAME"),
                 env!("CARGO_PKG_VERSION")
             ))
