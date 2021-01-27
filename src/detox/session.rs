@@ -169,6 +169,11 @@ impl DetoxSession {
 
         tracing::info!(%proxy);
 
+        // Remove hop-by-hop headers which are meant for the proxy.
+        // "proxy-connection" is not an official header, but used by many clients.
+        let _proxy_connection = req
+            .headers_mut()
+            .remove(http::header::HeaderName::from_static("proxy-connection"));
         let _proxy_auth = req.headers_mut().remove(http::header::PROXY_AUTHORIZATION);
 
         let proxy_client;
