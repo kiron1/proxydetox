@@ -1,7 +1,7 @@
 pub mod http_proxy_connector;
 pub mod http_proxy_stream;
 
-use http::{header::HOST, HeaderValue, Request, Response, StatusCode};
+use http::{Request, Response, StatusCode};
 pub use http_proxy_connector::HttpProxyConnector;
 use http_proxy_stream::HttpProxyInfo;
 use hyper::Body;
@@ -113,21 +113,13 @@ impl ForwardClient for Client {
         let uri = req.uri().clone();
 
         let resp = async move {
-            // Make a client CONNECT request to the parent proxy to upgrade the connection
-            let host = if let Some(host) = req.headers_mut().get(HOST) {
-                host.clone()
-            } else {
-                let host = req.uri().host().expect("uri with host");
-                HeaderValue::from_str(host).unwrap()
-            };
-
             assert_eq!(req.method(), http::Method::CONNECT);
 
-            let mut parent_req = Request::connect(req.uri().clone())
+            // Make a client CONNECT request to the parent proxy to upgrade the connection
+            let parent_req = Request::connect(req.uri().clone())
                 .version(http::version::Version::HTTP_11)
                 .body(Body::empty())
                 .unwrap();
-            parent_req.headers_mut().insert(HOST, host);
 
             tracing::debug!("forward_connect req: {:?}", req);
             let parent_res = this.send(parent_req).await?;
