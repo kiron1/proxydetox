@@ -224,7 +224,7 @@ where
     E: std::error::Error + Send + Sync,
 {
     let body = format!(
-        include_str!("../500.html"),
+        include_str!("../502.html"),
         error,
         env!("CARGO_PKG_NAME"),
         env!("CARGO_PKG_VERSION")
@@ -234,7 +234,7 @@ where
         http::header::CONTENT_TYPE,
         http::header::HeaderValue::from_static("text/html"),
     );
-    *resp.status_mut() = http::StatusCode::INTERNAL_SERVER_ERROR;
+    *resp.status_mut() = http::StatusCode::BAD_GATEWAY;
 
     resp
 }
