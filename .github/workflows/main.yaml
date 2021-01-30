@@ -18,7 +18,7 @@ jobs:
 
     strategy:
       matrix:
-        build: [linux, macos]
+        build: [linux, macos, windows]
         include:
           - build: linux
             os: ubuntu-18.04
@@ -30,6 +30,11 @@ jobs:
             rust: stable
             target: x86_64-apple-darwin
             features: gssapi
+          - build: windows
+            os: windows-latest
+            rust: stable
+            target: x86_64-pc-windows-msvc
+            features: sspi
 
     steps:
       - name: Checkout repository
@@ -47,7 +52,7 @@ jobs:
           override: true
           target: ${{ matrix.target }}
       - name: Run cargo test
-        run: cargo test --target ${{ matrix.target }} --features ${{ matrix.features }}  --all
+        run: cargo test --target ${{ matrix.target }} --features ${{ matrix.features }}
 
 
   format_check:
