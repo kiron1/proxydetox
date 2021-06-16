@@ -11,8 +11,8 @@ use tokio::{
 
 #[derive(Clone, Debug)]
 pub struct HttpProxyInfo {
-    remote_addr: SocketAddr,
-    local_addr: SocketAddr,
+    pub remote_addr: SocketAddr,
+    pub local_addr: SocketAddr,
 }
 
 impl HttpProxyInfo {
