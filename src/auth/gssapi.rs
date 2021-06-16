@@ -1,4 +1,4 @@
-use super::Result;
+use crate::auth::Result;
 use http::{
     header::{PROXY_AUTHENTICATE, PROXY_AUTHORIZATION},
     HeaderValue,
@@ -30,7 +30,9 @@ impl NegotiateAuthenticator {
         })
     }
 
-    fn make_client(proxy_url: &http::Uri) -> Result<ClientCtx> {
+    fn make_client(
+        proxy_url: &http::Uri,
+    ) -> std::result::Result<ClientCtx, libgssapi::error::Error> {
         let desired_mechs = {
             let mut s = OidSet::new().expect("OidSet::new");
             s.add(&GSS_MECH_KRB5).expect("GSS_MECH_KRB5");
@@ -54,9 +56,8 @@ impl NegotiateAuthenticator {
     }
 
     // Extract the server token from "Proxy-Authenticate: Negotiate <base64>" header value
-    fn server_token(response: &http::Response<hyper::Body>) -> Option<Vec<u8>> {
-        let server_tok = response
-            .headers()
+    fn server_token(last_headers: &hyper::HeaderMap) -> Option<Vec<u8>> {
+        let server_tok = last_headers
             .get_all(PROXY_AUTHENTICATE)
             .iter()
             .map(HeaderValue::to_str)
@@ -70,70 +71,74 @@ impl NegotiateAuthenticator {
 
         server_tok
     }
+}
 
+impl super::Authenticator for NegotiateAuthenticator {
     // Call `step` `while request.status() == http::StatusCode::PROXY_AUTHENTICATION_REQUIRED {}`.
-    pub async fn step(
-        &self,
-        response: Option<&http::Response<hyper::Body>>,
-    ) -> Result<hyper::HeaderMap> {
-        // todo: actually the client context should be persistent across calls to step.
-        // but currently there is no way to know when the context is completed and a new one needs
-        // to be created. therefor we always create a fresh one (which seems to work).
-        let mut headers = hyper::HeaderMap::new();
+    fn step<'async_trait>(
+        &'async_trait self,
+        last_headers: Option<hyper::HeaderMap>,
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = Result<hyper::HeaderMap>> + Send + 'async_trait>,
+    > {
+        let fut = async move {
+            // todo: actually the client context should be persistent across calls to step.
+            // but currently there is no way to know when the context is completed and a new one needs
+            // to be created. therefor we always create a fresh one (which seems to work).
+            let mut headers = hyper::HeaderMap::new();
 
-        if self.supports_auth.load(Ordering::Relaxed) == false {
-            return Ok(headers);
-        }
-
-        let server_tok = response.map(|r| Self::server_token(&r)).flatten();
-
-        // Get client token, and create new gss client context.
-        let token = {
-            let proxy_url = self.proxy_url.clone();
-            task::spawn_blocking(move || {
-                let stepper = Self::make_client(&proxy_url)?;
-                let token = server_tok.as_ref().map(|b| &**b);
-                let token = stepper
-                    .step(token)
-                    .map_err(|x| super::Error::GssApiError(x));
-                token
-            })
-            .await
-            .expect("join")
-        };
-
-        match token {
-            Ok(Some(token)) => {
-                let b64token = base64::encode(&*token);
-                tracing::debug!("auth gss token: {}", &b64token);
-
-                let auth_str = format!("Negotiate {}", b64token);
-                headers.append(
-                    PROXY_AUTHORIZATION,
-                    HeaderValue::from_str(&auth_str).expect("valid header value"),
-                );
+            if self.supports_auth.load(Ordering::Relaxed) == false {
+                return Ok(headers);
             }
-            Ok(None) => {
-                // finished with setting up the token, cannot re-use ClinetCtx
-            }
-            Err(super::Error::GssApiError(ref err)) => {
-                // When authentication is not supported, do not try again.
-                let bad_mech = err.major.contains(MajorFlags::GSS_S_BAD_MECH);
-                if bad_mech {
-                    self.supports_auth.store(false, Ordering::Relaxed);
-                } else {
-                    tracing::error!(
-                        "gss step error for {}: {} ({:?})",
-                        &self.proxy_url,
-                        &err,
-                        &err
-                    )
+
+            let server_tok = last_headers.map(|h| Self::server_token(&h)).flatten();
+
+            // Get client token, and create new gss client context.
+            let token = {
+                let proxy_url = self.proxy_url.clone();
+                task::spawn_blocking(move || {
+                    let stepper = Self::make_client(&proxy_url)?;
+                    let token = server_tok.as_ref().map(|b| &**b);
+                    let token = stepper.step(token);
+                    token
+                })
+                .await
+                .expect("join")
+            };
+
+            match token {
+                Ok(Some(token)) => {
+                    let b64token = base64::encode(&*token);
+                    tracing::debug!("auth gss token: {}", &b64token);
+
+                    let auth_str = format!("Negotiate {}", b64token);
+                    headers.append(
+                        PROXY_AUTHORIZATION,
+                        HeaderValue::from_str(&auth_str).expect("valid header value"),
+                    );
+                }
+                Ok(None) => {
+                    // finished with setting up the token, cannot re-use ClinetCtx
+                }
+                Err(ref err) => {
+                    // When authentication is not supported, do not try again.
+                    let bad_mech = err.major.contains(MajorFlags::GSS_S_BAD_MECH);
+                    if bad_mech {
+                        self.supports_auth.store(false, Ordering::Relaxed);
+                    } else {
+                        tracing::error!(
+                            "gss step error for {}: {} ({:?})",
+                            &self.proxy_url,
+                            &err,
+                            &err
+                        )
+                    }
                 }
             }
-            Err(ref err) => tracing::error!("gss step error for {}: {}", &self.proxy_url, &err),
-        }
+            Ok(headers)
+        };
 
-        Ok(headers)
+        Box::pin(fut)
     }
 }
 

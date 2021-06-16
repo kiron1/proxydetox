@@ -1,7 +1,27 @@
-use super::{Error, Result};
+use crate::auth::Result;
+use futures::future;
 use http::{header::PROXY_AUTHORIZATION, HeaderValue};
 use std::fs::File;
 use std::io::BufReader;
+
+#[derive(Debug)]
+pub enum Error {
+    NoHomeEnv,
+    NoNetrcFile,
+    NetrcParserError,
+}
+
+impl std::error::Error for Error {}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NoHomeEnv => write!(f, "HOME not set"),
+            Self::NoNetrcFile => write!(f, "no ~/.netrc file"),
+            Self::NetrcParserError => write!(f, "failed to parse ~/.netrc file"),
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct BasicAuthenticator {
@@ -31,20 +51,26 @@ impl BasicAuthenticator {
 
     fn home_netrc() -> Result<netrc::Netrc> {
         let netrc_path = {
-            let mut netrc_path = dirs::home_dir().ok_or(Error::NoHomeEnv)?;
+            let mut netrc_path =
+                dirs::home_dir().ok_or(super::Error::temporary(Box::new(Error::NoHomeEnv)))?;
             netrc_path.push(".netrc");
             netrc_path
         };
-        let input = File::open(netrc_path.as_path()).map_err(|_| Error::NoNetrcFile)?;
-        let netrc =
-            netrc::Netrc::parse(BufReader::new(input)).map_err(|_| Error::NetrcParserError)?;
+        let input = File::open(netrc_path.as_path())
+            .map_err(|_| super::Error::temporary(Box::new(Error::NoNetrcFile)))?;
+        let netrc = netrc::Netrc::parse(BufReader::new(input))
+            .map_err(|_| super::Error::temporary(Box::new(Error::NetrcParserError)))?;
         Ok(netrc)
     }
+}
 
-    pub fn step(
-        &self,
-        _response: Option<&http::Response<hyper::Body>>,
-    ) -> Result<hyper::HeaderMap> {
+impl super::Authenticator for BasicAuthenticator {
+    fn step<'async_trait>(
+        &'async_trait self,
+        _response: Option<hyper::HeaderMap>,
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = Result<hyper::HeaderMap>> + Send + 'async_trait>,
+    > {
         let mut headers = hyper::HeaderMap::new();
         if let Some(ref token) = self.token {
             headers.append(
@@ -52,6 +78,7 @@ impl BasicAuthenticator {
                 HeaderValue::from_str(&token).expect("valid header value"),
             );
         }
-        Ok(headers)
+
+        Box::pin(future::ok(headers))
     }
 }
