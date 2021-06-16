@@ -132,3 +132,15 @@ impl AuthenticatorFactory {
         }
     }
 }
+
+impl std::fmt::Display for AuthenticatorFactory {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+        let name = match *self {
+            Self::None => "none",
+            Self::Basic => "basic",
+            #[cfg(feature = "gssapi")]
+            Self::Negotiate => "negotiate",
+        };
+        f.write_str(name)
+    }
+}

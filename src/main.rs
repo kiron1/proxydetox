@@ -187,6 +187,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         #[cfg(not(feature = "gssapi"))]
         let auth = AuthenticatorFactory::basic();
 
+        tracing::info!("Authenticator factory: {}", &auth);
+
         let detox_config = detox::Config {
             pool_idle_timeout: config.pool_idle_timeout.map(|x| x.into()),
             pool_max_idle_per_host: config.pool_max_idle_per_host,

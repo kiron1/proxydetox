@@ -1,4 +1,4 @@
-use crate::auth::Result;
+use crate::auth::{Error, Result};
 use http::{
     header::{PROXY_AUTHENTICATE, PROXY_AUTHORIZATION},
     HeaderValue,
@@ -6,27 +6,20 @@ use http::{
 use libgssapi::{
     context::{ClientCtx, CtxFlags},
     credential::{Cred, CredUsage},
-    error::MajorFlags,
     name::Name,
     oid::{OidSet, GSS_MECH_KRB5, GSS_NT_HOSTBASED_SERVICE},
-};
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    Arc,
 };
 use tokio::task;
 
 #[derive(Debug, Clone)]
 pub struct NegotiateAuthenticator {
     proxy_url: http::Uri,
-    supports_auth: Arc<AtomicBool>,
 }
 
 impl NegotiateAuthenticator {
     pub fn new(proxy_url: &http::Uri) -> Result<Self> {
         Ok(Self {
             proxy_url: proxy_url.clone(),
-            supports_auth: Arc::new(AtomicBool::new(true)),
         })
     }
 
@@ -87,10 +80,6 @@ impl super::Authenticator for NegotiateAuthenticator {
             // to be created. therefor we always create a fresh one (which seems to work).
             let mut headers = hyper::HeaderMap::new();
 
-            if self.supports_auth.load(Ordering::Relaxed) == false {
-                return Ok(headers);
-            }
-
             let server_tok = last_headers.map(|h| Self::server_token(&h)).flatten();
 
             // Get client token, and create new gss client context.
@@ -120,19 +109,14 @@ impl super::Authenticator for NegotiateAuthenticator {
                 Ok(None) => {
                     // finished with setting up the token, cannot re-use ClinetCtx
                 }
-                Err(ref err) => {
-                    // When authentication is not supported, do not try again.
-                    let bad_mech = err.major.contains(MajorFlags::GSS_S_BAD_MECH);
-                    if bad_mech {
-                        self.supports_auth.store(false, Ordering::Relaxed);
-                    } else {
-                        tracing::error!(
-                            "gss step error for {}: {} ({:?})",
-                            &self.proxy_url,
-                            &err,
-                            &err
-                        )
-                    }
+                Err(err) => {
+                    tracing::error!(
+                        "gss step error for {}: {} ({:?})",
+                        &self.proxy_url,
+                        &err,
+                        &err
+                    );
+                    return Err(Error::temporary(Box::new(err)));
                 }
             }
             Ok(headers)
@@ -146,14 +130,17 @@ impl super::Authenticator for NegotiateAuthenticator {
 mod tests {
     use super::NegotiateAuthenticator;
     use super::PROXY_AUTHENTICATE;
+
     #[test]
     fn server_token_test() -> Result<(), Box<dyn std::error::Error>> {
-        let response = http::Response::builder()
-            .header(PROXY_AUTHENTICATE, "Negotiate SGVsbG8gV29ybGQh")
-            .body(hyper::Body::empty())?;
+        let mut headers = hyper::HeaderMap::new();
+        headers.append(
+            PROXY_AUTHENTICATE,
+            http::HeaderValue::from_str("Negotiate SGVsbG8gV29ybGQh").expect("valid header value"),
+        );
 
         assert_eq!(
-            NegotiateAuthenticator::server_token(&response),
+            NegotiateAuthenticator::server_token(&headers),
             Some(b"Hello World!".to_vec())
         );
 
