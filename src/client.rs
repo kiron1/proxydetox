@@ -5,7 +5,14 @@ use http::{Request, Response, StatusCode};
 pub use http_proxy_connector::HttpProxyConnector;
 use http_proxy_stream::HttpProxyInfo;
 use hyper::Body;
-use std::{future::Future, pin::Pin};
+use std::{
+    future::Future,
+    pin::Pin,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+};
 
 use crate::auth::SharedAuthenticator;
 
@@ -44,6 +51,7 @@ type Result<T> = std::result::Result<T, ClientError>;
 pub struct Client {
     inner: hyper::Client<HttpProxyConnector, Body>,
     auth: SharedAuthenticator,
+    requires_auth: Arc<AtomicBool>,
 }
 
 impl Client {
@@ -51,13 +59,22 @@ impl Client {
         Self {
             inner: client,
             auth,
+            requires_auth: Arc::new(AtomicBool::new(true)),
         }
     }
 
     pub async fn send(&self, mut req: hyper::Request<Body>) -> Result<Response<Body>> {
-        let headers = self.auth.step(None).await?;
-        req.headers_mut().extend(headers);
+        if self.requires_auth.load(Ordering::Relaxed) == false {
+            let headers = self.auth.step(None).await;
+            match headers {
+                Ok(headers) => req.headers_mut().extend(headers),
+                Err(ref _err) => self.requires_auth.store(false, Ordering::Relaxed),
+            }
+        }
         let res = self.inner.request(req).await?;
+        if res.status() == http::StatusCode::PROXY_AUTHENTICATION_REQUIRED {
+            self.requires_auth.store(true, Ordering::Relaxed);
+        }
         Ok(res)
     }
 }
