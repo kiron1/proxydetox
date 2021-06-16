@@ -6,9 +6,8 @@ pub use http_proxy_connector::HttpProxyConnector;
 use http_proxy_stream::HttpProxyInfo;
 use hyper::Body;
 use std::{future::Future, pin::Pin};
-use tracing_attributes::instrument;
 
-use crate::auth::Authenticator;
+use crate::auth::SharedAuthenticator;
 
 #[derive(Debug)]
 pub enum ClientError {
@@ -41,14 +40,14 @@ impl From<crate::auth::Error> for ClientError {
 
 type Result<T> = std::result::Result<T, ClientError>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Client {
     inner: hyper::Client<HttpProxyConnector, Body>,
-    auth: Authenticator,
+    auth: SharedAuthenticator,
 }
 
 impl Client {
-    pub fn new(client: hyper::Client<HttpProxyConnector, Body>, auth: Authenticator) -> Self {
+    pub fn new(client: hyper::Client<HttpProxyConnector, Body>, auth: SharedAuthenticator) -> Self {
         Self {
             inner: client,
             auth,
@@ -71,7 +70,6 @@ pub trait ForwardClient {
 }
 
 impl ForwardClient for hyper::Client<hyper::client::HttpConnector, Body> {
-    #[instrument]
     fn connect(&self, req: http::Request<Body>) -> ResponseFuture {
         let resp = async move {
             if let Ok(stream) = crate::net::dial(req.uri()).await {
@@ -98,7 +96,6 @@ impl ForwardClient for hyper::Client<hyper::client::HttpConnector, Body> {
         Box::pin(resp)
     }
 
-    #[instrument]
     fn http(&self, req: http::Request<Body>) -> ResponseFuture {
         let this = self.clone();
         let resp = async move { this.request(req).await.map_err(ClientError::Hyper) };
@@ -107,7 +104,6 @@ impl ForwardClient for hyper::Client<hyper::client::HttpConnector, Body> {
 }
 
 impl ForwardClient for Client {
-    #[instrument]
     fn connect(&self, mut req: http::Request<Body>) -> ResponseFuture {
         let this = self.clone();
         let uri = req.uri().clone();
@@ -164,7 +160,6 @@ impl ForwardClient for Client {
         Box::pin(resp)
     }
 
-    #[instrument]
     fn http(&self, req: hyper::Request<Body>) -> ResponseFuture {
         let this = self.clone();
         let resp = async move {
