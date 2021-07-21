@@ -1,4 +1,4 @@
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Config {
     /// sets the maximum idle connection per host allowed in the pool
     pub pool_max_idle_per_host: usize,
