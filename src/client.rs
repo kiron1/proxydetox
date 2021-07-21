@@ -111,7 +111,6 @@ impl ForwardClient for hyper::Client<hyper::client::HttpConnector, Body> {
 impl ForwardClient for Client {
     fn connect(&self, mut req: http::Request<Body>) -> ResponseFuture {
         let this = self.clone();
-        let uri = req.uri().clone();
 
         let resp = async move {
             assert_eq!(req.method(), http::Method::CONNECT);
@@ -139,6 +138,7 @@ impl ForwardClient for Client {
                                     if let Err(cause) =
                                         crate::io::tunnel(parent_upgraded, client_upgraded).await
                                     {
+                                        let uri = req.uri();
                                         tracing::error!(
                                             ?http_proxy_info,
                                             ?cause,
