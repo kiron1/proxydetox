@@ -16,36 +16,15 @@ use std::{
 
 use crate::auth::SharedAuthenticator;
 
-#[derive(Debug)]
-pub enum ClientError {
-    Hyper(hyper::Error),
-    Auth(crate::auth::Error),
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("hyper error: {0}")]
+    Hyper(#[from] hyper::Error),
+    #[error("authentication mechanism error: {0}")]
+    Auth(#[from] crate::auth::Error),
 }
 
-impl std::error::Error for ClientError {}
-
-impl std::fmt::Display for ClientError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        match *self {
-            ClientError::Hyper(ref err) => write!(f, "hyper error: {}", err),
-            ClientError::Auth(ref err) => write!(f, "authentication mechanism error: {}", err),
-        }
-    }
-}
-
-impl From<hyper::Error> for ClientError {
-    fn from(cause: hyper::Error) -> ClientError {
-        ClientError::Hyper(cause)
-    }
-}
-
-impl From<crate::auth::Error> for ClientError {
-    fn from(cause: crate::auth::Error) -> ClientError {
-        ClientError::Auth(cause)
-    }
-}
-
-type Result<T> = std::result::Result<T, ClientError>;
+type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Clone)]
 pub struct Client {
@@ -124,7 +103,7 @@ impl ForwardClient for hyper::Client<hyper::client::HttpConnector, Body> {
 
     fn http(&self, req: http::Request<Body>) -> ResponseFuture {
         let this = self.clone();
-        let resp = async move { this.request(req).await.map_err(ClientError::Hyper) };
+        let resp = async move { this.request(req).await.map_err(Error::Hyper) };
         Box::pin(resp)
     }
 }

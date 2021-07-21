@@ -4,23 +4,14 @@ use http::{header::PROXY_AUTHORIZATION, HeaderValue};
 use std::fs::File;
 use std::io::BufReader;
 
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum Error {
+    #[error("HOME not set")]
     NoHomeEnv,
+    #[error("no ~/.netrc file")]
     NoNetrcFile,
+    #[error("failed to parse ~/.netrc file")]
     NetrcParserError,
-}
-
-impl std::error::Error for Error {}
-
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::NoHomeEnv => write!(f, "HOME not set"),
-            Self::NoNetrcFile => write!(f, "no ~/.netrc file"),
-            Self::NetrcParserError => write!(f, "failed to parse ~/.netrc file"),
-        }
-    }
 }
 
 #[derive(Debug, Clone)]
