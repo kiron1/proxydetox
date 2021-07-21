@@ -49,13 +49,27 @@ type Result<T> = std::result::Result<T, Error>;
 type ProxyClient = crate::client::Client;
 
 #[derive(Clone)]
-pub struct Session {
-    eval: Arc<Mutex<paclib::Evaluator>>,
+pub struct Session(Arc<Inner>);
+
+struct Inner {
+    eval: Mutex<paclib::Evaluator>,
     direct_client: hyper::Client<hyper::client::HttpConnector>,
-    proxy_clients: Arc<Mutex<HashMap<Uri, ProxyClient>>>,
-    //auth: Arc<Mutex<Authenticator>>,
+    proxy_clients: Mutex<HashMap<Uri, ProxyClient>>,
     auth: AuthenticatorFactory,
     config: super::Config,
+}
+
+impl Inner {
+    async fn find_proxy(&self, uri: &Uri) -> paclib::Proxies {
+        self.eval
+            .lock()
+            .await
+            .find_proxy(&uri)
+            .unwrap_or_else(|cause| {
+                tracing::error!("failed to find_proxy: {:?}", cause);
+                paclib::Proxies::direct()
+            })
+    }
 }
 
 impl std::fmt::Debug for Session {
@@ -66,32 +80,27 @@ impl std::fmt::Debug for Session {
 
 impl Session {
     pub fn new(pac_script: &str, auth: AuthenticatorFactory, config: super::Config) -> Self {
-        let eval = Arc::new(Mutex::new(Evaluator::new(pac_script).unwrap()));
+        let eval = Mutex::new(Evaluator::new(pac_script).unwrap());
         let direct_client = hyper::Client::builder()
             .pool_max_idle_per_host(config.pool_max_idle_per_host)
             .pool_idle_timeout(config.pool_idle_timeout)
             .build_http();
         let proxy_clients = Default::default();
-        Self {
+        Self(Arc::new(Inner {
             eval,
             direct_client,
             proxy_clients,
             auth,
             config,
-        }
+        }))
     }
 
     // For now just use the first reportet proxy
     async fn find_proxy(&mut self, uri: &http::Uri) -> paclib::proxy::ProxyDesc {
-        let eval = self.eval.clone();
+        let inner = self.0.clone();
         let uri = uri.clone();
         let proxy = tokio::task::spawn_blocking(move || {
-            futures::executor::block_on(async {
-                eval.lock().await.find_proxy(&uri).unwrap_or_else(|cause| {
-                    tracing::error!("failed to find_proxy: {:?}", cause);
-                    paclib::Proxies::direct()
-                })
-            })
+            futures::executor::block_on(async { inner.find_proxy(&uri).await })
         })
         .await;
         match proxy {
@@ -105,15 +114,15 @@ impl Session {
     }
 
     async fn proxy_client(&mut self, uri: http::Uri) -> Result<ProxyClient> {
-        let mut proxies = self.proxy_clients.lock().await;
+        let mut proxies = self.0.proxy_clients.lock().await;
         match proxies.get(&uri) {
             Some(proxy) => Ok(proxy.clone()),
             None => {
                 tracing::debug!("new proxy client for {:?}", uri.host());
-                let auth = self.auth.make(&uri)?;
+                let auth = self.0.auth.make(&uri)?;
                 let client = hyper::Client::builder()
-                    .pool_max_idle_per_host(self.config.pool_max_idle_per_host)
-                    .pool_idle_timeout(self.config.pool_idle_timeout)
+                    .pool_max_idle_per_host(self.0.config.pool_max_idle_per_host)
+                    .pool_idle_timeout(self.0.config.pool_idle_timeout)
                     .build(HttpProxyConnector::new(uri.clone()));
                 let client = ProxyClient::new(client, auth);
                 proxies.insert(uri, client.clone());
@@ -151,7 +160,7 @@ impl Session {
 
         let proxy_client;
         let client: &(dyn crate::client::ForwardClient + Send + Sync) = match proxy {
-            ProxyDesc::Direct => &self.direct_client,
+            ProxyDesc::Direct => &self.0.direct_client,
             ProxyDesc::Proxy(ref proxy) => {
                 proxy_client = self.proxy_client(proxy.clone()).await?;
                 &proxy_client
@@ -186,7 +195,7 @@ impl Session {
             "<!DOCTYPE html><html><h1>{}/{}</h1><h2>DNS Cache</h2><code>{:?}</code></html>",
             env!("CARGO_PKG_NAME"),
             env!("CARGO_PKG_VERSION"),
-            self.eval.lock().await.cache()
+            self.0.eval.lock().await.cache()
         );
         let mut resp = Response::new(Body::from(body));
         resp.headers_mut().insert(
