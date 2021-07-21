@@ -6,7 +6,7 @@ build = "build.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-bindgen = "0.56"
+bindgen = "0.59"
 cc = "1.0"
 
 [dependencies]
