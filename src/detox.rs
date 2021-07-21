@@ -3,5 +3,5 @@ pub mod service;
 pub mod session;
 
 pub use config::Config;
-pub use service::DetoxService;
-pub use session::DetoxSession;
+pub use service::Service;
+pub use session::Session;
