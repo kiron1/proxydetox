@@ -6,6 +6,23 @@ use std::result::Result;
 
 const PAC_UTILS: &str = include_str!("pac_utils.js");
 
+#[derive(thiserror::Error, Debug, PartialEq, Eq, Clone)]
+pub enum CreateEvaluatorError {
+    #[error("failed to create JS context")]
+    CreateContext,
+    #[error("failed to evaluate PAC")]
+    EvalPacFile,
+}
+
+#[derive(thiserror::Error, Debug, PartialEq, Eq, Clone)]
+pub enum FindProxyError {
+    #[error("no host in URL")]
+    NoHost,
+    #[error("invalid result from PAC script")]
+    InvalidResult,
+    #[error("internal error when processing PAC script")]
+    InternalError,
+}
 pub struct Evaluator {
     js: Context,
     dns_cache: Box<DnsCache>,
@@ -72,42 +89,6 @@ impl Evaluator {
             Ok(duktape::Value::String(result)) => Some(result),
             Ok(duktape::Value::Null) => None,
             _ => panic!("invalid result type"),
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub enum CreateEvaluatorError {
-    CreateContext,
-    EvalPacFile,
-}
-
-impl std::error::Error for CreateEvaluatorError {}
-
-impl std::fmt::Display for CreateEvaluatorError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        match *self {
-            CreateEvaluatorError::CreateContext => write!(f, "failed to create JS context"),
-            CreateEvaluatorError::EvalPacFile => write!(f, "failed to evaluate PAC"),
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub enum FindProxyError {
-    NoHost,
-    InvalidResult,
-    InternalError,
-}
-
-impl std::error::Error for FindProxyError {}
-
-impl std::fmt::Display for FindProxyError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        match *self {
-            FindProxyError::NoHost => write!(f, "no host in URL"),
-            FindProxyError::InvalidResult => write!(f, "invalid result from PAC script"),
-            FindProxyError::InternalError => write!(f, "internal error when processing PAC script"),
         }
     }
 }
