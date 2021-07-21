@@ -1,6 +1,11 @@
 use http::Uri;
 use std::fmt;
-use std::fmt::{Error, Formatter};
+
+#[derive(thiserror::Error, Debug, PartialEq, Eq, Clone)]
+pub enum Error {
+    #[error("parser error")]
+    ParserError,
+}
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum ProxyDesc {
@@ -12,16 +17,16 @@ pub enum ProxyDesc {
 pub struct Proxies(Vec<ProxyDesc>);
 
 impl ProxyDesc {
-    pub fn parse(input: &str) -> Result<ProxyDesc, ParserError> {
+    pub fn parse(input: &str) -> Result<ProxyDesc, Error> {
         let input = input.trim();
         if let Some(uri) = input.strip_prefix("PROXY") {
             let uri = uri.trim();
-            let uri = uri.parse::<Uri>().map_err(|_| ParserError)?;
+            let uri = uri.parse::<Uri>().map_err(|_| Error::ParserError)?;
             Ok(ProxyDesc::Proxy(uri))
         } else if input == "DIRECT" {
             Ok(ProxyDesc::Direct)
         } else {
-            Err(ParserError)
+            Err(Error::ParserError)
         }
     }
 }
@@ -35,7 +40,7 @@ impl Proxies {
         Self::new(vec![ProxyDesc::Direct])
     }
 
-    pub fn parse(input: &str) -> Result<Proxies, ParserError> {
+    pub fn parse(input: &str) -> Result<Proxies, Error> {
         let result: Result<Vec<_>, _> = input
             .split(';')
             .map(|s| s.trim().trim_matches(';').trim())
@@ -45,12 +50,12 @@ impl Proxies {
         match result {
             Ok(p) => {
                 if p.is_empty() {
-                    Err(ParserError)
+                    Err(Error::ParserError)
                 } else {
                     Ok(Proxies::new(p))
                 }
             }
-            Err(_) => Err(ParserError),
+            Err(_) => Err(Error::ParserError),
         }
     }
 
@@ -74,17 +79,6 @@ impl fmt::Display for Proxies {
             write!(f, "{};", el)?;
         }
         Ok(())
-    }
-}
-
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub struct ParserError;
-
-impl std::error::Error for ParserError {}
-
-impl std::fmt::Display for ParserError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        write!(f, "proxy declaration parser error")
     }
 }
 
