@@ -8,14 +8,22 @@ use duktape_sys::{
     DUK_TYPE_UNDEFINED,
 };
 use std::ffi::{c_void, CStr, CString};
-
-use crate::error::TypeError;
 use std::result::Result;
+
+#[derive(thiserror::Error, Debug, PartialEq, Eq, Clone)]
+pub enum Error {
+    #[error("none type error")]
+    NoneType,
+    #[error("unknown type error")]
+    UnknownType,
+    #[error("bad string error")]
+    BadString,
+}
 
 pub trait Stack {
     unsafe fn ptr(&mut self) -> *mut duk_context;
 
-    fn pop_string(&mut self) -> Result<crate::Value, TypeError> {
+    fn pop_string(&mut self) -> Result<crate::Value, Error> {
         let result = self.get_string(-1)?;
 
         unsafe {
@@ -24,10 +32,10 @@ pub trait Stack {
         Ok(crate::Value::String(result))
     }
 
-    fn pop(&mut self) -> Result<crate::Value, TypeError> {
+    fn pop(&mut self) -> Result<crate::Value, Error> {
         let typeid: u32 = unsafe { duk_get_type(self.ptr(), -1) as u32 };
         match typeid {
-            DUK_TYPE_NONE => Err(TypeError::NoneType),
+            DUK_TYPE_NONE => Err(Error::NoneType),
             DUK_TYPE_UNDEFINED => {
                 let r = Ok(crate::Value::Undefined);
                 unsafe {
@@ -61,11 +69,11 @@ pub trait Stack {
                 r
             }
             DUK_TYPE_STRING => self.pop_string(),
-            _ => Err(TypeError::NoneType),
+            _ => Err(Error::NoneType),
         }
     }
 
-    fn pop_ptr<T>(&mut self) -> Result<*mut T, TypeError> {
+    fn pop_ptr<T>(&mut self) -> Result<*mut T, Error> {
         let typeid: u32 = unsafe { duk_get_type(self.ptr(), -1) as u32 };
         match typeid {
             DUK_TYPE_BUFFER => unsafe {
@@ -75,22 +83,22 @@ pub trait Stack {
                 let ptr = duk_get_pointer(self.ptr(), -1) as *mut T;
                 Ok(ptr)
             },
-            _ => Err(TypeError::NoneType),
+            _ => Err(Error::NoneType),
         }
     }
 
-    fn eval(&mut self, src: &str) -> Result<crate::Value, TypeError> {
+    fn eval(&mut self, src: &str) -> Result<crate::Value, Error> {
         unsafe {
             duk_eval_string(
                 self.ptr(),
-                &CString::new(src).map_err(|_| TypeError::BadString)?,
+                &CString::new(src).map_err(|_| Error::BadString)?,
             );
         }
         self.pop()
     }
 
-    fn put_global_pointer<T: Sized>(&mut self, name: &str, ptr: *mut T) -> Result<(), TypeError> {
-        let name = CString::new(name).map_err(|_| TypeError::BadString)?;
+    fn put_global_pointer<T: Sized>(&mut self, name: &str, ptr: *mut T) -> Result<(), Error> {
+        let name = CString::new(name).map_err(|_| Error::BadString)?;
         unsafe {
             duk_push_pointer(self.ptr(), ptr as *mut c_void);
             duk_put_global_string(self.ptr(), name.as_ptr());
@@ -140,21 +148,21 @@ pub trait Stack {
         unsafe { duk_is_undefined(self.ptr(), idx) != 0u32 }
     }
 
-    fn get_global_string(&mut self, name: &str) -> Result<(), TypeError> {
-        let cstr = CString::new(name).map_err(|_| TypeError::BadString)?;
+    fn get_global_string(&mut self, name: &str) -> Result<(), Error> {
+        let cstr = CString::new(name).map_err(|_| Error::BadString)?;
         let exists = unsafe { duk_get_global_string(self.ptr(), cstr.as_ptr()) } != 0;
         if exists {
             Ok(())
         } else {
-            Err(TypeError::NoneType)
+            Err(Error::NoneType)
         }
     }
 
-    fn get_string(&mut self, idx: i32) -> Result<String, TypeError> {
+    fn get_string(&mut self, idx: i32) -> Result<String, Error> {
         let cstr = unsafe { duk_get_string(self.ptr(), idx) };
         let cstr = unsafe { CStr::from_ptr(cstr) };
         let cstr = cstr.to_owned();
-        cstr.into_string().map_err(|_| TypeError::BadString)
+        cstr.into_string().map_err(|_| Error::BadString)
     }
 
     fn require_stack(&mut self, sz: i32) {
@@ -169,8 +177,8 @@ pub trait Stack {
         }
     }
 
-    fn push_string(&mut self, name: &str) -> Result<(), TypeError> {
-        let cstr = CString::new(name).map_err(|_| TypeError::BadString)?;
+    fn push_string(&mut self, name: &str) -> Result<(), Error> {
+        let cstr = CString::new(name).map_err(|_| Error::BadString)?;
         unsafe {
             duk_push_string(self.ptr(), cstr.as_ptr());
         }
@@ -188,8 +196,8 @@ pub trait Stack {
         name: &str,
         func: unsafe extern "C" fn(ctx: *mut duk_context) -> duk_ret_t,
         nargs: i32,
-    ) -> Result<(), TypeError> {
-        let name = CString::new(name).map_err(|_| TypeError::BadString)?;
+    ) -> Result<(), Error> {
+        let name = CString::new(name).map_err(|_| Error::BadString)?;
         unsafe {
             duk_push_c_function(
                 self.ptr(),
