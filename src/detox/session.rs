@@ -20,58 +20,29 @@ use crate::{auth::AuthenticatorFactory, client::HttpProxyConnector};
 use paclib::proxy::ProxyDesc;
 use paclib::Evaluator;
 
-#[derive(Debug)]
-pub enum SessionError {
-    Io(std::io::Error),
-    Hyper(hyper::Error),
-    Auth(crate::auth::Error),
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("I/O error: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("hyper error: {0}")]
+    Hyper(#[from] hyper::Error),
+    #[error("authentication mechanism error: {0}")]
+    Auth(#[from] crate::auth::Error),
+    #[error("upstream proxy ({0}) requires authentication")]
     ProxyAuthenticationRequired(ProxyDesc),
 }
 
-impl std::error::Error for SessionError {}
-
-impl std::fmt::Display for SessionError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        match *self {
-            SessionError::Io(ref err) => write!(f, "I/O error: {}", err),
-            SessionError::Hyper(ref err) => write!(f, "hyper error: {}", err),
-            SessionError::Auth(ref err) => write!(f, "authentication mechanism error: {}", err),
-            SessionError::ProxyAuthenticationRequired(ref proxy) => {
-                write!(f, "upstream proxy ({}) requires authentication", proxy)
-            }
-        }
-    }
-}
-
-impl From<hyper::Error> for SessionError {
-    fn from(cause: hyper::Error) -> SessionError {
-        SessionError::Hyper(cause)
-    }
-}
-
-impl From<std::io::Error> for SessionError {
-    fn from(cause: std::io::Error) -> SessionError {
-        SessionError::Io(cause)
-    }
-}
-
-impl From<crate::auth::Error> for SessionError {
-    fn from(cause: crate::auth::Error) -> SessionError {
-        SessionError::Auth(cause)
-    }
-}
-
-impl From<crate::client::ClientError> for SessionError {
-    fn from(cause: crate::client::ClientError) -> SessionError {
-        use crate::client::ClientError;
+impl From<crate::client::Error> for Error {
+    fn from(cause: crate::client::Error) -> Error {
+        use crate::client;
         match cause {
-            ClientError::Auth(cause) => SessionError::Auth(cause),
-            ClientError::Hyper(cause) => SessionError::Hyper(cause),
+            client::Error::Auth(cause) => Error::Auth(cause),
+            client::Error::Hyper(cause) => Error::Hyper(cause),
         }
     }
 }
 
-type Result<T> = std::result::Result<T, SessionError>;
+type Result<T> = std::result::Result<T, Error>;
 
 type ProxyClient = crate::client::Client;
 
@@ -193,7 +164,7 @@ impl DetoxSession {
 
         if let Ok(ref mut res) = res {
             if res.status() == http::StatusCode::PROXY_AUTHENTICATION_REQUIRED {
-                return Err(SessionError::ProxyAuthenticationRequired(proxy));
+                return Err(Error::ProxyAuthenticationRequired(proxy));
             }
 
             let via = HeaderValue::from_str(&format!(
