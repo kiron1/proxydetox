@@ -49,7 +49,7 @@ type Result<T> = std::result::Result<T, Error>;
 type ProxyClient = crate::client::Client;
 
 #[derive(Clone)]
-pub struct DetoxSession {
+pub struct Session {
     eval: Arc<Mutex<paclib::Evaluator>>,
     direct_client: hyper::Client<hyper::client::HttpConnector>,
     proxy_clients: Arc<Mutex<HashMap<Uri, ProxyClient>>>,
@@ -58,13 +58,13 @@ pub struct DetoxSession {
     config: super::Config,
 }
 
-impl std::fmt::Debug for DetoxSession {
+impl std::fmt::Debug for Session {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("DetoxSession").finish()
+        f.debug_struct("Session").finish()
     }
 }
 
-impl DetoxSession {
+impl Session {
     pub fn new(pac_script: &str, auth: AuthenticatorFactory, config: super::Config) -> Self {
         let eval = Arc::new(Mutex::new(Evaluator::new(pac_script).unwrap()));
         let direct_client = hyper::Client::builder()
@@ -217,7 +217,7 @@ where
     resp
 }
 
-impl Service<Request<Body>> for DetoxSession {
+impl Service<Request<Body>> for Session {
     type Response = Response<Body>;
     type Error = Infallible;
     type Future =

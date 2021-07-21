@@ -18,7 +18,7 @@ use argh::FromArgs;
 use auth::AuthenticatorFactory;
 use hyper::{body::Buf, Server};
 
-use crate::detox::DetoxService;
+use crate::detox::Service;
 
 #[derive(Debug, FromArgs)]
 /// Proxy tamer
@@ -202,7 +202,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let addr = SocketAddr::from(([127, 0, 0, 1], config.port.unwrap_or(3128)));
         let server =
-            Server::bind(&addr).serve(DetoxService::new(&pac_script.clone(), auth, detox_config));
+            Server::bind(&addr).serve(Service::new(&pac_script.clone(), auth, detox_config));
         let server = server.with_graceful_shutdown(async {
             rx.recv().await.unwrap();
         });
