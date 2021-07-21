@@ -62,23 +62,29 @@ impl FromStr for Seconds {
     }
 }
 
-impl Into<std::time::Duration> for Seconds {
-    fn into(self) -> std::time::Duration {
-        std::time::Duration::from_secs(self.0)
+impl From<Seconds> for std::time::Duration {
+    fn from(sec: Seconds) -> Self {
+        std::time::Duration::from_secs(sec.0)
     }
 }
+// impl Into<std::time::Duration> for Seconds {
+//     fn into(self) -> std::time::Duration {
+//         std::time::Duration::from_secs(self.0)
+//     }
+// }
+
 fn read_file<P: AsRef<Path>>(path: P) -> std::io::Result<String> {
     let mut file = File::open(&path)?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
-    return Ok(contents);
+    Ok(contents)
 }
 
 /// Load config file, but command line flags will override config file values.
 fn load_config() -> Options {
     let opt: Options = argh::from_env();
     let user_config = dirs::config_dir()
-        .unwrap_or("".into())
+        .unwrap_or_else(|| "".into())
         .join("proxydetox/proxydetoxrc");
     let config_locations = vec![
         user_config,
@@ -130,10 +136,10 @@ fn load_pac_file(opt: &Options) -> (Option<String>, std::io::Result<String>) {
             });
             return (Some(pac_path.to_string()), pac);
         }
-        return (Some(pac_path.to_string()), read_file(pac_path));
+        (Some(pac_path.to_string()), read_file(pac_path))
     } else {
         let user_config = dirs::config_dir()
-            .unwrap_or("".into())
+            .unwrap_or_else(|| "".into())
             .join("proxydetox/proxy.pac");
         let config_locations = vec![
             user_config,
@@ -145,10 +151,10 @@ fn load_pac_file(opt: &Options) -> (Option<String>, std::io::Result<String>) {
                 return (Some(path.to_string_lossy().to_string()), Ok(content));
             }
         }
-        return (
+        (
             None,
             Ok("function FindProxyForURL(url, host) { return \"DIRECT\"; }".into()),
-        );
+        )
     }
 }
 

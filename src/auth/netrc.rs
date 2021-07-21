@@ -28,7 +28,7 @@ impl BasicAuthenticator {
             let token = if let Some(ref password) = machine.password {
                 format!("{}:{}", machine.login, password)
             } else {
-                format!("{}", machine.login)
+                machine.login.to_string()
             };
             let token = format!("Basic {}", base64::encode(&token));
             tracing::debug!("auth netrc {}@{}: ", &machine.login, &proxy_url);
@@ -42,8 +42,8 @@ impl BasicAuthenticator {
 
     fn home_netrc() -> Result<netrc::Netrc> {
         let netrc_path = {
-            let mut netrc_path =
-                dirs::home_dir().ok_or(super::Error::temporary(Box::new(Error::NoHomeEnv)))?;
+            let mut netrc_path = dirs::home_dir()
+                .ok_or_else(|| super::Error::temporary(Box::new(Error::NoHomeEnv)))?;
             netrc_path.push(".netrc");
             netrc_path
         };
