@@ -66,7 +66,7 @@ impl DnsCache {
 fn resolve(host: &str) -> Option<String> {
     use std::net::ToSocketAddrs;
 
-    let host_port = (&host[..], 0u16);
+    let host_port = (host, 0u16);
     if let Ok(mut addrs) = host_port.to_socket_addrs() {
         if let Some(addr) = addrs.next() {
             let ip = addr.ip();
@@ -79,6 +79,9 @@ fn resolve(host: &str) -> Option<String> {
     }
 }
 
+/// # Safety
+///
+/// This function is a duktape callback.
 pub unsafe extern "C" fn dns_resolve(ctx: *mut duktape_sys::duk_context) -> i32 {
     let mut ctx = ContextRef::from(ctx);
     ctx.require_stack(4);

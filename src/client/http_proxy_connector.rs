@@ -1,3 +1,5 @@
+#![allow(clippy::type_complexity)]
+
 use super::http_proxy_stream::HttpProxyStream;
 use http::Uri;
 use hyper::service::Service;

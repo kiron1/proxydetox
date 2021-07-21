@@ -21,11 +21,11 @@ impl Rlimit {
     }
 
     fn set_maxfiles(new_limit: &Rlimit) -> std::io::Result<()> {
-        let mut limit = libc::rlimit {
+        let limit = libc::rlimit {
             rlim_cur: new_limit.cur,
             rlim_max: new_limit.max,
         };
-        let rc = unsafe { libc::setrlimit(libc::RLIMIT_NOFILE, &mut limit) };
+        let rc = unsafe { libc::setrlimit(libc::RLIMIT_NOFILE, &limit) };
         if rc == 0 {
             Ok(())
         } else {

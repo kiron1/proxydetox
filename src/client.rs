@@ -126,10 +126,7 @@ impl ForwardClient for Client {
             let parent_res = this.send(parent_req).await?;
 
             if parent_res.status() == StatusCode::OK {
-                let http_proxy_info = parent_res
-                    .extensions()
-                    .get::<HttpProxyInfo>()
-                    .map(|i| i.clone());
+                let http_proxy_info = parent_res.extensions().get::<HttpProxyInfo>().cloned();
 
                 // Upgrade connection to parent proxy
                 match hyper::upgrade::on(parent_res).await {

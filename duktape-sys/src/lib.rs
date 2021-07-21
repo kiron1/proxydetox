@@ -2,6 +2,8 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 #![allow(deref_nullptr)] // for generated code in bindings.rs
+#![allow(clippy::missing_safety_doc)]
+#![allow(clippy::redundant_static_lifetimes)]
 
 use std::ffi::CStr;
 
@@ -16,7 +18,7 @@ pub unsafe fn duk_eval_string(ctx: *mut duk_context, src: &CStr) {
         ctx,
         src.as_ptr(),
         0,
-        0 /*args*/ | DUK_COMPILE_EVAL | DUK_COMPILE_NOSOURCE | DUK_COMPILE_STRLEN | DUK_COMPILE_NOFILENAME,
+        DUK_COMPILE_EVAL | DUK_COMPILE_NOSOURCE | DUK_COMPILE_STRLEN | DUK_COMPILE_NOFILENAME,
     );
 }
 

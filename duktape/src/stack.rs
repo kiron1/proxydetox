@@ -21,6 +21,9 @@ pub enum Error {
 }
 
 pub trait Stack {
+    /// # Safety
+    ///
+    /// Implementor must own the target object and ensure that the point is valid.
     unsafe fn ptr(&mut self) -> *mut duk_context;
 
     fn pop_string(&mut self) -> Result<crate::Value, Error> {
