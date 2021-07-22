@@ -1,24 +1,18 @@
-pub mod auth;
-pub mod client;
-pub mod detox;
-pub mod io;
-pub mod net;
-
 #[cfg(target_family = "unix")]
 mod limit;
 
-use std::io::prelude::*;
+use std::fmt::Display;
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::result::Result;
 use std::{boxed::Box, str::FromStr};
-use std::{fmt::Display, fs::File};
 
 use argh::FromArgs;
-use auth::AuthenticatorFactory;
-use hyper::{body::Buf, Server};
-
-use crate::detox::Service;
+use hyper::Server;
+use proxydetox::auth::AuthenticatorFactory;
+use proxydetox::detox;
+use proxydetox::http_file;
+use proxydetox::read_file;
 
 #[derive(Debug, FromArgs)]
 /// Proxy tamer
@@ -69,13 +63,6 @@ impl From<Seconds> for std::time::Duration {
     }
 }
 
-fn read_file<P: AsRef<Path>>(path: P) -> std::io::Result<String> {
-    let mut file = File::open(&path)?;
-    let mut contents = String::new();
-    file.read_to_string(&mut contents)?;
-    Ok(contents)
-}
-
 /// Load config file, but command line flags will override config file values.
 fn load_config() -> Options {
     let opt: Options = argh::from_env();
@@ -120,15 +107,7 @@ fn load_pac_file(opt: &Options) -> (Option<String>, std::io::Result<String>) {
     if let Some(pac_path) = &opt.pac_file {
         if pac_path.starts_with("http://") {
             let pac = futures::executor::block_on(async {
-                let client = hyper::Client::new();
-                let res = client
-                    .get(pac_path.parse().expect("URI"))
-                    .await
-                    .expect("get");
-                let body = hyper::body::aggregate(res).await.expect("aggregate");
-                let mut buffer = String::new();
-                body.reader().read_to_string(&mut buffer)?;
-                Ok(buffer)
+                http_file(pac_path.parse().expect("URI")).await
             });
             return (Some(pac_path.to_string()), pac);
         }
@@ -198,7 +177,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let addr = SocketAddr::from(([127, 0, 0, 1], config.port.unwrap_or(3128)));
         let server =
-            Server::bind(&addr).serve(Service::new(&pac_script.clone(), auth, detox_config));
+            Server::bind(&addr).serve(detox::Service::new(&pac_script.clone(), auth, detox_config));
         let server = server.with_graceful_shutdown(async {
             rx.recv().await.unwrap();
         });
