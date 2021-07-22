@@ -2,17 +2,12 @@
 mod limit;
 
 use std::fmt::Display;
-use std::net::SocketAddr;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::result::Result;
 use std::{boxed::Box, str::FromStr};
 
 use argh::FromArgs;
-use hyper::Server;
-use proxydetox::auth::AuthenticatorFactory;
-use proxydetox::detox;
-use proxydetox::http_file;
-use proxydetox::read_file;
+use proxydetox::{auth::AuthenticatorFactory, detox, http_file, read_file};
 
 #[derive(Debug, FromArgs)]
 /// Proxy tamer
@@ -154,74 +149,71 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let pac_script = pac_script.as_ref().expect("inline PAC config");
 
-    loop {
-        // Prepare some signal for when the server should start shutting down...
-        let (tx, mut rx) = tokio::sync::mpsc::channel::<()>(32);
+    #[cfg(feature = "gssapi")]
+    let auth = if config.negotiate {
+        AuthenticatorFactory::negotiate()
+    } else {
+        AuthenticatorFactory::basic()
+    };
 
-        #[cfg(feature = "gssapi")]
-        let auth = if config.negotiate {
-            AuthenticatorFactory::negotiate()
-        } else {
-            AuthenticatorFactory::basic()
-        };
+    #[cfg(not(feature = "gssapi"))]
+    let auth = AuthenticatorFactory::basic();
 
-        #[cfg(not(feature = "gssapi"))]
-        let auth = AuthenticatorFactory::basic();
+    tracing::info!("Authenticator factory: {}", &auth);
 
-        tracing::info!("Authenticator factory: {}", &auth);
+    let detox_config = detox::Config {
+        pool_idle_timeout: config.pool_idle_timeout.map(|x| x.into()),
+        pool_max_idle_per_host: config.pool_max_idle_per_host,
+    };
 
-        let detox_config = detox::Config {
-            pool_idle_timeout: config.pool_idle_timeout.map(|x| x.into()),
-            pool_max_idle_per_host: config.pool_max_idle_per_host,
-        };
+    let mut server = proxydetox::Server::new(
+        pac_script.clone(),
+        auth,
+        config.port.unwrap_or(3128),
+        detox_config,
+    );
 
-        let addr = SocketAddr::from(([127, 0, 0, 1], config.port.unwrap_or(3128)));
-        let server =
-            Server::bind(&addr).serve(detox::Service::new(&pac_script.clone(), auth, detox_config));
-        let server = server.with_graceful_shutdown(async {
-            rx.recv().await.unwrap();
-        });
-
-        {
-            use tokio::signal;
-            let tx = tx.clone();
-            tokio::spawn(async move {
+    {
+        use tokio::signal;
+        let tx = server.control_channel();
+        tokio::spawn(async move {
+            loop {
                 signal::ctrl_c().await.expect("ctrl_c event");
-                tx.send(()).await.unwrap();
-            });
-        }
-
-        #[cfg(target_family = "unix")]
-        {
-            use tokio::signal::unix::{signal, SignalKind};
-            let tx = tx.clone();
-            let mut stream = signal(SignalKind::hangup())?;
-            tokio::spawn(async move {
-                stream.recv().await;
-                tx.send(()).await.unwrap();
-            });
-        }
-
-        #[cfg(target_os = "linux")]
-        {
-            let mut netrc_path = dirs::home_dir().expect("home");
-            netrc_path.push(".netrc");
-            let tx = tx.clone();
-            tokio::spawn(async move {
-                monitor_path(&netrc_path, tx).await;
-            });
-        }
-
-        tracing::info!("Listening on http://{}", addr);
-        if let Err(e) = server.await {
-            tracing::error!("server error: {}", e);
-            return Err(e.into());
-        }
+                tracing::info!("received Ctrl-C, trigger shutdown");
+                let _ = tx.send(proxydetox::Command::Shutdown).await;
+            }
+        });
     }
+
+    #[cfg(target_family = "unix")]
+    {
+        use tokio::signal::unix::{signal, SignalKind};
+        let tx = server.control_channel();
+        let mut stream = signal(SignalKind::hangup())?;
+        tokio::spawn(async move {
+            loop {
+                stream.recv().await;
+                tracing::info!("received SIGHUP, trigger restart");
+                let _ = tx.send(proxydetox::Command::Restart).await;
+            }
+        });
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        let mut netrc_path = dirs::home_dir().expect("home");
+        netrc_path.push(".netrc");
+        let tx = server.control_channel();
+        tokio::spawn(async move {
+            monitor_path(&netrc_path, tx).await;
+        });
+    }
+
+    server.run().await
 }
 
 #[cfg(target_os = "linux")]
-async fn monitor_path(path: &Path, tx: tokio::sync::mpsc::Sender<()>) {
+async fn monitor_path(path: &std::path::Path, tx: tokio::sync::mpsc::Sender<proxydetox::Command>) {
     use futures_util::StreamExt;
     use inotify::{EventMask, Inotify, WatchMask};
     use tokio::time::{self, Duration};
@@ -243,8 +235,8 @@ async fn monitor_path(path: &Path, tx: tokio::sync::mpsc::Sender<()>) {
                         || event.mask.contains(EventMask::MODIFY)
                     {
                         tracing::info!("~/.netrc changed, trigger restart");
-                        tx.send(()).await.unwrap();
-                        return;
+                        let _ = tx.send(proxydetox::Command::Restart).await;
+                        break;
                     }
                 }
             }
