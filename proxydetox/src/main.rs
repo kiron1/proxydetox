@@ -53,6 +53,7 @@ impl Display for Seconds {
         write!(f, "{}s", self.0)
     }
 }
+
 impl FromStr for Seconds {
     type Err = std::num::ParseIntError;
 
@@ -67,11 +68,6 @@ impl From<Seconds> for std::time::Duration {
         std::time::Duration::from_secs(sec.0)
     }
 }
-// impl Into<std::time::Duration> for Seconds {
-//     fn into(self) -> std::time::Duration {
-//         std::time::Duration::from_secs(self.0)
-//     }
-// }
 
 fn read_file<P: AsRef<Path>>(path: P) -> std::io::Result<String> {
     let mut file = File::open(&path)?;
