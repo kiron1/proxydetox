@@ -207,6 +207,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             rx.recv().await.unwrap();
         });
 
+        {
+            use tokio::signal;
+            let tx = tx.clone();
+            tokio::spawn(async move {
+                signal::ctrl_c().await.expect("ctrl_c event");
+                tx.send(()).await.unwrap();
+            });
+        }
+
         #[cfg(target_family = "unix")]
         {
             use tokio::signal::unix::{signal, SignalKind};
