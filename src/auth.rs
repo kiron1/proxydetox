@@ -3,8 +3,6 @@ pub mod gssapi;
 pub mod netrc;
 
 use futures::future;
-use std::sync::Arc;
-use tokio::sync::Mutex;
 
 use self::netrc::BasicAuthenticator;
 
@@ -64,7 +62,7 @@ impl std::fmt::Display for ErrorKind {
     }
 }
 
-type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = std::result::Result<T, Error>;
 
 pub trait Authenticator: Send + Sync {
     fn step<'async_trait>(
@@ -88,23 +86,6 @@ impl Authenticator for NoneAuthenticator {
     }
 }
 
-#[derive(Clone)]
-pub struct SharedAuthenticator(
-    std::sync::Arc<tokio::sync::Mutex<dyn Authenticator + Send + 'static>>,
-);
-
-impl SharedAuthenticator {
-    pub fn new<A: Authenticator + Send + 'static>(auth: Arc<Mutex<A>>) -> Self {
-        Self(auth)
-    }
-
-    pub async fn step(&self, last_headers: Option<hyper::HeaderMap>) -> Result<hyper::HeaderMap> {
-        let guard = self.0.lock().await;
-        let headers = guard.step(last_headers).await;
-        headers
-    }
-}
-
 #[derive(Clone, Debug)]
 pub enum AuthenticatorFactory {
     None,
@@ -123,16 +104,12 @@ impl AuthenticatorFactory {
         AuthenticatorFactory::Negotiate
     }
 
-    pub fn make(&self, proxy_url: &http::Uri) -> Result<SharedAuthenticator> {
+    pub fn make(&self, proxy_url: &http::Uri) -> Result<Box<dyn Authenticator>> {
         match self {
-            Self::None => Ok(SharedAuthenticator(Arc::new(Mutex::new(NoneAuthenticator)))),
-            Self::Basic => Ok(SharedAuthenticator(Arc::new(Mutex::new(
-                BasicAuthenticator::new(&proxy_url)?,
-            )))),
+            Self::None => Ok(Box::new(NoneAuthenticator)),
+            Self::Basic => Ok(Box::new(BasicAuthenticator::new(&proxy_url)?)),
             #[cfg(feature = "gssapi")]
-            Self::Negotiate => Ok(SharedAuthenticator::new(Arc::new(Mutex::new(
-                NegotiateAuthenticator::new(&proxy_url)?,
-            )))),
+            Self::Negotiate => Ok(Box::new(NegotiateAuthenticator::new(&proxy_url)?)),
         }
     }
 }
