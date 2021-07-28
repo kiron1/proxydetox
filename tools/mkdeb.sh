@@ -13,7 +13,7 @@ if [ -n "${1:-}" ]; then
   cp "${1}" "${workdir}/${prefix}/bin"
   strip "${workdir}/${prefix}/bin/$(basename ${1})"
 else
-  cargo install --path "${root}" --root "${workdir}/${prefix}" --no-track
+  cargo install --path "${root}/proxydetox" --root "${workdir}/${prefix}" --no-track
 fi
 
 mkdir -p "${workdir}/usr/lib/systemd/user"
@@ -35,7 +35,7 @@ WantedBy=default.target
 
 EOF
 
-version=$(sed -n 's/^version\s*=\s*"\([0-9.]*\)"/\1/p' "${root}/Cargo.toml")
+version=$(sed -n 's/^version\s*=\s*"\([0-9.]*\)"/\1/p' "${root}/proxydetox/Cargo.toml")
 echo "::set-output name=version::${version}"
 
 debfile=proxydetox-${version}-x86_64-linux.deb
