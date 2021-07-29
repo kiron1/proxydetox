@@ -1,0 +1,9 @@
+Package: proxydetox
+Version: ${version}-1
+Section: net
+Priority: optional
+Architecture: amd64
+Maintainer: Kiron <kiron1@gmail.com>
+Description: Proxydetox
+ A proxy for localhost to simplify life with corperate proxies.
+

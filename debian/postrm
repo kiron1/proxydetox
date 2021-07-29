@@ -1,0 +1,13 @@
+# https://github.com/Debian/debhelper/blob/master/autoscripts/postrm-systemd-user
+if [ "$1" = "remove" ]; then
+	if [ -x "/usr/bin/deb-systemd-helper" ] ; then
+		deb-systemd-helper --user mask proxydetox.service >/dev/null || true
+	fi
+fi
+
+if [ "$1" = "purge" ]; then
+	if [ -x "/usr/bin/deb-systemd-helper" ] ; then
+		deb-systemd-helper --user purge proxydetox.service >/dev/null || true
+		deb-systemd-helper --user unmask proxydetox.service >/dev/null || true
+	fi
+fi

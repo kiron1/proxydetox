@@ -1,0 +1,16 @@
+# https://github.com/Debian/debhelper/blob/master/autoscripts/postinst-systemd-user-dont-enable
+if [ "$1" = "configure" ] || [ "$1" = "abort-upgrade" ] || [ "$1" = "abort-deconfigure" ] || [ "$1" = "abort-remove" ] ; then
+	if deb-systemd-helper --user debian-installed proxydetox.service ; then
+		# This will only remove masks created by d-s-h on package removal.
+		deb-systemd-helper --user unmask proxydetox.service >/dev/null || true
+
+		if deb-systemd-helper --quiet --user was-enabled proxydetox.service ; then
+			# Create new symlinks, if any.
+			deb-systemd-helper --user enable proxydetox.service >/dev/null || true
+		fi
+	fi
+
+	# Update the statefile to add new symlinks (if any), which need to be cleaned
+	# up on purge. Also remove old symlinks.
+	deb-systemd-helper --user update-state proxydetox.service >/dev/null || true
+fi
