@@ -1,0 +1,15 @@
+[Unit]
+Description=Proxydetox Daemon
+Documentation=https://github.com/kiron1/proxydetox
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=${prefix}/bin/proxydetox
+KillMode=process
+RestartSec=5s
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
+
