@@ -2,6 +2,20 @@
 
 set -eu
 
+features=
+while getopts ":f:" o; do
+  case "${o}" in
+    f)
+        features=${features:+${features},}${OPTARG}
+        ;;
+    *)
+        echo "fatal error: invalid arguments"
+        exit 1
+        ;;
+  esac
+done
+shift $((OPTIND-1))
+
 prefix=/usr
 root=$( cd "$(dirname "$0")/.." ; pwd -P )
 workdir=$(mktemp -dt proxydetox-debbuild.XXXXXXXX)
@@ -13,7 +27,7 @@ if [ -n "${1:-}" ]; then
   cp "${1}" "${workdir}/${prefix}/bin"
   strip "${workdir}/${prefix}/bin/$(basename ${1})"
 else
-  cargo install --path "${root}/proxydetox" --root "${workdir}/${prefix}" --no-track
+  cargo install --path "${root}/proxydetox" --root "${workdir}/${prefix}" --no-track ${features:+--features=${features}}
 fi
 
 mkdir -p "${workdir}/lib/systemd/user"
