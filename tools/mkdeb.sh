@@ -22,15 +22,10 @@ workdir=$(mktemp -dt proxydetox-debbuild.XXXXXXXX)
 
 trap "rm -rf ${workdir}" EXIT INT
 
-mkdir -p "${workdir}/${prefix}/bin"
-if [ -n "${1:-}" ]; then
-  cp "${1}" "${workdir}/${prefix}/bin"
-  strip "${workdir}/${prefix}/bin/$(basename ${1})"
-else
-  cargo install --path "${root}/proxydetox" --root "${workdir}/${prefix}" --no-track ${features:+--features=${features}}
-fi
+mkdir -p "${workdir}/DEBIAN" "${workdir}/lib/systemd/user"
 
-mkdir -p "${workdir}/lib/systemd/user"
+cargo install --path "${root}/proxydetox" --root "${workdir}/${prefix}" --no-track ${features:+--features=${features}}
+
 sed -e "s/\${prefix}/${prefix//\//\\/}/" "${root}/debian/proxydetox.service" > "${workdir}/lib/systemd/user/proxydetox.service"
 
 version=$(sed -n 's/^version\s*=\s*"\([0-9.]*\)"/\1/p' "${root}/proxydetox/Cargo.toml")
@@ -38,8 +33,6 @@ echo "::set-output name=version::${version}"
 
 debfile=proxydetox-${version}-x86_64-linux.deb
 echo "::set-output name=debfile::${debfile}"
-
-mkdir -p "${workdir}/DEBIAN"
 
 sed -e "s/\${version}/${version}/" "${root}/debian/control" > "${workdir}/DEBIAN/control"
 for f in postinst postrm; do
