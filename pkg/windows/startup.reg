@@ -1,0 +1,5 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run]
+"Proxydetox"="C:\Users\User\AppData\Local\Proxydetox\proxydetox.exe"
+
