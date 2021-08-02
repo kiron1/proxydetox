@@ -34,7 +34,7 @@ jobs:
             os: windows-latest
             rust: stable
             target: x86_64-pc-windows-msvc
-            features: default
+            features: sspi
 
     steps:
       - name: Checkout repository
@@ -62,7 +62,7 @@ jobs:
           override: true
           target: ${{ matrix.target }}
       - name: Run cargo test
-        run: cargo test --target ${{ matrix.target }} --features ${{ matrix.features }}  --all
+        run: cargo test --target ${{ matrix.target }} --features ${{ matrix.features }}
 
 
   format_check:
