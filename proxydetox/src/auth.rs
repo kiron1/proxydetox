@@ -1,6 +1,8 @@
 #[cfg(feature = "gssapi")]
 pub mod gssapi;
 pub mod netrc;
+#[cfg(feature = "sspi")]
+pub mod sspi;
 
 use futures::future;
 
@@ -8,6 +10,9 @@ use self::netrc::BasicAuthenticator;
 
 #[cfg(feature = "gssapi")]
 use self::gssapi::NegotiateAuthenticator;
+
+#[cfg(feature = "sspi")]
+use self::sspi::NegotiateAuthenticator;
 
 #[derive(Debug)]
 pub struct Error {
@@ -90,7 +95,7 @@ impl Authenticator for NoneAuthenticator {
 pub enum AuthenticatorFactory {
     None,
     Basic,
-    #[cfg(feature = "gssapi")]
+    #[cfg(any(feature = "gssapi", feature = "sspi"))]
     Negotiate,
 }
 
@@ -99,7 +104,7 @@ impl AuthenticatorFactory {
         AuthenticatorFactory::Basic
     }
 
-    #[cfg(feature = "gssapi")]
+    #[cfg(any(feature = "gssapi", feature = "sspi"))]
     pub fn negotiate() -> Self {
         AuthenticatorFactory::Negotiate
     }
@@ -108,7 +113,7 @@ impl AuthenticatorFactory {
         match self {
             Self::None => Ok(Box::new(NoneAuthenticator)),
             Self::Basic => Ok(Box::new(BasicAuthenticator::new(&proxy_url)?)),
-            #[cfg(feature = "gssapi")]
+            #[cfg(any(feature = "gssapi", feature = "sspi"))]
             Self::Negotiate => Ok(Box::new(NegotiateAuthenticator::new(&proxy_url)?)),
         }
     }
@@ -120,6 +125,8 @@ impl std::fmt::Display for AuthenticatorFactory {
             Self::None => "none",
             Self::Basic => "basic",
             #[cfg(feature = "gssapi")]
+            Self::Negotiate => "negotiate",
+            #[cfg(feature = "sspi")]
             Self::Negotiate => "negotiate",
         };
         f.write_str(name)

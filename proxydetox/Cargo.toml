@@ -7,6 +7,7 @@ homepage = "https://github.com/kiron1/proxydetox"
 [features]
 default = []
 gssapi = ["libgssapi"]
+sspi = ["libsspi"]
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
@@ -24,6 +25,7 @@ futures-util = { version = "0.3", default-features = false }
 http = "0.2"
 hyper = { version = "0.14", features = ["http1", "http2", "client", "server", "tcp"] }
 libgssapi = { version = "0.4", default-features = false, optional = true }
+libsspi = { path = "../libsspi", optional = true }
 netrc = { git = "https://github.com/kiron1/netrc-rs", branch = "modernize" }
 paclib = { path = "../paclib" }
 thiserror = "1.0"
