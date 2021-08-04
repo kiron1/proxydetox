@@ -31,7 +31,7 @@ jobs:
           - build: windows
             os: windows-latest
             features: sspi
-            mkcmd: powershell ./tools/mkzip.ps1
+            mkcmd: ./tools/mkzip.ps1
 
     steps:
       - name: Checkout repository
