@@ -9,7 +9,7 @@ $workdir = New-TemporaryDirectory
 $root = Split-Path $PSScriptRoot
 $destdir = New-Item -ItemType Directory -Path (Join-Path $workdir "proxydetox")
 
-cargo install --path "${root}/proxydetox" --root "${destdir}" --no-track
+cargo install --path "${root}/proxydetox" --root "${destdir}" --no-track --features sspi
 Copy-Item "${root}/pkg/windows/install.bat" "${destdir}/"
 
 $pkgfile = "proxydetox-win64.zip"
