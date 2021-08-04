@@ -13,12 +13,13 @@ cargo install --path "${root}/proxydetox" --root "${destdir}" --no-track
 Copy-Item "${root}/pkg/windows/install.bat" "${destdir}/"
 Copy-Item "${root}/pkg/windows/startup.reg" "${destdir}/"
 
-$zipfile = "proxydetox-win64.zip"
+$pkgfile = "proxydetox-win64.zip"
+Write-Output "::set-output name=pkgfile::${pkgfile}"
 
-if(Test-Path "${zipfile}") {
-  Remove-Item "${zipfile}"
+if(Test-Path "${pkgfile}") {
+  Remove-Item "${pkgfile}"
 }
-Get-ChildItem -Path "${workdir}" | Compress-Archive -Force -DestinationPath "${zipfile}"
+Get-ChildItem -Path "${workdir}" | Compress-Archive -Force -DestinationPath "${pkgfile}"
 
 if(Test-Path "${workdir}") {
   Remove-Item -Recurse "${workdir}"
