@@ -22,15 +22,12 @@ jobs:
         include:
           - build: linux
             os: ubuntu-latest
-            rust: stable
             features: default
           - build: macos
             os: macos-latest
-            rust: stable
             features: gssapi
           - build: windows
             os: windows-latest
-            rust: stable
             features: sspi
 
     steps:
@@ -54,7 +51,7 @@ jobs:
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: ${{ matrix.rust }}
+          toolchain: stable
           profile: minimal
           override: true
       - name: Run cargo test
