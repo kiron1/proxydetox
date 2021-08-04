@@ -24,16 +24,52 @@ jobs:
           prerelease: false
 
   buildpkg:
-    name: Upload Release Asset
-    runs-on: macos-latest
+    name: Build and Upload Release Asset
+    runs-on: ${{ matrix.os }}
+
     needs: mkrelease
+
+    strategy:
+      matrix:
+        build: [linux, macos, windows]
+        include:
+          - build: linux
+            os: ubuntu-18.04
+            mkcmd: ./tools/mkdeb.sh
+            shell: sh
+          - build: macos
+            os: macos-latest
+            mkcmd: ./tools/mkpkg.sh
+            shell: sh
+          - build: windows
+            os: windows-latest
+            mkcmd: ./tools/mkzip.ps1
+            shell: powershell
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+      #  see https://github.com/rust-lang/rust-bindgen/issues/1797
+      - name: Install Windows dependency (LLVM)
+        uses: KyleMayes/install-llvm-action@v1.4.1
+        if: ${{ matrix.build == 'windows' }}
+        with:
+          version: "11.0"
+          directory: ${{ runner.temp }}/llvm
+      - name: Set LIBCLANG_PATH
+        run: echo "LIBCLANG_PATH=$((gcm clang).source -replace "clang.exe")" >> $env:GITHUB_ENV
+        if: ${{ matrix.build == 'windows' }}
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
       - name: Build (pkg)
         id: buildpkg
-        run: ./tools/mkpkg.sh
-      - name: Upload Release Asset (pkg)
+        run: ${{ matrix.mkcmd }}
+        shell: ${{ matrix.shell }}
+      - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -41,30 +77,4 @@ jobs:
           upload_url: ${{ needs.mkrelease.outputs.upload_url }}
           asset_path: ./${{ steps.buildpkg.outputs.pkgfile }}
           asset_name: ${{ steps.buildpkg.outputs.pkgfile }}
-          asset_content_type: application/octet-stream
-
-  builddeb:
-    name: Upload Release Asset
-    runs-on: ubuntu-latest
-    needs: mkrelease
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
-      - name: Build (deb)
-        id: buildpkg
-        run: ./tools/mkdeb.sh
-      - name: Upload Release Asset (deb)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.mkrelease.outputs.upload_url }}
-          asset_path: ./${{ steps.buildpkg.outputs.debfile }}
-          asset_name: ${{ steps.buildpkg.outputs.debfile }}
           asset_content_type: application/octet-stream

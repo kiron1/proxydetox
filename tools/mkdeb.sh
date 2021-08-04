@@ -31,8 +31,8 @@ sed -e "s|\${prefix}|${prefix}|" "${root}/debian/proxydetox.service" > "${workdi
 version=$(sed -n 's/^version\s*=\s*"\([0-9.]*\)"/\1/p' "${root}/proxydetox/Cargo.toml")
 echo "::set-output name=version::${version}"
 
-debfile=proxydetox-${version}-x86_64-linux.deb
-echo "::set-output name=debfile::${debfile}"
+pkgfile=proxydetox-${version}-x86_64-linux.deb
+echo "::set-output name=pkgfile::${pkgfile}"
 
 sed -e "s/\${version}/${version}/" "${root}/debian/control" > "${workdir}/DEBIAN/control"
 for f in postinst postrm; do
@@ -40,13 +40,13 @@ for f in postinst postrm; do
   chmod 0755 "${workdir}/DEBIAN/${f}"
 done
 
-echo Building ${debfile}
-dpkg-deb --build "${workdir}" "${debfile}"
+echo Building ${pkgfile}
+dpkg-deb --build "${workdir}" "${pkgfile}"
 
-dpkg --info "${debfile}"
-dpkg --contents "${debfile}"
+dpkg --info "${pkgfile}"
+dpkg --contents "${pkgfile}"
 
 echo
 echo Install the package with:
-echo sudo dpkg --install "${debfile}"
+echo sudo dpkg --install "${pkgfile}"
 echo
