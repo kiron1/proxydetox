@@ -7,12 +7,13 @@
 mod limit;
 
 use std::fmt::Display;
+use std::fs::read_to_string;
 use std::path::PathBuf;
 use std::result::Result;
 use std::{boxed::Box, str::FromStr};
 
 use argh::FromArgs;
-use proxydetox::{auth::AuthenticatorFactory, detox, http_file, read_file};
+use proxydetox::{auth::AuthenticatorFactory, detox, http_file};
 
 #[derive(Debug, FromArgs)]
 /// Proxy tamer
@@ -75,7 +76,7 @@ fn load_config() -> Options {
         PathBuf::from("/usr/local/etc/proxydetox/proxydetoxrc"),
     ];
     for path in config_locations {
-        if let Ok(content) = read_file(&path) {
+        if let Ok(content) = read_to_string(&path) {
             let name = std::env::args().next().expect("argv[0]");
             // todo: this will fail with arguments which require a space (e.g. path of pac_file)
             let args = content
@@ -111,7 +112,7 @@ fn load_pac_file(opt: &Options) -> (Option<String>, std::io::Result<String>) {
             });
             return (Some(pac_path.to_string()), pac);
         }
-        (Some(pac_path.to_string()), read_file(pac_path))
+        (Some(pac_path.to_string()), read_to_string(pac_path))
     } else {
         let user_config = dirs::config_dir()
             .unwrap_or_else(|| "".into())
@@ -122,7 +123,7 @@ fn load_pac_file(opt: &Options) -> (Option<String>, std::io::Result<String>) {
             PathBuf::from("/usr/local/etc/proxydetox/proxy.pac"),
         ];
         for path in config_locations {
-            if let Ok(content) = read_file(&path) {
+            if let Ok(content) = read_to_string(&path) {
                 return (Some(path.to_string_lossy().to_string()), Ok(content));
             }
         }

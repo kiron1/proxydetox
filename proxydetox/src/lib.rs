@@ -4,7 +4,6 @@ pub mod detox;
 pub mod io;
 pub mod net;
 
-pub use io::read_file;
 pub use net::http_file;
 use tokio::sync::Mutex;
 
