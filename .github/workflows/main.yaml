@@ -21,7 +21,7 @@ jobs:
         build: [linux, macos, windows]
         include:
           - build: linux
-            os: ubuntu-18.04
+            os: ubuntu-latest
             rust: stable
             features: default
           - build: macos
