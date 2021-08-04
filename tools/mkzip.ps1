@@ -11,7 +11,6 @@ $destdir = New-Item -ItemType Directory -Path (Join-Path $workdir "proxydetox")
 
 cargo install --path "${root}/proxydetox" --root "${destdir}" --no-track
 Copy-Item "${root}/pkg/windows/install.bat" "${destdir}/"
-Copy-Item "${root}/pkg/windows/startup.reg" "${destdir}/"
 
 $pkgfile = "proxydetox-win64.zip"
 Write-Output "::set-output name=pkgfile::${pkgfile}"
