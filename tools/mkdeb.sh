@@ -26,7 +26,7 @@ mkdir -p "${workdir}/DEBIAN" "${workdir}/lib/systemd/user"
 
 cargo install --path "${root}/proxydetox" --root "${workdir}/${prefix}" --no-track ${features:+--features=${features}}
 
-sed -e "s/\${prefix}/${prefix//\//\\/}/" "${root}/debian/proxydetox.service" > "${workdir}/lib/systemd/user/proxydetox.service"
+sed -e "s|\${prefix}|${prefix}|" "${root}/debian/proxydetox.service" > "${workdir}/lib/systemd/user/proxydetox.service"
 
 version=$(sed -n 's/^version\s*=\s*"\([0-9.]*\)"/\1/p' "${root}/proxydetox/Cargo.toml")
 echo "::set-output name=version::${version}"
