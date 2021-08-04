@@ -41,7 +41,7 @@ jobs:
             mkcmd: ./tools/mkpkg.sh
           - build: windows
             os: windows-latest
-            mkcmd: powershell ./tools/mkzip.ps1
+            mkcmd: ./tools/mkzip.ps1
 
     steps:
       - name: Checkout repository
