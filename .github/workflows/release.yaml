@@ -36,15 +36,12 @@ jobs:
           - build: linux
             os: ubuntu-latest
             mkcmd: ./tools/mkdeb.sh
-            shell: sh
           - build: macos
             os: macos-latest
             mkcmd: ./tools/mkpkg.sh
-            shell: sh
           - build: windows
             os: windows-latest
-            mkcmd: ./tools/mkzip.ps1
-            shell: powershell
+            mkcmd: powershell ./tools/mkzip.ps1
 
     steps:
       - name: Checkout repository
@@ -65,10 +62,10 @@ jobs:
           toolchain: stable
           profile: minimal
           override: true
-      - name: Build (pkg)
+      - name: Build Release Package
         id: buildpkg
         run: ${{ matrix.mkcmd }}
-        shell: ${{ matrix.shell }}
+        shell: ${{ matrix.mkcmdsh }}
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:

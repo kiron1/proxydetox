@@ -23,12 +23,15 @@ jobs:
           - build: linux
             os: ubuntu-latest
             features: default
+            mkcmd: ./tools/mkdeb.sh
           - build: macos
             os: macos-latest
             features: gssapi
+            mkcmd: ./tools/mkpkg.sh
           - build: windows
             os: windows-latest
             features: sspi
+            mkcmd: powershell ./tools/mkzip.ps1
 
     steps:
       - name: Checkout repository
@@ -56,17 +59,9 @@ jobs:
           override: true
       - name: Run cargo test
         run: cargo test --features ${{ matrix.features }}
-      - name: Build (deb)
-        if: ${{ matrix.build == 'linux' }}
-        run: ./tools/mkdeb.sh
-      - name: Build (pkg)
-        if: ${{ matrix.build == 'macos' }}
-        run: ./tools/mkpkg.sh
-      - name: Build (zip)
-        if: ${{ matrix.build == 'windows' }}
-        run: ./tools/mkzip.ps1
-        shell: powershell
-
+      - name: Build Release Package
+        id: buildpkg
+        run: ${{ matrix.mkcmd }}
 
   format_check:
     name: Check format
