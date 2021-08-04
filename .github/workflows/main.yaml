@@ -59,6 +59,16 @@ jobs:
           override: true
       - name: Run cargo test
         run: cargo test --features ${{ matrix.features }}
+      - name: Build (deb)
+        if: ${{ matrix.build == 'linux' }}
+        run: ./tools/mkdeb.sh
+      - name: Build (pkg)
+        if: ${{ matrix.build == 'macos' }}
+        run: ./tools/mkpkg.sh
+      - name: Build (zip)
+        if: ${{ matrix.build == 'windows' }}
+        run: ./tools/mkzip.ps1
+        shell: powershell
 
 
   format_check:
