@@ -1,16 +1,6 @@
 use futures_util::{future::try_join, TryFutureExt};
-use std::fs::File;
-use std::io::prelude::*;
-use std::path::Path;
 use tokio::io::{AsyncRead, AsyncWrite};
 use tracing_futures::Instrument;
-
-pub fn read_file<P: AsRef<Path>>(path: P) -> std::io::Result<String> {
-    let mut file = File::open(&path)?;
-    let mut contents = String::new();
-    file.read_to_string(&mut contents)?;
-    Ok(contents)
-}
 
 // Bidirectionl copy two async streams
 pub async fn tunnel<T1, T2>(server: T1, client: T2) -> tokio::io::Result<(u64, u64)>
