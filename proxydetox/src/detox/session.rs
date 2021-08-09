@@ -30,6 +30,8 @@ pub enum Error {
     Hyper(#[from] hyper::Error),
     #[error("authentication mechanism error: {0}")]
     Auth(#[from] crate::auth::Error),
+    #[error("invalid URI")]
+    InvalidUri,
     #[error("upstream proxy ({0}) requires authentication")]
     ProxyAuthenticationRequired(ProxyDesc),
 }
@@ -40,6 +42,7 @@ impl From<crate::client::Error> for Error {
         match cause {
             client::Error::Auth(cause) => Error::Auth(cause),
             client::Error::Hyper(cause) => Error::Hyper(cause),
+            client::Error::InvalidUri => Error::InvalidUri,
         }
     }
 }
@@ -147,7 +150,7 @@ impl Session {
 
     pub async fn dispatch(&mut self, mut req: hyper::Request<Body>) -> Result<Response<Body>> {
         let proxy = self.find_proxy(req.uri()).await;
-        let is_connect = req.method() == hyper::Method::CONNECT;
+        let is_connect = req.method() == hyper::Method::CONNECT || self.0.config.always_use_connect;
 
         tracing::info!(%proxy);
 

@@ -23,6 +23,8 @@ pub enum Error {
     Hyper(#[from] hyper::Error),
     #[error("authentication mechanism error: {0}")]
     Auth(#[from] crate::auth::Error),
+    #[error("invalid URI")]
+    InvalidUri,
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -130,10 +132,8 @@ impl ForwardClient for Client {
         let this = self.clone();
 
         let resp = async move {
-            assert_eq!(req.method(), http::Method::CONNECT);
-
             // Make a client CONNECT request to the parent proxy to upgrade the connection
-            let parent_req = Request::connect(req.uri().clone())
+            let parent_req = Request::connect(authority_of(req.uri())?)
                 .version(http::version::Version::HTTP_11)
                 .body(Body::empty())
                 .unwrap();
@@ -190,8 +190,64 @@ impl ForwardClient for Client {
     }
 }
 
+fn authority_of(uri: &http::Uri) -> Result<http::Uri> {
+    match (uri.scheme(), uri.port()) {
+        (None, None) => Err(Error::InvalidUri),
+        (Some(scheme), None) => {
+            let port = if *scheme == http::uri::Scheme::HTTP {
+                "80"
+            } else if *scheme == http::uri::Scheme::HTTPS {
+                "443"
+            } else {
+                return Err(Error::InvalidUri);
+            };
+            let host = uri.host().ok_or(Error::InvalidUri)?;
+            let uri = format!("{}:{}", host, port);
+            let uri = uri.parse().map_err(|_| Error::InvalidUri)?;
+            Ok(uri)
+        }
+        (_, Some(port)) => {
+            let host = uri.host().ok_or(Error::InvalidUri)?;
+            let uri = format!("{}:{}", host, port);
+            let uri = uri.parse().map_err(|_| Error::InvalidUri)?;
+            Ok(uri)
+        }
+    }
+}
+
 fn bad_request(slice: &str) -> Result<Response<Body>> {
     let mut resp = Response::new(Body::from(String::from(slice)));
     *resp.status_mut() = http::StatusCode::BAD_REQUEST;
     Ok(resp)
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn authority_of_test() -> Result<(), Box<dyn std::error::Error>> {
+        use super::authority_of;
+
+        // No scheme and no port is an error
+        assert!(authority_of(&("example.org".parse()?)).is_err());
+        assert_eq!(
+            authority_of(&("example.org:8080".parse()?))?
+                .port_u16()
+                .unwrap(),
+            8080
+        );
+        assert_eq!(
+            authority_of(&("http://example.org".parse()?))?
+                .port_u16()
+                .unwrap(),
+            80
+        );
+        assert_eq!(
+            authority_of(&("https://example.org".parse()?))?
+                .port_u16()
+                .unwrap(),
+            443
+        );
+
+        Ok(())
+    }
 }

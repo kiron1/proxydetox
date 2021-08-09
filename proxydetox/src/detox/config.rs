@@ -5,4 +5,7 @@ pub struct Config {
 
     /// set an optional timeout for idle sockets being kept-aliv.
     pub pool_idle_timeout: Option<std::time::Duration>,
+
+    /// use the CONNECT method even for HTTP requests.
+    pub always_use_connect: bool,
 }
