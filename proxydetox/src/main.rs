@@ -27,6 +27,10 @@ struct Options {
     #[argh(option)]
     pac_file: Option<String>,
 
+    /// use CONNECT method even for http requests
+    #[argh(switch)]
+    always_use_connect: bool,
+
     /// listening port
     #[argh(option)]
     port: Option<u16>,
@@ -92,6 +96,11 @@ fn load_config() -> Options {
             return Options {
                 #[cfg(feature = "negotiate")]
                 negotiate: if opt.negotiate { true } else { rcopt.negotiate },
+                always_use_connect: if opt.always_use_connect {
+                    true
+                } else {
+                    rcopt.always_use_connect
+                },
                 pac_file: opt.pac_file.or(rcopt.pac_file),
                 port: opt.port.or(rcopt.port),
                 pool_max_idle_per_host: opt
@@ -170,6 +179,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let detox_config = detox::Config {
         pool_idle_timeout: config.pool_idle_timeout.map(|x| x.into()),
         pool_max_idle_per_host: config.pool_max_idle_per_host,
+        always_use_connect: config.always_use_connect,
     };
 
     let mut server = proxydetox::Server::new(
