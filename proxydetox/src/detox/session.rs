@@ -64,7 +64,7 @@ impl Inner {
         self.eval
             .lock()
             .await
-            .find_proxy(&uri)
+            .find_proxy(uri)
             .unwrap_or_else(|cause| {
                 tracing::error!("failed to find_proxy: {:?}", cause);
                 paclib::Proxies::direct()
@@ -146,7 +146,7 @@ impl Session {
     }
 
     pub async fn dispatch(&mut self, mut req: hyper::Request<Body>) -> Result<Response<Body>> {
-        let proxy = self.find_proxy(&req.uri()).await;
+        let proxy = self.find_proxy(req.uri()).await;
         let is_connect = req.method() == hyper::Method::CONNECT;
 
         tracing::info!(%proxy);

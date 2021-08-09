@@ -1,8 +1,8 @@
-use crate::auth::Result;
 use futures::future;
 use http::{header::PROXY_AUTHORIZATION, HeaderValue};
 use std::fs::File;
 use std::io::BufReader;
+use std::result::Result;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -12,45 +12,42 @@ pub enum Error {
     NoNetrcFile,
     #[error("failed to parse ~/.netrc file")]
     NetrcParserError,
+    #[error("no entry for this host: {0}")]
+    NoEntryForHost(String),
 }
 
 #[derive(Debug, Clone)]
 pub struct BasicAuthenticator {
-    token: Option<String>,
+    token: String,
 }
 
 impl BasicAuthenticator {
-    pub fn new(proxy_url: &http::Uri) -> Result<Self> {
+    pub fn new(proxy_fqdn: &str) -> Result<Self, Error> {
         let netrc = BasicAuthenticator::home_netrc()?;
-        let host = proxy_url.host().expect("URI with host");
 
-        let token = if let Some(&(_, ref machine)) = netrc.hosts.iter().find(|&x| x.0 == host) {
+        if let Some(&(_, ref machine)) = netrc.hosts.iter().find(|&x| x.0 == proxy_fqdn) {
             let token = if let Some(ref password) = machine.password {
                 format!("{}:{}", machine.login, password)
             } else {
                 machine.login.to_string()
             };
             let token = format!("Basic {}", base64::encode(&token));
-            tracing::debug!("auth netrc {}@{}: ", &machine.login, &proxy_url);
-            Some(token)
+            tracing::debug!("auth netrc {}@{}: ", &machine.login, &proxy_fqdn);
+            Ok(Self { token })
         } else {
-            None
-        };
-
-        Ok(Self { token })
+            Err(Error::NoEntryForHost(proxy_fqdn.into()))
+        }
     }
 
-    fn home_netrc() -> Result<netrc::Netrc> {
+    fn home_netrc() -> Result<netrc::Netrc, Error> {
         let netrc_path = {
-            let mut netrc_path = dirs::home_dir()
-                .ok_or_else(|| super::Error::temporary(Box::new(Error::NoHomeEnv)))?;
+            let mut netrc_path = dirs::home_dir().ok_or(Error::NoHomeEnv)?;
             netrc_path.push(".netrc");
             netrc_path
         };
-        let input = File::open(netrc_path.as_path())
-            .map_err(|_| super::Error::temporary(Box::new(Error::NoNetrcFile)))?;
-        let netrc = netrc::Netrc::parse(BufReader::new(input))
-            .map_err(|_| super::Error::temporary(Box::new(Error::NetrcParserError)))?;
+        let input = File::open(netrc_path.as_path()).map_err(|_| Error::NoNetrcFile)?;
+        let netrc =
+            netrc::Netrc::parse(BufReader::new(input)).map_err(|_| Error::NetrcParserError)?;
         Ok(netrc)
     }
 }
@@ -58,17 +55,19 @@ impl BasicAuthenticator {
 impl super::Authenticator for BasicAuthenticator {
     fn step<'async_trait>(
         &'async_trait self,
-        _response: Option<hyper::HeaderMap>,
+        _last_headers: Option<hyper::HeaderMap>,
     ) -> std::pin::Pin<
-        Box<dyn std::future::Future<Output = Result<hyper::HeaderMap>> + Send + 'async_trait>,
+        Box<
+            dyn std::future::Future<Output = crate::auth::Result<hyper::HeaderMap>>
+                + Send
+                + 'async_trait,
+        >,
     > {
         let mut headers = hyper::HeaderMap::new();
-        if let Some(ref token) = self.token {
-            headers.append(
-                PROXY_AUTHORIZATION,
-                HeaderValue::from_str(&token).expect("valid header value"),
-            );
-        }
+        headers.append(
+            PROXY_AUTHORIZATION,
+            HeaderValue::from_str(&self.token).expect("valid header value"),
+        );
 
         Box::pin(future::ok(headers))
     }

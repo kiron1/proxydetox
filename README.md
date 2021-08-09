@@ -21,8 +21,8 @@ with most tools.
 
 The following authentication methods are supported:
 
-- Basic (use the username and password from `~/.netrc`)
-- Negotiate<sup>1</sup>
+- Basic: use the username and password from `~/.netrc`.
+- Negotiate<sup>1</sup>: on Linux and macOS it will use [GSSAPI][gssapi], on Windows [SSPI][sspi] will be used.
 
 Installation instructions are provided in the [INSTALL.md](./INSTALL.md) file.
 
@@ -30,6 +30,8 @@ Installation instructions are provided in the [INSTALL.md](./INSTALL.md) file.
 [INSTALL.md](./INSTALL.md).
 
 [mdnpac]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Proxy_servers_and_tunneling/Proxy_Auto-Configuration_(PAC)_file "Proxy Auto-Configuration (PAC) file"
+[sspi]: https://docs.microsoft.com/en-us/windows/win32/rpc/security-support-provider-interface-sspi- "Security Support Provider Interface (SSPI)"
+[gssapi]: https://web.mit.edu/kerberos/krb5-devel/doc/appdev/gssapi.html "Generic Security Services API (GSSAPI)"
 
 Alternative solutions
 ---------------------

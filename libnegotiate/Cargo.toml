@@ -1,0 +1,18 @@
+[package]
+name = "libnegotiate"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = []
+gssapi = ["libgssapi"]
+
+[dependencies]
+
+[target.'cfg(unix)'.dependencies]
+libgssapi = { version = "0.4", default-features = false, optional = true }
+
+[target.'cfg(windows)'.dependencies]
+libsspi = { path = "../libsspi" }
