@@ -1,18 +1,11 @@
-#[cfg(feature = "gssapi")]
-pub mod gssapi;
+#[cfg(feature = "negotiate")]
+pub mod kerberos;
 pub mod netrc;
-#[cfg(feature = "sspi")]
-pub mod sspi;
 
-use futures::future;
-
+#[cfg(feature = "negotiate")]
+use self::kerberos::NegotiateAuthenticator;
 use self::netrc::BasicAuthenticator;
-
-#[cfg(feature = "gssapi")]
-use self::gssapi::NegotiateAuthenticator;
-
-#[cfg(feature = "sspi")]
-use self::sspi::NegotiateAuthenticator;
+use futures::future;
 
 #[derive(Debug)]
 pub struct Error {
@@ -83,11 +76,11 @@ struct NoneAuthenticator;
 impl Authenticator for NoneAuthenticator {
     fn step<'async_trait>(
         &'async_trait self,
-        last_headers: Option<hyper::HeaderMap>,
+        _last_headers: Option<hyper::HeaderMap>,
     ) -> std::pin::Pin<
         Box<dyn std::future::Future<Output = Result<hyper::HeaderMap>> + Send + 'async_trait>,
     > {
-        Box::pin(future::ok(last_headers.unwrap_or_default()))
+        Box::pin(future::ok(Default::default()))
     }
 }
 
@@ -95,7 +88,7 @@ impl Authenticator for NoneAuthenticator {
 pub enum AuthenticatorFactory {
     None,
     Basic,
-    #[cfg(any(feature = "gssapi", feature = "sspi"))]
+    #[cfg(feature = "negotiate")]
     Negotiate,
 }
 
@@ -104,17 +97,22 @@ impl AuthenticatorFactory {
         AuthenticatorFactory::Basic
     }
 
-    #[cfg(any(feature = "gssapi", feature = "sspi"))]
+    #[cfg(feature = "negotiate")]
     pub fn negotiate() -> Self {
         AuthenticatorFactory::Negotiate
     }
 
     pub fn make(&self, proxy_url: &http::Uri) -> Result<Box<dyn Authenticator>> {
+        let proxy_fqdn = proxy_url.host().unwrap_or_default();
         match self {
             Self::None => Ok(Box::new(NoneAuthenticator)),
-            Self::Basic => Ok(Box::new(BasicAuthenticator::new(&proxy_url)?)),
-            #[cfg(any(feature = "gssapi", feature = "sspi"))]
-            Self::Negotiate => Ok(Box::new(NegotiateAuthenticator::new(&proxy_url)?)),
+            Self::Basic => Ok(Box::new(
+                BasicAuthenticator::new(proxy_fqdn).map_err(|e| Error::permanent(e.into()))?,
+            )),
+            #[cfg(feature = "negotiate")]
+            Self::Negotiate => Ok(Box::new(
+                NegotiateAuthenticator::new(&proxy_fqdn).map_err(|e| Error::permanent(e.into()))?,
+            )),
         }
     }
 }
@@ -124,9 +122,7 @@ impl std::fmt::Display for AuthenticatorFactory {
         let name = match *self {
             Self::None => "none",
             Self::Basic => "basic",
-            #[cfg(feature = "gssapi")]
-            Self::Negotiate => "negotiate",
-            #[cfg(feature = "sspi")]
+            #[cfg(feature = "negotiate")]
             Self::Negotiate => "negotiate",
         };
         f.write_str(name)

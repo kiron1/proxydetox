@@ -19,7 +19,7 @@ use proxydetox::{auth::AuthenticatorFactory, detox, http_file};
 /// Proxy tamer
 struct Options {
     /// use HTTP Negotiate instead of netrc to authenticate against proxies
-    #[cfg(any(feature = "gssapi", feature = "sspi"))]
+    #[cfg(any(feature = "negotiate"))]
     #[argh(switch)]
     negotiate: bool,
 
@@ -90,7 +90,7 @@ fn load_config() -> Options {
             let rcopt = Options::from_args(&[&name], &args).expect("valid proxydetoxrc file");
             // Return merged options, priotize command line flags over file.
             return Options {
-                #[cfg(any(feature = "gssapi", feature = "sspi"))]
+                #[cfg(feature = "negotiate")]
                 negotiate: if opt.negotiate { true } else { rcopt.negotiate },
                 pac_file: opt.pac_file.or(rcopt.pac_file),
                 port: opt.port.or(rcopt.port),
@@ -155,14 +155,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let pac_script = pac_script.as_ref().expect("inline PAC config");
 
-    #[cfg(any(feature = "gssapi", feature = "sspi"))]
+    #[cfg(feature = "negotiate")]
     let auth = if config.negotiate {
         AuthenticatorFactory::negotiate()
     } else {
         AuthenticatorFactory::basic()
     };
 
-    #[cfg(not(any(feature = "gssapi", feature = "sspi")))]
+    #[cfg(not(feature = "negotiate"))]
     let auth = AuthenticatorFactory::basic();
 
     tracing::info!("Authenticator factory: {}", &auth);

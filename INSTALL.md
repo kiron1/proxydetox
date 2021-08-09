@@ -16,14 +16,11 @@ cargo install --path .
 
 ## Enable build features
 
-To enable the Negotiate authentication method on GNU/Linux or macoOS the
-[Generic Security Services Application Program Interface (GSSAPI)][gssapi] must
-be enabled during compile time using the `--features gssapi` feature flag when
-invoking cargo.
+To enable the Negotiate authentication method, the `negotiate` feature must be enabled.
 
-To enable the Negotiate authentication method on Windows the [Security Support
-Provider Interface][sspi] is used and must be enable during compile time using
-the `--features sspi` feature flag when invoking cargo.
+On GNU/Linux and macoOS the
+[Generic Security Services Application Program Interface (GSSAPI)][gssapi] will be used.
+On Windows the [Security Support Provider Interface][sspi] is used .
 
 [gssapi]: https://en.wikipedia.org/wiki/Generic_Security_Services_Application_Program_Interface
 [sspi]: https://en.wikipedia.org/wiki/Security_Support_Provider_Interface
@@ -34,8 +31,8 @@ Two configuration files are needed, a) an optional `~/.netrc` file which will
 store the authentication credentials for the proxy (if required by the proxy),
 and b) a `proxy.pac` file in the `~/.config/proxydetox` directory.
 
-For macOS users, the configuration is stored in the `~/Library/Application\
-Support/proxydetox` directory. Please substitute accordingly.
+For macOS users, the configuration is stored in the
+`~/Library/Application\ Support/proxydetox` directory. Please substitute accordingly.
 
 ### Negotiate authentication
 

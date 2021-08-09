@@ -10,7 +10,7 @@ workdir=$(mktemp -dt proxydetox-pkgbuild)
 trap "rm -rf ${workdir}" EXIT ERR
 
 
-cargo install --path "${root}/proxydetox" --root "${workdir}" --no-track --features gssapi
+cargo install --path "${root}/proxydetox" --root "${workdir}" --no-track --features negotiate
 version=$(sed -n 's/^version[ \t]*=[ \t]*"\([0-9.]*\)"/\1/p' "${root}/proxydetox/Cargo.toml")
 echo "::set-output name=version::${version}"
 
