@@ -1,10 +1,6 @@
-pub mod http_proxy_connector;
-pub mod http_proxy_stream;
-
 use http::{Request, Response, StatusCode};
-pub use http_proxy_connector::HttpProxyConnector;
-use http_proxy_stream::HttpProxyInfo;
 use hyper::Body;
+use proxy_client::HttpProxyInfo;
 use std::{
     future::Future,
     pin::Pin,
@@ -33,7 +29,7 @@ type Result<T> = std::result::Result<T, Error>;
 pub struct Client(Arc<Inner>);
 
 struct Inner {
-    client: hyper::Client<HttpProxyConnector, Body>,
+    client: proxy_client::Client,
     auth: Mutex<Box<dyn Authenticator>>,
     requires_auth: AtomicBool,
 }
@@ -50,10 +46,7 @@ impl Inner {
 }
 
 impl Client {
-    pub fn new(
-        client: hyper::Client<HttpProxyConnector, Body>,
-        auth: Box<dyn Authenticator>,
-    ) -> Self {
+    pub fn new(client: proxy_client::Client, auth: Box<dyn Authenticator>) -> Self {
         Self(Arc::new(Inner {
             client,
             auth: Mutex::new(auth),

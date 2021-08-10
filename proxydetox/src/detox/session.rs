@@ -15,10 +15,11 @@ use http::Uri;
 use http::{Request, Response};
 use hyper::service::Service;
 use hyper::Body;
+use proxy_client::HttpProxyConnector;
 use tokio::sync::Mutex;
 use tracing_attributes::instrument;
 
-use crate::{auth::AuthenticatorFactory, client::HttpProxyConnector};
+use crate::auth::AuthenticatorFactory;
 use paclib::proxy::ProxyDesc;
 use paclib::Evaluator;
 
