@@ -52,7 +52,7 @@ impl Service<Uri> for HttpProxyConnector {
     }
 
     fn call(&mut self, dst: Uri) -> Self::Future {
-        let mut self_ = self.clone();
-        Box::pin(async move { self_.call_async(dst).await })
+        let mut this = self.clone();
+        Box::pin(async move { this.call_async(dst).await })
     }
 }
