@@ -3,35 +3,40 @@ Proxydetox
 
 A small proxy to relive the pain of some corporate proxies.
 
-Most utilities support the `http_proxy`, `https_proxy` and `no_proxy`
-environment variables to handle proxies. On the other side some corporate
-networks provide different proxies depending on the destination and for
-selecting the correct proxy a [Proxy Auto-Configuration (PAC) file][mdnpac] is
-provided. This is inherently incompatible with many tools who only support the
-proxy environment variables. Additionally some proxies in coroprate networks
-require authentication which can mean that the user name and password is stored
-in plain text in environment variables.
+Proxydetox can act as an intermediate HTTP proxy for your local applications
+and actual HTTP proxy. Proxydtox will talk to the actual corporate HTTP
+proxies on behalf of the actual application. Proxydetox will select the correct
+upstream proxy based on the [Proxy Auto-Configuration (PAC) file][mdnpac]
+provided by the network administrator and will take care to correctly
+authenticate against the upstream proxy.
 
-This *Proxydetox* software is meant to help in this situation: the Proxydetox
-provides a local proxy without authentication. Upon receiving a request
-Proxydetox will evaluate the PAC configuration and forward to the correct
-parent proxy and also optionally authenticate with them. With Proxydetox it is
-enough to set a single proxy running on localhost. This should be compatible
-with most tools.
+With Proxydetox in place, most local applications can be configured to use the
+proxy by setting the environment variables `http_proxy`, and `https_proxy`.
 
 The following authentication methods are supported:
 
-- Basic: use the username and password from `~/.netrc`.
-- Negotiate<sup>1</sup>: on Linux and macOS it will use [GSSAPI][gssapi], on Windows [SSPI][sspi] will be used.
+- [Basic][basic]: use the username and password from `~/.netrc`.
+- [Negotiate][negotiate]<sup>1</sup>: on Linux and macOS it will use [GSSAPI][gssapi],
+  on Windows [SSPI][sspi] will be used.
 
+Proxydetox supports the following systems:
+
+- POSIX-compliant systems (tested on Ubuntu and OpenBSD)
+- macOS
+- Windows
+
+Prebuild versions of Proxydetox can be found on [the releaes page][releases].
 Installation instructions are provided in the [INSTALL.md](./INSTALL.md) file.
 
-<sup>1)</sup> To enable the negotiate feature, please see the instructions in
-[INSTALL.md](./INSTALL.md).
+<sup>1)</sup> Must be enabled via the `--features negotiate` flag during build
+time and activated with the `--negotiate` flag during runtime.
 
 [mdnpac]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Proxy_servers_and_tunneling/Proxy_Auto-Configuration_(PAC)_file "Proxy Auto-Configuration (PAC) file"
+[basic]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication#basic_authentication_scheme "Basic authentication scheme"
+[negotiate]: https://www.rfc-editor.org/rfc/rfc4559.html#section-4 "HTTP Negotiate Authentication Scheme"
 [sspi]: https://docs.microsoft.com/en-us/windows/win32/rpc/security-support-provider-interface-sspi- "Security Support Provider Interface (SSPI)"
 [gssapi]: https://web.mit.edu/kerberos/krb5-devel/doc/appdev/gssapi.html "Generic Security Services API (GSSAPI)"
+[releases]: https://github.com/kiron1/proxydetox/releases "Proxydetox releases"
 
 Alternative solutions
 ---------------------
@@ -50,13 +55,33 @@ Alternative solutions
 Components in this repository
 -----------------------------
 
+### JavaScript support
+
+Since the PAC files are actual JavaScript code, Proxydetox needs to be able to run JavaScript code.
+
 - [duktape-sys](./duktape-sys/) - FFI bindings for Rust of the [duktape](https://duktape.org)
   JavaScript interpreter library written in C.
 - [duktape](./duktape/) - Idiomatic Rust wrapper for the `duktape_sys` crate.
   (Just enough which is needed in this product context).
+
+### Evaluation of PAC scripts
+
 - [paclib](./paclib/) - Functions needed to implement `FindProxyForURL` and wrap it in Rust.
 - [paceval](./paceval/) - A utility to evaluate PAC files for a given URL and print the result.
+
+### Authentication
+
+- [libsspi](./libsspi/) - Binding of the Windows SSPI API for Rust using [`windows-rs`][windows-rs].
+- [libnegotiate](./libnegotiate/) - Authentication code using GSSAPI or SSPI depending on the target system.
+
+### HTTP Proxy code
+
+- [proxy_client](./proxy_client/) - Supporting code to allow [`hyper`][hyper] to utilize HTTP proxies.
 - [proxydetox](./proxydetox/) - The actual Proxydetox software.
+- [proxydetox](./proxydetox/) - The actual Proxydetox software.
+
+[windows-rs]: https://github.com/microsoft/windows-rs "Rust for the Windows SDK"
+[hyper]: https://github.com/hyperium/hyper "A fast and correct HTTP implementation for Rust"
 
 Third party source code in this repository
 ------------------------------------------
