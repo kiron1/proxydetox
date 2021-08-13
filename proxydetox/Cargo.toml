@@ -15,7 +15,7 @@ libc = "0.2"
 inotify = "0.9"
 
 [dependencies]
-argh = "0.1"
+clap = "2.3"
 base64 = "0.13"
 dirs = "3.0"
 env_logger = "0.9"

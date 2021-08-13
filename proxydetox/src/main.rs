@@ -5,113 +5,15 @@
 
 #[cfg(target_family = "unix")]
 mod limit;
+mod options;
 
-use std::fmt::Display;
+use options::Options;
+use std::boxed::Box;
 use std::fs::read_to_string;
 use std::path::PathBuf;
 use std::result::Result;
-use std::{boxed::Box, str::FromStr};
 
-use argh::FromArgs;
 use proxydetox::{auth::AuthenticatorFactory, detox, http_file};
-
-#[derive(Debug, FromArgs)]
-/// Proxy tamer
-struct Options {
-    /// use HTTP Negotiate instead of netrc to authenticate against proxies
-    #[cfg(any(feature = "negotiate"))]
-    #[argh(switch)]
-    negotiate: bool,
-
-    /// path to a PAC file or url of PAC file
-    #[argh(option)]
-    pac_file: Option<String>,
-
-    /// use CONNECT method even for http requests
-    #[argh(switch)]
-    always_use_connect: bool,
-
-    /// listening port
-    #[argh(option)]
-    port: Option<u16>,
-
-    /// sets the maximum idle connection per host allowed in the pool
-    #[argh(option, default = "usize::MAX")]
-    pool_max_idle_per_host: usize,
-
-    /// set an optional timeout for idle sockets being kept-aliv.
-    #[argh(option)]
-    pool_idle_timeout: Option<Seconds>,
-}
-
-#[derive(Copy, Clone, Debug)]
-struct Seconds(u64);
-
-impl Display for Seconds {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}s", self.0)
-    }
-}
-
-impl FromStr for Seconds {
-    type Err = std::num::ParseIntError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let n = s.parse()?;
-        Ok(Seconds(n))
-    }
-}
-
-impl From<Seconds> for std::time::Duration {
-    fn from(sec: Seconds) -> Self {
-        std::time::Duration::from_secs(sec.0)
-    }
-}
-
-/// Load config file, but command line flags will override config file values.
-fn load_config() -> Options {
-    let opt: Options = argh::from_env();
-    let user_config = dirs::config_dir()
-        .unwrap_or_else(|| "".into())
-        .join("proxydetox/proxydetoxrc");
-    let config_locations = vec![
-        user_config,
-        PathBuf::from("/etc/proxydetox/proxydetoxrc"),
-        PathBuf::from("/usr/local/etc/proxydetox/proxydetoxrc"),
-    ];
-    for path in config_locations {
-        if let Ok(content) = read_to_string(&path) {
-            let name = std::env::args().next().expect("argv[0]");
-            // todo: this will fail with arguments which require a space (e.g. path of pac_file)
-            let args = content
-                .split('\n')
-                .map(|s| s.trim())
-                .filter(|s| !s.starts_with('#'))
-                .map(str::split_ascii_whitespace)
-                .flatten()
-                .filter(|s| !s.is_empty())
-                .collect::<Vec<_>>();
-            let rcopt = Options::from_args(&[&name], &args).expect("valid proxydetoxrc file");
-            // Return merged options, priotize command line flags over file.
-            return Options {
-                #[cfg(feature = "negotiate")]
-                negotiate: if opt.negotiate { true } else { rcopt.negotiate },
-                always_use_connect: if opt.always_use_connect {
-                    true
-                } else {
-                    rcopt.always_use_connect
-                },
-                pac_file: opt.pac_file.or(rcopt.pac_file),
-                port: opt.port.or(rcopt.port),
-                pool_max_idle_per_host: opt
-                    .pool_max_idle_per_host
-                    .min(rcopt.pool_max_idle_per_host),
-                pool_idle_timeout: opt.pool_idle_timeout.or(rcopt.pool_idle_timeout),
-            };
-        }
-    }
-    opt
-}
 
 fn load_pac_file(opt: &Options) -> (Option<String>, std::io::Result<String>) {
     if let Some(pac_path) = &opt.pac_file {
@@ -128,7 +30,9 @@ fn load_pac_file(opt: &Options) -> (Option<String>, std::io::Result<String>) {
             .join("proxydetox/proxy.pac");
         let config_locations = vec![
             user_config,
+            #[cfg(target_family = "unix")]
             PathBuf::from("/etc/proxydetox/proxy.pac"),
+            #[cfg(target_family = "unix")]
             PathBuf::from("/usr/local/etc/proxydetox/proxy.pac"),
         ];
         for path in config_locations {
@@ -147,7 +51,7 @@ fn load_pac_file(opt: &Options) -> (Option<String>, std::io::Result<String>) {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
 
-    let config = load_config();
+    let config = Options::load();
 
     #[cfg(target_family = "unix")]
     limit::update_limits();
@@ -177,17 +81,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing::info!("Authenticator factory: {}", &auth);
 
     let detox_config = detox::Config {
-        pool_idle_timeout: config.pool_idle_timeout.map(|x| x.into()),
+        pool_idle_timeout: config.pool_idle_timeout,
         pool_max_idle_per_host: config.pool_max_idle_per_host,
         always_use_connect: config.always_use_connect,
     };
 
-    let mut server = proxydetox::Server::new(
-        pac_script.clone(),
-        auth,
-        config.port.unwrap_or(3128),
-        detox_config,
-    );
+    let mut server = proxydetox::Server::new(pac_script.clone(), auth, config.port, detox_config);
 
     {
         use tokio::signal;
