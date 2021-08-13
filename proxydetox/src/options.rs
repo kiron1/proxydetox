@@ -149,6 +149,10 @@ fn readrc() -> Vec<OsString> {
         PathBuf::from("/etc/proxydetox/proxydetoxrc"),
         #[cfg(target_family = "unix")]
         PathBuf::from("/usr/local/etc/proxydetox/proxydetoxrc"),
+        #[cfg(target_family = "windows")]
+        portable_dir("proxydetoxrc"),
+        #[cfg(target_family = "windows")]
+        portable_dir("proxydetoxrc.txt"),
     ];
     for path in config_locations {
         if let Ok(content) = read_to_string(&path) {
@@ -166,4 +170,21 @@ fn readrc() -> Vec<OsString> {
         }
     }
     Vec::new()
+}
+
+#[cfg(target_family = "windows")]
+// For Windows, use config file path next to the binary for portable use cases.
+pub fn portable_dir(path: impl AsRef<Path>) -> PathBuf {
+    let sys_config = std::env::current_exe()
+        .map(|p| {
+            p.parent()
+                .map(|p| {
+                    let mut p = PathBuf::from(p);
+                    p.push(path);
+                    p
+                })
+                .unwrap_or_default()
+        })
+        .unwrap_or_default();
+    sys_config
 }

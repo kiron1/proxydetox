@@ -10,12 +10,15 @@ mod options;
 use options::Options;
 use std::boxed::Box;
 use std::fs::read_to_string;
-use std::path::PathBuf;
 use std::result::Result;
 
 use proxydetox::{auth::AuthenticatorFactory, detox, http_file};
 
 fn load_pac_file(opt: &Options) -> (Option<String>, std::io::Result<String>) {
+    // For Windows, accept a proxy.pac file located next to the binary.
+    #[cfg(target_family = "windows")]
+    let sys_pac = options::portable_dir("proxy.pac");
+
     if let Some(pac_path) = &opt.pac_file {
         if pac_path.starts_with("http://") {
             let pac = futures::executor::block_on(async {
@@ -25,15 +28,17 @@ fn load_pac_file(opt: &Options) -> (Option<String>, std::io::Result<String>) {
         }
         (Some(pac_path.to_string()), read_to_string(pac_path))
     } else {
-        let user_config = dirs::config_dir()
+        let user_pac = dirs::config_dir()
             .unwrap_or_else(|| "".into())
             .join("proxydetox/proxy.pac");
         let config_locations = vec![
-            user_config,
+            user_pac,
             #[cfg(target_family = "unix")]
-            PathBuf::from("/etc/proxydetox/proxy.pac"),
+            std::path::PathBuf::from("/etc/proxydetox/proxy.pac"),
             #[cfg(target_family = "unix")]
-            PathBuf::from("/usr/local/etc/proxydetox/proxy.pac"),
+            std::path::PathBuf::from("/usr/local/etc/proxydetox/proxy.pac"),
+            #[cfg(target_family = "windows")]
+            sys_pac,
         ];
         for path in config_locations {
             if let Ok(content) = read_to_string(&path) {
