@@ -1,44 +1,54 @@
 # Build and Install `proxydetox`
 
-The easiest is, to use `cargo` from [rustup][rustup]. The next command will
-install the `proxydetox` binary in `~/.cargo/bin`.
+The easiest is, to use the download and install a pre-build package from the
+[realeases page][releases]. To build Proxydetox fron sources, please refer
+the [BUILD.md](./BUILD.md) file.
 
-```sh
-cargo install --git https://github.com/kiron1/proxydetox.git
-```
-
-If you have cloned this repository already, you can also do:
-
-
-```sh
-cargo install --path .
-```
-
-## Enable build features
-
-To enable the Negotiate authentication method, the `negotiate` feature must be enabled.
-
-On GNU/Linux and macoOS the
-[Generic Security Services Application Program Interface (GSSAPI)][gssapi] will be used.
-On Windows the [Security Support Provider Interface][sspi] is used .
-
-[gssapi]: https://en.wikipedia.org/wiki/Generic_Security_Services_Application_Program_Interface
-[sspi]: https://en.wikipedia.org/wiki/Security_Support_Provider_Interface
+[releases]: https://github.com/kiron1/proxydetox/releases "Proxydetox releases"
 
 ## Configuration
 
-Two configuration files are needed, a) an optional `~/.netrc` file which will
-store the authentication credentials for the proxy (if required by the proxy),
-and b) a `proxy.pac` file in the `~/.config/proxydetox` directory.
+### File locations
 
-For macOS users, the configuration is stored in the
-`~/Library/Application\ Support/proxydetox` directory. Please substitute accordingly.
+The following files are read during startup by Proxydetox. These files can be
+used to tweak the behaviour of Proxydetox.
+
+- `proxydetoxrc`: Main configuration file.
+- `proxy.pac`: The PAC file, which defines the rules to select the correct
+  upstream proxy.
+- `.netrc`: Contains the authentication information when `--negotiate` is
+   _not_ used.
+
+The configuration files are searched at the following locations:
+
+The `.netrc` file is expected to be located in the `HOME` directory on all platforms.
+If needed, the location can be specified via the `--netrc-file` flag when
+invoking Proxydetox.
+
+For `proxydetoxrc` and `proxy.pac` at a user configurable location and system
+wide location is searched.
+
+For the different platforms, the user configurable location is as follows:
+
+- `~/.config/proxydetox/` (POSIX-compliant systems like **BSD** and **Linux**)
+- `~/Library/Application\ Support/proxydetox` (**macOS**)
+- `%APPDATA%` (**Windows**)
+
+For the different platforms, the user system wide location is as follows:
+
+POSIX-compliant systems like **BSD**, **macOS**, and **Linux**:
+
+- `/usr/etc/proxydetox`
+- `/usr/local/etc/proxydetox/`
+
+Windows:
+
+- `.` (the directory of the the executable)
 
 ### Negotiate authentication
 
 To enable the Negotiate authentication the `--negotiate` flag must be added
-when calling `proxydetox` or added to the configuration file
-`~/.config/proxydetox/proxydetoxrc`.
+when calling `proxydetox` or added to the `proxydetoxrc` configuration file.
 
 ### Basic authentication
 
@@ -56,10 +66,11 @@ password in clear text on disk and the password is transferred unencrypted.
 
 ### Proxy Auto-Configuration (PAC) file
 
-A copy of the PAC file with the name `proxy.pac` must be places in the
-`~/.config/proxydetox/` directory. The PAC file is mostly maintained by the
-network administrators. The path (usually some http location in the intranet)
-can be retrieved from the settings of the pre-configured internet browser.
+A copy of the PAC file `proxy.pac` must be places in on of directories searched
+by Proxydetox or specified via the `--pac-file` option. The PAC file is usually
+maintained by the network administrators. The path (usually some http location
+in the intranet) can be retrieved from the settings of the pre-configured
+internet browser.
 
 ## Automatically start proxydetox with a user session
 
@@ -82,5 +93,3 @@ cp pkg/com.github.kiron1.proxydetox.plist ~/Library/LaunchAgents/
 launchctl load -w -F ~/Library/LaunchAgents/com.github.kiron1.proxydetox.plist
 launchctl start com.github.kiron1.proxydetox
 ```
-
-[rustup]: https://rustup.rs/ "rustup.rs - The Rust toolchain installer"
