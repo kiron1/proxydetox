@@ -2,6 +2,7 @@ use futures::future;
 use http::{header::PROXY_AUTHORIZATION, HeaderValue};
 use std::fs::File;
 use std::io::BufReader;
+use std::path::Path;
 use std::result::Result;
 
 #[derive(thiserror::Error, Debug)]
@@ -22,8 +23,8 @@ pub struct BasicAuthenticator {
 }
 
 impl BasicAuthenticator {
-    pub fn new(proxy_fqdn: &str) -> Result<Self, Error> {
-        let netrc = BasicAuthenticator::home_netrc()?;
+    pub fn new(netrc_path: &Path, proxy_fqdn: &str) -> Result<Self, Error> {
+        let netrc = BasicAuthenticator::read_netrc(netrc_path)?;
 
         if let Some(&(_, ref machine)) = netrc.hosts.iter().find(|&x| x.0 == proxy_fqdn) {
             let token = if let Some(ref password) = machine.password {
@@ -39,13 +40,8 @@ impl BasicAuthenticator {
         }
     }
 
-    fn home_netrc() -> Result<netrc::Netrc, Error> {
-        let netrc_path = {
-            let mut netrc_path = dirs::home_dir().ok_or(Error::NoHomeEnv)?;
-            netrc_path.push(".netrc");
-            netrc_path
-        };
-        let input = File::open(netrc_path.as_path()).map_err(|_| Error::NoNetrcFile)?;
+    fn read_netrc(netrc_path: &Path) -> Result<netrc::Netrc, Error> {
+        let input = File::open(netrc_path).map_err(|_| Error::NoNetrcFile)?;
         let netrc =
             netrc::Netrc::parse(BufReader::new(input)).map_err(|_| Error::NetrcParserError)?;
         Ok(netrc)

@@ -72,11 +72,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let auth = if config.negotiate {
         AuthenticatorFactory::negotiate()
     } else {
-        AuthenticatorFactory::basic()
+        AuthenticatorFactory::basic(config.netrc_file.clone())
     };
 
     #[cfg(not(feature = "negotiate"))]
-    let auth = AuthenticatorFactory::basic();
+    let auth = AuthenticatorFactory::basic(config.netrc_file.clone());
 
     tracing::info!("Authenticator factory: {}", &auth);
 
@@ -116,8 +116,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     #[cfg(target_os = "linux")]
     {
-        let mut netrc_path = dirs::home_dir().expect("home");
-        netrc_path.push(".netrc");
+        let netrc_path = config.netrc_file.clone();
         let tx = server.control_channel();
         tokio::spawn(async move {
             monitor_path(&netrc_path, tx).await;

@@ -13,6 +13,7 @@ pub struct Options {
     #[cfg(feature = "negotiate")]
     pub negotiate: bool,
     pub pac_file: Option<String>,
+    pub netrc_file: PathBuf,
     pub always_use_connect: bool,
     pub port: u16,
     pub pool_max_idle_per_host: usize,
@@ -37,6 +38,12 @@ fn is_file(v: String) -> Result<(), String> {
 impl Options {
     pub fn load() -> Self {
         let default_pool_max_idle_per_host = usize::MAX.to_string();
+        let default_netrc_file = {
+            let mut netrc_path = dirs::home_dir().unwrap_or_default();
+            netrc_path.push(".netrc");
+            netrc_path.to_str().unwrap_or_default().to_owned()
+        };
+
         let app: _ = App::new(env!("CARGO_PKG_NAME"))
             .version(env!("CARGO_PKG_VERSION"))
             .about("A small proxy to relive the pain of some corporate proxies")
@@ -49,6 +56,15 @@ impl Options {
                 .long("negotiate")
                 .help("Enables Negotiate (SPNEGO) authentication"),
         );
+
+        let netrc_arg = Arg::with_name("netrc_file")
+            .long("netrc-file")
+            .help("Path to a .netrc file to be used for basic authentication")
+            .validator(is_file)
+            .default_value(&default_netrc_file)
+            .takes_value(true);
+        #[cfg(feature = "negotiate")]
+        let netrc_arg = netrc_arg.conflicts_with("negotiate");
 
         let app = app
             .arg(
@@ -69,6 +85,7 @@ impl Options {
                     .validator(is_file)
                     .takes_value(true),
             )
+            .arg(netrc_arg)
             .arg(
                 Arg::with_name("always_use_connect")
                     .short("c")
@@ -104,6 +121,7 @@ impl From<ArgMatches<'_>> for Options {
             #[cfg(feature = "negotiate")]
             negotiate: m.is_present("negotiate"),
             pac_file: m.value_of("pac_file").map(|s| String::from(s)),
+            netrc_file: m.value_of("netrc_file").map(|s| PathBuf::from(s)).unwrap(),
             always_use_connect: m.is_present("always_use_connect"),
             port: m
                 .value_of("port")

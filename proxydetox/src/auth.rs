@@ -2,6 +2,8 @@
 pub mod kerberos;
 pub mod netrc;
 
+use std::path::PathBuf;
+
 #[cfg(feature = "negotiate")]
 use self::kerberos::NegotiateAuthenticator;
 use self::netrc::BasicAuthenticator;
@@ -87,14 +89,14 @@ impl Authenticator for NoneAuthenticator {
 #[derive(Clone, Debug)]
 pub enum AuthenticatorFactory {
     None,
-    Basic,
+    Basic(PathBuf),
     #[cfg(feature = "negotiate")]
     Negotiate,
 }
 
 impl AuthenticatorFactory {
-    pub fn basic() -> Self {
-        AuthenticatorFactory::Basic
+    pub fn basic(netrc_path: PathBuf) -> Self {
+        AuthenticatorFactory::Basic(netrc_path)
     }
 
     #[cfg(feature = "negotiate")]
@@ -106,8 +108,9 @@ impl AuthenticatorFactory {
         let proxy_fqdn = proxy_url.host().unwrap_or_default();
         match self {
             Self::None => Ok(Box::new(NoneAuthenticator)),
-            Self::Basic => Ok(Box::new(
-                BasicAuthenticator::new(proxy_fqdn).map_err(|e| Error::permanent(e.into()))?,
+            Self::Basic(ref netrc_path) => Ok(Box::new(
+                BasicAuthenticator::new(&netrc_path.as_path(), proxy_fqdn)
+                    .map_err(|e| Error::permanent(e.into()))?,
             )),
             #[cfg(feature = "negotiate")]
             Self::Negotiate => Ok(Box::new(
@@ -121,7 +124,7 @@ impl std::fmt::Display for AuthenticatorFactory {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         let name = match *self {
             Self::None => "none",
-            Self::Basic => "basic",
+            Self::Basic(ref _netrc_path) => "basic",
             #[cfg(feature = "negotiate")]
             Self::Negotiate => "negotiate",
         };
