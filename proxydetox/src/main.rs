@@ -6,6 +6,7 @@
 #[cfg(target_family = "unix")]
 mod limit;
 mod options;
+mod service;
 
 use options::Options;
 use std::boxed::Box;
@@ -57,6 +58,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
 
     let config = Options::load();
+
+    config.command.run();
 
     #[cfg(target_family = "unix")]
     limit::update_limits();

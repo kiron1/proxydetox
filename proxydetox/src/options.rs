@@ -6,7 +6,26 @@ use std::{
     time::Duration,
 };
 
-use clap::{App, AppSettings, Arg, ArgMatches};
+use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
+
+#[derive(Debug)]
+pub enum Command {
+    None,
+    Install,
+}
+
+impl Command {
+    pub fn run(&self) {
+        match *self {
+            Command::None => (),
+            #[cfg(any(target_os = "linux", target_os = "windows"))]
+            Command::Install => {
+                crate::service::install().unwrap();
+                std::process::exit(0);
+            }
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct Options {
@@ -18,6 +37,7 @@ pub struct Options {
     pub port: u16,
     pub pool_max_idle_per_host: usize,
     pub pool_idle_timeout: Option<Duration>,
+    pub command: Command,
 }
 
 fn is_num<T: FromStr + PartialOrd>(v: String) -> Result<(), String> {
@@ -107,6 +127,11 @@ impl Options {
                     .takes_value(true),
             );
 
+        #[cfg(any(target_os = "linux", target_os = "windows"))]
+        let app = app.subcommand(
+            SubCommand::with_name("install").about("Install Proxydetox as user service"),
+        );
+
         let mut args = readrc();
         args.extend(std::env::args_os().skip(1));
         let matches = app.get_matches_from(args);
@@ -117,6 +142,12 @@ impl Options {
 
 impl From<ArgMatches<'_>> for Options {
     fn from(m: ArgMatches) -> Self {
+        let cmd = if let Some(_install) = m.subcommand_matches("install") {
+            Command::Install
+        } else {
+            Command::None
+        };
+
         Self {
             #[cfg(feature = "negotiate")]
             negotiate: m.is_present("negotiate"),
@@ -134,6 +165,7 @@ impl From<ArgMatches<'_>> for Options {
             pool_idle_timeout: m
                 .value_of("pool_idle_timeout")
                 .map(|s| std::time::Duration::from_secs(s.parse::<u64>().unwrap())),
+            command: cmd,
         }
     }
 }
