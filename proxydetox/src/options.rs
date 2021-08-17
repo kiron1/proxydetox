@@ -108,7 +108,7 @@ impl Options {
             );
 
         let mut args = readrc();
-        args.extend(std::env::args_os());
+        args.extend(std::env::args_os().skip(1));
         let matches = app.get_matches_from(args);
 
         matches.into()
