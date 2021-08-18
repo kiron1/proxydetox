@@ -7,7 +7,7 @@
 
 use std::ffi::CStr;
 
-include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+include!(env!("DUKTAPE_BINDINGS_RS"));
 
 pub unsafe fn duk_create_heap_default() -> *mut duk_context {
     duk_create_heap(None, None, None, std::ptr::null_mut(), None)

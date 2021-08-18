@@ -1,15 +1,16 @@
-load("@build_bazel_rules_apple//apple:macos.bzl", "macos_application", "macos_bundle", "macos_command_line_application")
-load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library", "swift_binary")
+load("@build_bazel_rules_apple//apple:macos.bzl", "macos_application")
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 # https://github.com/bazelbuild/rules_swift/blob/master/doc/rules.md#swift_library
 swift_library(
     name = "Proxydetox",
     srcs = [
-         "AppDelegate.swift",
-         "main.swift",
-         "ProxydetoxControl.swift",
-         "StatusItemCOntroller.swift",
+        "AppDelegate.swift",
+        "ProxydetoxControl.swift",
+        "StatusItemCOntroller.swift",
+        "main.swift",
     ],
+    tags = ["manual"],
     visibility = ["//visibility:private"],
 )
 
@@ -22,12 +23,9 @@ macos_application(
     bundle_id = "com.github.kiron1.Proxydetox",
     infoplists = ["Info.plist"],
     minimum_os_version = "10.14",
+    tags = ["manual"],
+    visibility = ["//visibility:public"],
     deps = [
         ":Proxydetox",
     ],
-    additional_contents = {
-        "@proxydetoxcli//:proxydetox": "MacOS",
-        "//macos/launcher:ProxydetoxLauncher":  "MacOS",
-    },
-    visibility = ["//visibility:public"],
 )

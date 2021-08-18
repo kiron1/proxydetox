@@ -5,6 +5,9 @@ use std::env;
 use std::path::PathBuf;
 
 fn main() {
+    let out_dir = env::var("OUT_DIR").expect("OUT_DIR");
+    let bindings_rs = "bindings.rs";
+
     println!("cargo:rustc-link-lib=duktape");
 
     let bindings = bindgen::Builder::default()
@@ -14,12 +17,17 @@ fn main() {
         .allowlist_type("duk_.*")
         .allowlist_var("DUK_.*")
         .generate()
-        .expect("Unable to generate bindings");
+        .expect("generate bindings");
 
-    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
+    let out_path = PathBuf::from(&out_dir);
+    let out_path = out_path.join(bindings_rs);
     bindings
-        .write_to_file(out_path.join("bindings.rs"))
-        .expect("Couldn't write bindings!");
+        .write_to_file(&out_path)
+        .expect("write bindings to file");
+    println!(
+        "cargo:rustc-env=DUKTAPE_BINDINGS_RS={}",
+        &out_path.display()
+    );
 
     cc::Build::new()
         .file("src/duktape.c")
