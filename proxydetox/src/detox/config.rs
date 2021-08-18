@@ -9,3 +9,13 @@ pub struct Config {
     /// use the CONNECT method even for HTTP requests.
     pub always_use_connect: bool,
 }
+
+impl std::default::Default for Config {
+    fn default() -> Self {
+        Self {
+            pool_max_idle_per_host: usize::MAX,
+            pool_idle_timeout: None,
+            always_use_connect: false,
+        }
+    }
+}

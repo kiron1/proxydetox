@@ -1,5 +1,5 @@
 [workspace]
-members = ["proxydetox", "paceval"]
+members = ["cproxydetox", "proxydetox", "paceval"]
 
 # https://github.com/google/cargo-raze#cargo-workspace-projects
 [workspace.metadata.raze]
