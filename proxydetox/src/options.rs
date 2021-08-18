@@ -107,7 +107,9 @@ impl Options {
                     .takes_value(true),
             );
 
-        let mut args = readrc();
+        let mut args = Vec::new();
+        args.extend(std::env::args_os().take(1));
+        args.extend(readrc());
         args.extend(std::env::args_os().skip(1));
         let matches = app.get_matches_from(args);
 
