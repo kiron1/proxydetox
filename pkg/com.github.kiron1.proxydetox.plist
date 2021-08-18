@@ -10,7 +10,6 @@
     <array>
       <string>/bin/sh</string>
       <string>-c</string>
-      <string>-c</string>
       <string>exec "$HOME/.cargo/bin/proxydetox"</string>
     </array>
     <key>EnvironmentVariables</key>
