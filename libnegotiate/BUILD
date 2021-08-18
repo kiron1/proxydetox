@@ -1,0 +1,20 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+
+rust_library(
+    name = "libnegotiate",
+    srcs = [
+        "src/gssapi.rs",
+        "src/lib.rs",
+        "src/sspi.rs",
+    ],
+    crate_features = ["gssapi"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//duktape-sys:duktape-sys",
+        "//cargo:libc",
+        "//cargo:thiserror",
+    ] + select({
+        "@bazel_tools//src/conditions:windows": ["//libsspi:libsspi"],
+        "//conditions:default": ["//cargo:libgssapi"],
+    }),
+)
