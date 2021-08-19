@@ -12,6 +12,7 @@ swift_library(
     ],
     tags = ["manual"],
     visibility = ["//visibility:private"],
+    deps = ["//cproxydetox:swiftlyproxydetox"],
 )
 
 # https://github.com/bazelbuild/rules_apple/blob/master/doc/rules-macos.md#macos_application
@@ -21,7 +22,12 @@ macos_application(
         "//macos/launcher:ProxydetoxLauncher": "Library/LoginItems",
     },
     bundle_id = "com.github.kiron1.Proxydetox",
+    entitlements = ":ProxydetoxApp.entitlements",
     infoplists = ["Info.plist"],
+    linkopts = [
+        "-framework",
+        "GSS",
+    ],
     minimum_os_version = "10.14",
     tags = ["manual"],
     visibility = ["//visibility:public"],
