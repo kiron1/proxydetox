@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2018"
 homepage = "https://github.com/kiron1/proxydetox"
 
+[features]
+negotiate = ["proxydetox/negotiate"]
+
 [lib]
 crate-type = ["staticlib"]
 

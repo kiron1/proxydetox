@@ -1,0 +1,5 @@
+module Proxydetox {
+    header "src/proxydetox.h"
+    link "cproxydetox"
+    export *
+}
