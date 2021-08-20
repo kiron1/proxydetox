@@ -1,3 +1,4 @@
+load("@rules_pkg//:pkg.bzl", "pkg_zip")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
 
 rust_library(
@@ -64,4 +65,10 @@ rust_binary(
         "//cargo:tracing",
         "//cargo:tracing_subscriber",
     ],
+)
+
+pkg_zip(
+    name = "proxydetox.zip",
+    srcs = [":proxydetox"],
+    tags = ["manual"],
 )
