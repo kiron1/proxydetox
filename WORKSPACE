@@ -1,6 +1,6 @@
 workspace(name = "proxydetox")
 
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+load("//third_party:crate_universe_defaults.bzl", "DEFAULT_SHA256_CHECKSUMS", "DEFAULT_URL_TEMPLATE")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
@@ -58,9 +58,48 @@ load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
 
 rust_bindgen_repositories()
 
-load("//cargo:crates.bzl", "raze_fetch_remote_crates")
+# load("//cargo:crates.bzl", "raze_fetch_remote_crates")
 
-raze_fetch_remote_crates()
+# raze_fetch_remote_crates()
+
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crate_universe")
+
+crate_universe(
+    name = "crates",
+    cargo_toml_files = [
+        "//libsspi:Cargo.toml",
+        "//proxydetox:Cargo.toml",
+        "//proxy_client:Cargo.toml",
+        "//cproxydetox:Cargo.toml",
+        "//duktape-sys:Cargo.toml",
+        "//libnegotiate:Cargo.toml",
+        "//paclib:Cargo.toml",
+        "//paceval:Cargo.toml",
+        "//duktape:Cargo.toml",
+    ],
+    # [package.metadata.raze.xxx] lines in Cargo.toml files are ignored;
+    # the overrides need to be declared in the repo rule instead.
+    overrides = {
+        "clang-sys": crate.override(
+            extra_build_script_env_vars = {"PATH": "/var/empty"},
+        ),
+    },
+    resolver_download_url_template = DEFAULT_URL_TEMPLATE,
+    resolver_sha256s = DEFAULT_SHA256_CHECKSUMS,
+    # leave unset for default multi-platform support
+    # supported_targets = [
+    #     "x86_64-apple-darwin",
+    #     "x86_64-unknown-linux-gnu",
+    # ],
+    # to use a lockfile, uncomment the following line,
+    # create an empty file in the location, and then build
+    # with REPIN=1 bazel build ...
+    #lockfile = "//:crate_universe.lock",
+)
+
+load("@crates//:defs.bzl", "pinned_rust_install")
+
+pinned_rust_install()
 
 http_archive(
     name = "rules_pkg",

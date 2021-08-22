@@ -1,3 +1,0 @@
-BUILD.bazel             linguist-vendored
-crates.bzl              linguist-vendored
-remote/BUILD.*.bazel    linguist-vendored
