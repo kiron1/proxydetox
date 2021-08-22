@@ -6,7 +6,7 @@ swift_library(
     srcs = [
         "AppDelegate.swift",
     ],
-    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:macos"],
     visibility = ["//visibility:private"],
 )
 
@@ -15,7 +15,7 @@ macos_application(
     bundle_id = "com.github.kiron1.ProxydetoxLauncher",
     infoplists = ["Info.plist"],
     minimum_os_version = "10.14",
-    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:macos"],
     visibility = ["//visibility:public"],
     deps = [
         ":launcher",

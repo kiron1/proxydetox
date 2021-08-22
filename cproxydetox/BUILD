@@ -27,7 +27,7 @@ swift_c_module(
     name = "swiftlyproxydetox",
     module_map = ":proxydetox.modulemap",
     module_name = "Proxydetox",
-    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:macos"],
     visibility = ["//visibility:public"],
     deps = [
         ":cproxydetox",
