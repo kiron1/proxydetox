@@ -10,7 +10,7 @@ swift_library(
         "StatusItemCOntroller.swift",
         "main.swift",
     ],
-    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:macos"],
     visibility = ["//visibility:private"],
     deps = ["//cproxydetox:swiftlyproxydetox"],
 )
@@ -29,7 +29,7 @@ macos_application(
         "GSS",
     ],
     minimum_os_version = "10.14",
-    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:macos"],
     visibility = ["//visibility:public"],
     deps = [
         ":Proxydetox",
