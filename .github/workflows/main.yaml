@@ -71,6 +71,38 @@ jobs:
         id: buildpkg
         run: ${{ matrix.mkcmd }}
 
+  bazel_build:
+    name: Bazel build
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        build: [macos]
+        include:
+          - build: macos
+            os: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: Bazel info
+        id: bazel_info
+        run: |
+          echo "::set-output name=output_base::$(bazel info output_base)"
+          echo "::set-output name=repository_cache::$(bazel info repository_cache)"
+        shell: bash
+      - name: Bazel cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${{ steps.bazel_info.outputs.output_base }}
+            ${{ steps.bazel_info.outputs.repository_cache }}
+          key: bazel-cache-${{ runner.os }}
+      - name: Run bazel build
+        run: bazel build -c opt --action_env=PATH=/bin:/usr/bin:/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:$HOME/.cargo/bin //...
+
   format_check:
     name: Check format
     runs-on: ubuntu-latest
