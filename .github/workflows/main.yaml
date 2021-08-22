@@ -1,6 +1,6 @@
 # GitHub Workflows file
 
-name: CI
+name: main
 
 on:
   push:
