@@ -6,7 +6,10 @@ rust_static_library(
     srcs = [
         "src/lib.rs",
     ],
-    crate_features = ["negotiate"],
+    crate_features = select({
+        "//:enable_negotiate": ["negotiate"],
+        "//conditions:default": [],
+    }),
     deps = [
         "//cargo:dirs",
         "//cargo:libc",
