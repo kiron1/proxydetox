@@ -19,7 +19,10 @@ rust_library(
     compile_data = [
         "src/502.html",
     ],
-    crate_features = ["negotiate"],
+    crate_features = select({
+        "//:enable_negotiate": ["negotiate"],
+        "//conditions:default": [],
+    }),
     crate_name = "proxydetox",
     proc_macro_deps = [
         "//cargo:tracing_attributes",
@@ -39,10 +42,12 @@ rust_library(
         "//cargo:tracing",
         "//cargo:tracing_futures",
         "//cargo:tracing_subscriber",
-        "//libnegotiate",
         "//paclib",
         "//proxy_client",
-    ],
+    ] + select({
+        "//:enable_negotiate": ["//libnegotiate"],
+        "//conditions:default": [],
+    }),
 )
 
 rust_binary(

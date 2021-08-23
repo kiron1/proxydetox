@@ -8,6 +8,7 @@ rust_library(
         "src/sspi.rs",
     ],
     crate_features = ["gssapi"],
+    tags = ["manual"],
     visibility = ["//visibility:public"],
     deps = [
         "//duktape-sys:duktape-sys",

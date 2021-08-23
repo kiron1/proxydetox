@@ -79,3 +79,11 @@ bazel build //macos/app:ProxydetoxApp
 ```
 
 [bazelisk]: https://github.com/bazelbuild/bazelisk/releases "A user-friendly launcher for Bazel"
+
+### Enable build features
+
+Append `--negotiate=1` to bazel to enable the negotiate feature:
+
+```sh
+bazel build --features=negotiate //...
+```
