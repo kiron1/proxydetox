@@ -109,12 +109,12 @@ impl AuthenticatorFactory {
         match self {
             Self::None => Ok(Box::new(NoneAuthenticator)),
             Self::Basic(ref netrc_path) => Ok(Box::new(
-                BasicAuthenticator::new(&netrc_path.as_path(), proxy_fqdn)
+                BasicAuthenticator::new(netrc_path.as_path(), proxy_fqdn)
                     .map_err(|e| Error::permanent(e.into()))?,
             )),
             #[cfg(feature = "negotiate")]
             Self::Negotiate => Ok(Box::new(
-                NegotiateAuthenticator::new(&proxy_fqdn).map_err(|e| Error::permanent(e.into()))?,
+                NegotiateAuthenticator::new(proxy_fqdn).map_err(|e| Error::permanent(e.into()))?,
             )),
         }
     }

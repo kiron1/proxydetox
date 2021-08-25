@@ -79,8 +79,8 @@ mod tests {
     fn it_works() {
         let mut ctx = Context::new().unwrap();
         match ctx.eval("5+5") {
-            Ok(crate::Value::Number(k)) => assert_eq!(k, 10.0f64),
-            _ => assert!(false),
+            Ok(crate::Value::Number(k)) => assert!((k - 10.0f64).abs() < 0.001f64),
+            _ => panic!("eval failed"),
         }
     }
 }
