@@ -48,7 +48,7 @@ impl super::Authenticator for NegotiateAuthenticator {
             let mut cx = this.cx.lock().await;
             let mut headers = hyper::HeaderMap::new();
             let challenge = last_headers.map(|h| server_token(&h)).flatten();
-            let challenge = challenge.as_ref().map(|b| &**b);
+            let challenge = challenge.as_deref();
             let token = cx
                 .step(challenge)
                 .map_err(|e| super::Error::temporary(Box::new(e)));

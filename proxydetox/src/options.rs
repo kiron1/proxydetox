@@ -23,7 +23,7 @@ pub struct Options {
 fn is_num<T: FromStr + PartialOrd>(v: String) -> Result<(), String> {
     match v.parse::<T>() {
         Ok(_v) => Ok(()),
-        Err(ref _cause) => Err(format!("invalid number")),
+        Err(ref _cause) => Err("invalid number".to_string()),
     }
 }
 
@@ -122,8 +122,8 @@ impl From<ArgMatches<'_>> for Options {
         Self {
             #[cfg(feature = "negotiate")]
             negotiate: m.is_present("negotiate"),
-            pac_file: m.value_of("pac_file").map(|s| String::from(s)),
-            netrc_file: m.value_of("netrc_file").map(|s| PathBuf::from(s)).unwrap(),
+            pac_file: m.value_of("pac_file").map(String::from),
+            netrc_file: m.value_of("netrc_file").map(PathBuf::from).unwrap(),
             always_use_connect: m.is_present("always_use_connect"),
             port: m
                 .value_of("port")
@@ -166,7 +166,7 @@ fn readrc() -> Vec<OsString> {
                 .map(str::split_ascii_whitespace)
                 .flatten()
                 .filter(|s| !s.is_empty())
-                .map(|s| OsString::from(s))
+                .map(OsString::from)
                 .collect::<Vec<_>>();
             return args;
         }
