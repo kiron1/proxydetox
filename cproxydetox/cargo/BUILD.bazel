@@ -1,0 +1,40 @@
+"""
+@generated
+cargo-raze generated Bazel file.
+
+DO NOT EDIT! Replaced on runs of cargo-raze
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+licenses([
+    "notice",  # See individual crates for specific licenses
+])
+
+# Aliased targets
+alias(
+    name = "dirs",
+    actual = "@raze__dirs__3_0_2//:dirs",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    name = "libc",
+    actual = "@raze__libc__0_2_100//:libc",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    name = "tokio",
+    actual = "@raze__tokio__1_10_0//:tokio",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)

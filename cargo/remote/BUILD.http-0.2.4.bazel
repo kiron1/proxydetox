@@ -61,7 +61,7 @@ rust_library(
     deps = [
         "@raze__bytes__1_0_1//:bytes",
         "@raze__fnv__1_0_7//:fnv",
-        "@raze__itoa__0_4_7//:itoa",
+        "@raze__itoa__0_4_8//:itoa",
     ],
 )
 

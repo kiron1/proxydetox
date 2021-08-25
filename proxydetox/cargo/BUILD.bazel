@@ -5,33 +5,13 @@ cargo-raze generated Bazel file.
 DO NOT EDIT! Replaced on runs of cargo-raze
 """
 
-package(default_visibility = [
-    # Public for visibility by "@raze__crate__version//" targets.
-    #
-    # Prefer access through "//cargo", which limits external
-    # visibility to explicit Cargo.toml dependencies.
-    "//visibility:public",
+package(default_visibility = ["//visibility:public"])
+
+licenses([
+    "notice",  # See individual crates for specific licenses
 ])
 
-# Export file for Stardoc support
-exports_files(
-    [
-        "crates.bzl",
-    ],
-    visibility = ["//visibility:public"],
-)
-
 # Aliased targets
-
-alias(
-    name = "libgssapi",
-    actual = "@raze__libgssapi__0_4_5//:libgssapi",
-    tags = [
-        "cargo-raze",
-        "manual",
-    ],
-)
-
 alias(
     name = "base64",
     actual = "@raze__base64__0_13_0//:base64",
@@ -115,7 +95,7 @@ alias(
 
 alias(
     name = "libc",
-    actual = "@raze__libc__0_2_99//:libc",
+    actual = "@raze__libc__0_2_100//:libc",
     tags = [
         "cargo-raze",
         "manual",
@@ -179,51 +159,6 @@ alias(
 alias(
     name = "tracing_subscriber",
     actual = "@raze__tracing_subscriber__0_2_20//:tracing_subscriber",
-    tags = [
-        "cargo-raze",
-        "manual",
-    ],
-)
-
-alias(
-    name = "lazy_static",
-    actual = "@raze__lazy_static__1_4_0//:lazy_static",
-    tags = [
-        "cargo-raze",
-        "manual",
-    ],
-)
-
-alias(
-    name = "log",
-    actual = "@raze__log__0_4_14//:log",
-    tags = [
-        "cargo-raze",
-        "manual",
-    ],
-)
-
-alias(
-    name = "regex",
-    actual = "@raze__regex__1_5_4//:regex",
-    tags = [
-        "cargo-raze",
-        "manual",
-    ],
-)
-
-alias(
-    name = "windows",
-    actual = "@raze__windows__0_18_0//:windows",
-    tags = [
-        "cargo-raze",
-        "manual",
-    ],
-)
-
-alias(
-    name = "argh",
-    actual = "@raze__argh__0_1_5//:argh",
     tags = [
         "cargo-raze",
         "manual",

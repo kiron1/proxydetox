@@ -101,7 +101,7 @@ jobs:
             ${{ steps.bazel_info.outputs.repository_cache }}
           key: bazel-cache-${{ runner.os }}
       - name: Run bazel build
-        run: bazel build -c opt --action_env=PATH=/bin:/usr/bin:/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:$HOME/.cargo/bin //...
+        run: bazel build -c opt //...
 
   format_check:
     name: Check format

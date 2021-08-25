@@ -81,7 +81,7 @@ rust_library(
         "@raze__lazy_static__1_4_0//:lazy_static",
         "@raze__matchers__0_0_1//:matchers",
         "@raze__regex__1_5_4//:regex",
-        "@raze__serde__1_0_127//:serde",
+        "@raze__serde__1_0_129//:serde",
         "@raze__serde_json__1_0_66//:serde_json",
         "@raze__sharded_slab__0_1_3//:sharded_slab",
         "@raze__smallvec__1_6_1//:smallvec",

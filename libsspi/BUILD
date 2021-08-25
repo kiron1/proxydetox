@@ -9,7 +9,7 @@ rust_library(
     visibility = ["//visibility:public"],
     deps = [
     ] + select({
-        "@bazel_tools//src/conditions:windows": ["//cargo:windows"],
+        "@bazel_tools//src/conditions:windows": ["//libsspi/cargo:windows"],
         "//conditions:default": [],
     }),
 )

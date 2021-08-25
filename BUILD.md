@@ -54,18 +54,7 @@ Currently the Bazel setup has some quirks which requires some extra steps:
 xcode-select --install
 ```
 
-2. Ensure clang_sys can find `clang`, by placing the following content in a file
-   called `user.bazelrc` in the root directroy of our Proxydetox checkout:
-
-Until
-[KyleMayes/clang-sys/ #132](https://github.com/KyleMayes/clang-sys/pull/132) is
-resolved:
-
-```
-build --action_env=PATH=/bin:/usr/bin:/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:~/.cargo/bin
-```
-
-3. Ensure the `duktape-sys` can find `TargetConditionals.h`
+2. Ensure the `duktape-sys` can find `TargetConditionals.h`
 
 Currently we hardcode the necessary include path in
 [`duktape-sys/BUILD`](./duktape-sys/BUILD) this might need adjustment for your

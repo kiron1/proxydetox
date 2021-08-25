@@ -83,8 +83,8 @@ rust_library(
     # buildifier: leave-alone
     deps = [
         ":serde_json_build_script",
-        "@raze__itoa__0_4_7//:itoa",
+        "@raze__itoa__0_4_8//:itoa",
         "@raze__ryu__1_0_5//:ryu",
-        "@raze__serde__1_0_127//:serde",
+        "@raze__serde__1_0_129//:serde",
     ],
 )
