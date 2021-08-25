@@ -9,9 +9,9 @@ rust_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//cargo:http",
-        "//cargo:hyper",
-        "//cargo:thiserror",
-        "//cargo:tokio",
+        "//proxy_client/cargo:http",
+        "//proxy_client/cargo:hyper",
+        "//proxy_client/cargo:thiserror",
+        "//proxy_client/cargo:tokio",
     ],
 )

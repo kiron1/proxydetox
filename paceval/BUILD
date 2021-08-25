@@ -7,8 +7,8 @@ rust_binary(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//cargo:argh",
-        "//cargo:http",
+        "//paceval/cargo:argh",
+        "//paceval/cargo:http",
         "//paclib",
     ],
 )

@@ -10,8 +10,8 @@ rust_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//cargo:libc",
-        "//cargo:thiserror",
         "//duktape-sys",
+        "//duktape/cargo:libc",
+        "//duktape/cargo:thiserror",
     ],
 )

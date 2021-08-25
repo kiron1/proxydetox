@@ -37,7 +37,7 @@ load(
 )
 
 cargo_build_script(
-    name = "libc_build_script",
+    name = "httparse_build_script",
     srcs = glob(["**/*.rs"]),
     build_script_env = {
     },
@@ -55,14 +55,16 @@ cargo_build_script(
         "cargo-raze",
         "manual",
     ],
-    version = "0.2.99",
+    version = "1.5.1",
     visibility = ["//visibility:private"],
     deps = [
     ],
 )
 
+# Unsupported target "parse" with type "bench" omitted
+
 rust_library(
-    name = "libc",
+    name = "httparse",
     srcs = glob(["**/*.rs"]),
     crate_features = [
         "default",
@@ -79,11 +81,11 @@ rust_library(
         "cargo-raze",
         "manual",
     ],
-    version = "0.2.99",
+    version = "1.5.1",
     # buildifier: leave-alone
     deps = [
-        ":libc_build_script",
+        ":httparse_build_script",
     ],
 )
 
-# Unsupported target "const_fn" with type "test" omitted
+# Unsupported target "uri" with type "test" omitted
