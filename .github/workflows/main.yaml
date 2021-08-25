@@ -109,8 +109,17 @@ jobs:
         run: bazel build -c opt //...
 
   format_check:
-    name: Check format
+    name: Rust lint
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        lint: [clippy, fmt]
+        include:
+          - lint: clippy
+            flags: --all
+          - lint: fmt
+            flags: --all -- --check
 
     steps:
       - uses: actions/checkout@v2
@@ -119,5 +128,5 @@ jobs:
           toolchain: stable
           components: rustfmt, clippy
           override: true
-      - name: fmt
-        run: cargo fmt --all -- --check
+      - name: Lint check
+        run: cargo ${{ matrix.lint }} ${{ matrix.flags }}
