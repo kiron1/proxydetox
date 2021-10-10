@@ -29,18 +29,29 @@ impl HttpProxyInfo {
 
 pub struct HttpProxyStream {
     inner: TcpStream,
+    is_proxied: bool,
 }
 
 impl HttpProxyStream {
     pub fn new(stream: TcpStream) -> Self {
-        Self { inner: stream }
+        Self {
+            inner: stream,
+            is_proxied: true,
+        }
+    }
+
+    pub fn new_connected(stream: TcpStream) -> Self {
+        Self {
+            inner: stream,
+            is_proxied: false,
+        }
     }
 }
 
 impl Connection for HttpProxyStream {
     fn connected(&self) -> Connected {
         let connected = Connected::new();
-        let connected = connected.proxy(true);
+        let connected = connected.proxy(self.is_proxied);
         match (self.inner.local_addr(), self.inner.peer_addr()) {
             (Ok(local_addr), Ok(remote_addr)) => connected.extra(HttpProxyInfo {
                 remote_addr,
