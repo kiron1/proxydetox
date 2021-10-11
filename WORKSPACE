@@ -1,6 +1,5 @@
 workspace(name = "proxydetox")
 
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
@@ -51,7 +50,7 @@ load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 
 rust_repositories(
     edition = "2018",
-    version = "1.54.0",
+    version = "1.55.0",
 )
 
 load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
