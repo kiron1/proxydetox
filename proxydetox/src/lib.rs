@@ -23,8 +23,6 @@ pub struct Server {
     config: detox::Config,
     tx: tokio::sync::mpsc::Sender<Command>,
     rx: Arc<Mutex<tokio::sync::mpsc::Receiver<Command>>>,
-    shutdown_tx: tokio::sync::mpsc::Sender<()>,
-    shutdown_rx: tokio::sync::mpsc::Receiver<()>,
 }
 
 impl Server {
@@ -35,7 +33,6 @@ impl Server {
         config: detox::Config,
     ) -> Self {
         let (tx, rx) = tokio::sync::mpsc::channel::<Command>(32);
-        let (shutdown_tx, shutdown_rx) = tokio::sync::mpsc::channel::<()>(32);
 
         Self {
             pac_script,
@@ -44,8 +41,6 @@ impl Server {
             config,
             tx,
             rx: Arc::new(Mutex::new(rx)),
-            shutdown_tx,
-            shutdown_rx,
         }
     }
 
@@ -60,7 +55,7 @@ impl Server {
             select,
         };
 
-        let shutdown_tx = self.shutdown_tx.clone();
+        let (shutdown_tx, mut shutdown_rx) = tokio::sync::mpsc::channel::<()>(1);
         let cmd_rx = self.rx.clone();
         let addr = SocketAddr::from(([127, 0, 0, 1], self.port));
 
@@ -72,7 +67,7 @@ impl Server {
             ));
             let server = server
                 .with_graceful_shutdown(async {
-                    let _ = self.shutdown_rx.recv().await;
+                    let _ = shutdown_rx.recv().await;
                 })
                 .fuse();
 
