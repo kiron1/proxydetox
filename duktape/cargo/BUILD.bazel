@@ -14,7 +14,7 @@ licenses([
 # Aliased targets
 alias(
     name = "libc",
-    actual = "@raze__libc__0_2_100//:libc",
+    actual = "@raze__libc__0_2_103//:libc",
     tags = [
         "cargo-raze",
         "manual",
@@ -23,7 +23,7 @@ alias(
 
 alias(
     name = "thiserror",
-    actual = "@raze__thiserror__1_0_26//:thiserror",
+    actual = "@raze__thiserror__1_0_30//:thiserror",
     tags = [
         "cargo-raze",
         "manual",

@@ -53,7 +53,7 @@ rust_library(
     deps = [
         "@raze__lazy_static__1_4_0//:lazy_static",
         "@raze__log__0_4_14//:log",
-        "@raze__tracing_core__0_1_19//:tracing_core",
+        "@raze__tracing_core__0_1_21//:tracing_core",
     ],
 )
 

@@ -14,7 +14,7 @@ licenses([
 # Aliased targets
 alias(
     name = "argh",
-    actual = "@raze__argh__0_1_5//:argh",
+    actual = "@raze__argh__0_1_6//:argh",
     tags = [
         "cargo-raze",
         "manual",
@@ -23,7 +23,7 @@ alias(
 
 alias(
     name = "http",
-    actual = "@raze__http__0_2_4//:http",
+    actual = "@raze__http__0_2_5//:http",
     tags = [
         "cargo-raze",
         "manual",

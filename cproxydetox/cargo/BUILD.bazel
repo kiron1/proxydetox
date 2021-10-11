@@ -14,7 +14,7 @@ licenses([
 # Aliased targets
 alias(
     name = "dirs",
-    actual = "@raze__dirs__3_0_2//:dirs",
+    actual = "@raze__dirs__4_0_0//:dirs",
     tags = [
         "cargo-raze",
         "manual",
@@ -23,7 +23,7 @@ alias(
 
 alias(
     name = "libc",
-    actual = "@raze__libc__0_2_100//:libc",
+    actual = "@raze__libc__0_2_103//:libc",
     tags = [
         "cargo-raze",
         "manual",
@@ -32,7 +32,7 @@ alias(
 
 alias(
     name = "tokio",
-    actual = "@raze__tokio__1_10_0//:tokio",
+    actual = "@raze__tokio__1_12_0//:tokio",
     tags = [
         "cargo-raze",
         "manual",
