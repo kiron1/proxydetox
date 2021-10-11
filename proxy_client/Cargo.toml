@@ -8,5 +8,5 @@ edition = "2018"
 [dependencies]
 http = "0.2"
 hyper = { version = "0.14", features = ["http1", "http2", "client", "server", "tcp"] }
-tokio = { version = "1.0", features = ["rt-multi-thread", "net", "macros", "sync"] }
+tokio = { version = "1", features = ["rt-multi-thread", "net", "macros", "sync"] }
 thiserror = "1.0"
