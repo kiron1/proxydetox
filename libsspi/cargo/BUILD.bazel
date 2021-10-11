@@ -14,7 +14,7 @@ licenses([
 # Aliased targets
 alias(
     name = "windows",
-    actual = "@raze__windows__0_18_0//:windows",
+    actual = "@raze__windows__0_21_1//:windows",
     tags = [
         "cargo-raze",
         "manual",

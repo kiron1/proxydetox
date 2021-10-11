@@ -11,12 +11,4 @@ licenses([
     "notice",  # See individual crates for specific licenses
 ])
 
-# Aliased targets
-alias(
-    name = "libgssapi",
-    actual = "@raze__libgssapi__0_4_5//:libgssapi",
-    tags = [
-        "cargo-raze",
-        "manual",
-    ],
-)
+# No targets defined
