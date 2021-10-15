@@ -38,11 +38,6 @@ fn is_file(v: String) -> Result<(), String> {
 impl Options {
     pub fn load() -> Self {
         let default_pool_max_idle_per_host = usize::MAX.to_string();
-        let default_netrc_file = {
-            let mut netrc_path = dirs::home_dir().unwrap_or_default();
-            netrc_path.push(".netrc");
-            netrc_path.to_str().unwrap_or_default().to_owned()
-        };
 
         let app: _ = App::new(env!("CARGO_PKG_NAME"))
             .version(env!("CARGO_PKG_VERSION"))
@@ -61,7 +56,6 @@ impl Options {
             .long("netrc-file")
             .help("Path to a .netrc file to be used for basic authentication")
             .validator(is_file)
-            .default_value(&default_netrc_file)
             .takes_value(true);
         #[cfg(feature = "negotiate")]
         let netrc_arg = netrc_arg.conflicts_with("negotiate");
@@ -123,7 +117,14 @@ impl From<ArgMatches<'_>> for Options {
             #[cfg(feature = "negotiate")]
             negotiate: m.is_present("negotiate"),
             pac_file: m.value_of("pac_file").map(String::from),
-            netrc_file: m.value_of("netrc_file").map(PathBuf::from).unwrap(),
+            netrc_file: m
+                .value_of("netrc_file")
+                .map(PathBuf::from)
+                .unwrap_or_else(|| {
+                    let mut netrc_path = dirs::home_dir().unwrap_or_default();
+                    netrc_path.push(".netrc");
+                    netrc_path
+                }),
             always_use_connect: m.is_present("always_use_connect"),
             port: m
                 .value_of("port")
