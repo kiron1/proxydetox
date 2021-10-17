@@ -6,7 +6,7 @@ use hyper::service::Service as HyperService;
 use tracing::{event, Level};
 use tracing_attributes::instrument;
 
-use crate::{auth::AuthenticatorFactory, detox::Session};
+use crate::detox::Session;
 
 // https://github.com/hyperium/hyper/blob/master/examples/tower_server.rs
 #[derive(Clone)]
@@ -22,8 +22,7 @@ impl std::fmt::Debug for Service {
 }
 
 impl Service {
-    pub fn new(pac_script: &str, auth: AuthenticatorFactory, config: super::Config) -> Self {
-        let session = Session::new(pac_script, auth, config);
+    pub fn new(session: Session) -> Self {
         Service { session }
     }
 }
