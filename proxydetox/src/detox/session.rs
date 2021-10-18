@@ -2,6 +2,7 @@
 
 use std::convert::Infallible;
 use std::future::Future;
+use std::net::SocketAddr;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::{
@@ -17,9 +18,11 @@ use hyper::service::Service;
 use hyper::Body;
 use parking_lot::Mutex;
 use proxy_client::HttpProxyConnector;
+use tokio::net::TcpStream;
 use tracing_attributes::instrument;
 
 use crate::auth::AuthenticatorFactory;
+use crate::io::tunnel;
 use paclib::proxy::ProxyDesc;
 use paclib::Evaluator;
 
@@ -33,6 +36,8 @@ pub enum Error {
     Auth(#[from] crate::auth::Error),
     #[error("invalid URI")]
     InvalidUri,
+    #[error("bad request")]
+    BadRequest,
     #[error("upstream proxy ({0}) requires authentication")]
     ProxyAuthenticationRequired(ProxyDesc),
 }
@@ -41,9 +46,11 @@ impl From<crate::client::Error> for Error {
     fn from(cause: crate::client::Error) -> Error {
         use crate::client;
         match cause {
+            client::Error::Io(cause) => Error::Io(cause),
             client::Error::Auth(cause) => Error::Auth(cause),
             client::Error::Hyper(cause) => Error::Hyper(cause),
             client::Error::InvalidUri => Error::InvalidUri,
+            client::Error::BadRequest => Error::BadRequest,
         }
     }
 }
@@ -178,6 +185,34 @@ impl Session {
             res.headers_mut().insert(VIA, via);
         }
         Ok(res?)
+    }
+
+    #[instrument]
+    pub async fn transparent(&mut self, stream: TcpStream, addr: SocketAddr) -> Result<()> {
+        let host = format!("{}:{}", addr.ip(), addr.port())
+            .parse::<http::uri::Authority>()
+            .unwrap();
+
+        let uri = http::Uri::builder().authority(host).build().unwrap();
+
+        let proxy = self.find_proxy(&uri).await;
+
+        tracing::info!(%proxy);
+
+        let proxy_client;
+        let client: &(dyn crate::client::ForwardClient + Send + Sync) = match proxy {
+            ProxyDesc::Direct => &self.0.direct_client,
+            ProxyDesc::Proxy(ref proxy) => {
+                proxy_client = self.proxy_client(proxy.clone())?;
+                &proxy_client
+            }
+        };
+
+        let res = client.transparent(addr).await?;
+
+        tunnel(res, stream).await?;
+
+        Ok(())
     }
 
     pub async fn management(&mut self, _req: hyper::Request<Body>) -> Result<Response<Body>> {

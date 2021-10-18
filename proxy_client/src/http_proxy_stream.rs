@@ -46,6 +46,10 @@ impl HttpProxyStream {
             is_proxied: false,
         }
     }
+
+    pub fn into_inner(self) -> TcpStream {
+        self.inner
+    }
 }
 
 impl Connection for HttpProxyStream {

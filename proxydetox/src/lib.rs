@@ -4,9 +4,11 @@ pub mod detox;
 pub mod io;
 pub mod net;
 
+use crate::net::original_destination_address;
 pub use net::http_file;
 use parking_lot::Mutex;
 use std::{net::SocketAddr, sync::Arc};
+use tokio::net::TcpListener;
 
 #[derive(Debug)]
 pub enum Command {
@@ -85,4 +87,25 @@ impl Server {
         }
         Ok(())
     }
+}
+
+pub async fn run_transparent(
+    port: u16,
+    session: detox::Session,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+
+    let listener = TcpListener::bind(addr).await?;
+    tracing::info!("Listening on http://{}", addr);
+
+    while let Ok((stream, _addr)) = listener.accept().await {
+        let dst_addr = original_destination_address(&stream);
+        let mut session = session.clone();
+
+        tokio::spawn(async move {
+            let _ = session.transparent(stream, dst_addr).await;
+        });
+    }
+
+    Ok(())
 }
