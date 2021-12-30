@@ -5,7 +5,7 @@ pub mod io;
 pub mod net;
 
 pub use net::http_file;
-use tokio::sync::Mutex;
+use parking_lot::Mutex;
 
 use crate::auth::AuthenticatorFactory;
 use std::{net::SocketAddr, sync::Arc};
@@ -73,7 +73,7 @@ impl Server {
 
             tracing::info!("Listening on http://{}", addr);
 
-            let mut cmd_rx = cmd_rx.lock().await;
+            let mut cmd_rx = cmd_rx.lock();
             let recv = cmd_rx.recv().fuse();
 
             pin_mut!(server, recv);

@@ -175,6 +175,15 @@ alias(
 )
 
 alias(
+    name = "parking_lot",
+    actual = "@raze__parking_lot__0_11_2//:parking_lot",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
     name = "regex",
     actual = "@raze__regex__1_5_4//:regex",
     tags = [

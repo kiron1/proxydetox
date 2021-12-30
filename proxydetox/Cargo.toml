@@ -26,6 +26,7 @@ hyper = { version = "0.14", features = ["http1", "http2", "client", "server", "t
 libnegotiate = { path = "../libnegotiate", optional = true }
 netrc = { git = "https://github.com/kiron1/netrc-rs", branch = "modernize" }
 paclib = { path = "../paclib" }
+parking_lot = "0.11"
 proxy_client = { path = "../proxy_client" }
 thiserror = "1.0"
 tokio = { version = "1", features = ["rt-multi-thread", "net", "macros", "sync", "signal"] }

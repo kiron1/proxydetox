@@ -2,11 +2,10 @@ use http::{
     header::{PROXY_AUTHENTICATE, PROXY_AUTHORIZATION},
     HeaderValue,
 };
+use parking_lot::Mutex;
 use std::result::Result;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 
-#[cfg(feature = "negotiate")]
 use libnegotiate::Context;
 
 #[derive(thiserror::Error, Debug)]
@@ -32,49 +31,39 @@ impl NegotiateAuthenticator {
 }
 
 impl super::Authenticator for NegotiateAuthenticator {
-    fn step<'async_trait>(
-        &'async_trait self,
+    fn step(
+        &self,
         last_headers: Option<hyper::HeaderMap>,
-    ) -> std::pin::Pin<
-        Box<
-            dyn std::future::Future<Output = crate::auth::Result<hyper::HeaderMap>>
-                + Send
-                + 'async_trait,
-        >,
-    > {
-        let this = self.clone();
-        let resp = async move {
-            #[allow(unused_mut)]
-            let mut cx = this.cx.lock().await;
-            let mut headers = hyper::HeaderMap::new();
-            let challenge = last_headers.map(|h| server_token(&h)).flatten();
-            let challenge = challenge.as_deref();
-            let token = cx.step(challenge).map_err(Box::new);
+    ) -> crate::auth::Result<hyper::HeaderMap> {
+        #[allow(unused_mut)]
+        let mut cx = self.cx.lock();
+        let mut headers = hyper::HeaderMap::new();
+        let challenge = last_headers.map(|h| server_token(&h)).flatten();
+        let challenge = challenge.as_deref();
+        let token = cx.step(challenge).map_err(Box::new);
 
-            match token {
-                Ok(Some(token)) => {
-                    let b64token = base64::encode(&*token);
-                    tracing::debug!("negotiate token: {}", &b64token);
-                    let auth_str = format!("Negotiate {}", b64token);
-                    headers.append(
-                        PROXY_AUTHORIZATION,
-                        HeaderValue::from_str(&auth_str).expect("valid header value"),
-                    );
-                }
-                Ok(None) => {}
-                Err(err) => {
-                    tracing::error!(
-                        "negotiate error for {}: {} ({:?})",
-                        &cx.target_name(),
-                        &err,
-                        &err
-                    );
-                    return Err(err.into());
-                }
+        match token {
+            Ok(Some(token)) => {
+                let b64token = base64::encode(&*token);
+                tracing::debug!("negotiate token: {}", &b64token);
+                let auth_str = format!("Negotiate {}", b64token);
+                headers.append(
+                    PROXY_AUTHORIZATION,
+                    HeaderValue::from_str(&auth_str).expect("valid header value"),
+                );
             }
-            Ok(headers)
-        };
-        Box::pin(resp)
+            Ok(None) => {}
+            Err(err) => {
+                tracing::error!(
+                    "negotiate error for {}: {} ({:?})",
+                    &cx.target_name(),
+                    &err,
+                    &err
+                );
+                return Err(err.into());
+            }
+        }
+        Ok(headers)
     }
 }
 

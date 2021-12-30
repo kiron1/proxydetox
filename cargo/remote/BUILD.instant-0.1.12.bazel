@@ -26,13 +26,13 @@ package(default_visibility = [
 ])
 
 licenses([
-    "notice",  # Apache-2.0 from expression "Apache-2.0 OR MIT"
+    "notice",  # BSD-3-Clause from expression "BSD-3-Clause"
 ])
 
 # Generated Targets
 
-rust_proc_macro(
-    name = "pin_project_internal",
+rust_library(
+    name = "instant",
     srcs = glob(["**/*.rs"]),
     crate_features = [
     ],
@@ -45,13 +45,13 @@ rust_proc_macro(
     tags = [
         "cargo-raze",
         "manual",
-        "crate-name=pin-project-internal"
+        "crate-name=instant"
     ],
-    version = "1.0.9",
+    version = "0.1.12",
     # buildifier: leave-alone
     deps = [
-        "@raze__proc_macro2__1_0_36//:proc_macro2",
-        "@raze__quote__1_0_14//:quote",
-        "@raze__syn__1_0_84//:syn",
+        "@raze__cfg_if__1_0_0//:cfg_if",
     ],
 )
+
+# Unsupported target "wasm" with type "test" omitted
