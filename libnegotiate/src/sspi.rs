@@ -1,6 +1,6 @@
 use libsspi::{
     AcquireCredentialsHandleW, Error, InitializeSecurityContextW, SecBuffer, SecBufferDesc,
-    SecHandle, HRESULT, ISC_REQ_MUTUAL_AUTH, SECBUFFER_TOKEN, SECBUFFER_VERSION,
+    SecHandle, HRESULT, ISC_REQ_MUTUAL_AUTH, PWSTR, SECBUFFER_TOKEN, SECBUFFER_VERSION,
     SECPKG_CRED_OUTBOUND, SECURITY_NATIVE_DREP,
 };
 use std::{ffi::c_void, ptr::null_mut};
@@ -10,13 +10,22 @@ type TimeStamp = i64;
 // https://github.com/java-native-access/jna/issues/261
 const MAX_TOKEN_SIZE: usize = 48 * 1024;
 
-#[derive(Debug)]
 pub struct Context {
     cx: SecHandle,
     cred: SecHandle,
     target: String,
     spn: Vec<u16>,
     expiry: TimeStamp,
+}
+
+impl std::fmt::Debug for Context {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Context")
+            .field("target", &self.target)
+            .field("spn", &self.spn)
+            .field("expiry", &self.expiry)
+            .finish()
+    }
 }
 
 fn to_utf16(value: &str) -> Vec<u16> {
@@ -32,7 +41,7 @@ impl Context {
         let target = format!("HTTP/{}", proxy_fqdn);
         let spn = to_utf16(&target);
 
-        let package = "Negotiate";
+        let mut package = to_utf16("Negotiate");
         let mut cred = SecHandle::default();
         let mut expiry = TimeStamp::default();
 
@@ -40,7 +49,7 @@ impl Context {
         let status = unsafe {
             AcquireCredentialsHandleW(
                 None,
-                package,
+                PWSTR(package.as_mut_ptr()),
                 SECPKG_CRED_OUTBOUND,
                 null_mut(),
                 null_mut(),
@@ -91,7 +100,7 @@ impl Context {
             InitializeSecurityContextW(
                 &mut self.cred,
                 null_mut(),
-                self.spn.as_mut_ptr(),
+                self.spn.as_ptr(),
                 ISC_REQ_MUTUAL_AUTH,
                 0,
                 SECURITY_NATIVE_DREP,
