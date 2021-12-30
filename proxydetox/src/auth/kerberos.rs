@@ -49,9 +49,7 @@ impl super::Authenticator for NegotiateAuthenticator {
             let mut headers = hyper::HeaderMap::new();
             let challenge = last_headers.map(|h| server_token(&h)).flatten();
             let challenge = challenge.as_deref();
-            let token = cx
-                .step(challenge)
-                .map_err(|e| super::Error::temporary(Box::new(e)));
+            let token = cx.step(challenge).map_err(Box::new);
 
             match token {
                 Ok(Some(token)) => {
@@ -71,7 +69,7 @@ impl super::Authenticator for NegotiateAuthenticator {
                         &err,
                         &err
                     );
-                    return Err(err);
+                    return Err(err.into());
                 }
             }
             Ok(headers)

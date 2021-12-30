@@ -55,8 +55,7 @@ impl Context {
 
         // Get client token, and create new gss client context.
         let stepper = Self::make_client(self.target_name())?;
-        let token = server_token.as_deref();
-        let token = stepper.step(token);
+        let token = stepper.step(server_token);
 
         match token {
             Ok(Some(token)) => Ok(Some(Vec::from(&*token))),
