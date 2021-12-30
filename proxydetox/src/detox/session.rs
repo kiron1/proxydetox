@@ -15,8 +15,8 @@ use http::Uri;
 use http::{Request, Response};
 use hyper::service::Service;
 use hyper::Body;
+use parking_lot::Mutex;
 use proxy_client::HttpProxyConnector;
-use tokio::sync::Mutex;
 use tracing_attributes::instrument;
 
 use crate::auth::AuthenticatorFactory;
@@ -64,15 +64,11 @@ struct Inner {
 }
 
 impl Inner {
-    async fn find_proxy(&self, uri: &Uri) -> paclib::Proxies {
-        self.eval
-            .lock()
-            .await
-            .find_proxy(uri)
-            .unwrap_or_else(|cause| {
-                tracing::error!("failed to find_proxy: {:?}", cause);
-                paclib::Proxies::direct()
-            })
+    fn find_proxy(&self, uri: &Uri) -> paclib::Proxies {
+        self.eval.lock().find_proxy(uri).unwrap_or_else(|cause| {
+            tracing::error!("failed to find_proxy: {:?}", cause);
+            paclib::Proxies::direct()
+        })
     }
 }
 
@@ -103,22 +99,12 @@ impl Session {
     async fn find_proxy(&mut self, uri: &http::Uri) -> paclib::proxy::ProxyDesc {
         let inner = self.0.clone();
         let uri = uri.clone();
-        let proxy = tokio::task::spawn_blocking(move || {
-            futures::executor::block_on(async { inner.find_proxy(&uri).await })
-        })
-        .await;
-        match proxy {
-            Ok(proxy) => proxy,
-            Err(cause) => {
-                tracing::error!("failed to join: {:?}", cause);
-                paclib::Proxies::direct()
-            }
-        }
-        .first()
+        let proxy = tokio::task::block_in_place(move || inner.find_proxy(&uri));
+        proxy.first()
     }
 
-    async fn proxy_client(&mut self, uri: http::Uri) -> Result<ProxyClient> {
-        let mut proxies = self.0.proxy_clients.lock().await;
+    fn proxy_client(&mut self, uri: http::Uri) -> Result<ProxyClient> {
+        let mut proxies = self.0.proxy_clients.lock();
         match proxies.get(&uri) {
             Some(proxy) => Ok(proxy.clone()),
             None => {
@@ -166,7 +152,7 @@ impl Session {
         let client: &(dyn crate::client::ForwardClient + Send + Sync) = match proxy {
             ProxyDesc::Direct => &self.0.direct_client,
             ProxyDesc::Proxy(ref proxy) => {
-                proxy_client = self.proxy_client(proxy.clone()).await?;
+                proxy_client = self.proxy_client(proxy.clone())?;
                 &proxy_client
             }
         };
@@ -199,7 +185,7 @@ impl Session {
             "<!DOCTYPE html><html><h1>{}/{}</h1><h2>DNS Cache</h2><code>{:?}</code></html>",
             env!("CARGO_PKG_NAME"),
             env!("CARGO_PKG_VERSION"),
-            self.0.eval.lock().await.cache()
+            self.0.eval.lock().cache()
         );
         let mut resp = Response::new(Body::from(body));
         resp.headers_mut().insert(

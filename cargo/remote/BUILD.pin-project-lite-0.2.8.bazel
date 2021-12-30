@@ -47,7 +47,7 @@ rust_library(
         "manual",
         "crate-name=pin-project-lite"
     ],
-    version = "0.2.7",
+    version = "0.2.8",
     # buildifier: leave-alone
     deps = [
     ],

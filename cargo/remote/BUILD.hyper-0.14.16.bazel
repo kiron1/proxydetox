@@ -113,7 +113,7 @@ rust_library(
         "@raze__httparse__1_5_1//:httparse",
         "@raze__httpdate__1_0_2//:httpdate",
         "@raze__itoa__0_4_8//:itoa",
-        "@raze__pin_project_lite__0_2_7//:pin_project_lite",
+        "@raze__pin_project_lite__0_2_8//:pin_project_lite",
         "@raze__socket2__0_4_2//:socket2",
         "@raze__tokio__1_15_0//:tokio",
         "@raze__tower_service__0_3_1//:tower_service",

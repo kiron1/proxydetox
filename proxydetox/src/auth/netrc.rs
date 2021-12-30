@@ -1,4 +1,3 @@
-use futures::future;
 use http::{header::PROXY_AUTHORIZATION, HeaderValue};
 use std::fs::File;
 use std::io::BufReader;
@@ -49,22 +48,16 @@ impl BasicAuthenticator {
 }
 
 impl super::Authenticator for BasicAuthenticator {
-    fn step<'async_trait>(
-        &'async_trait self,
+    fn step(
+        &self,
         _last_headers: Option<hyper::HeaderMap>,
-    ) -> std::pin::Pin<
-        Box<
-            dyn std::future::Future<Output = crate::auth::Result<hyper::HeaderMap>>
-                + Send
-                + 'async_trait,
-        >,
-    > {
+    ) -> crate::auth::Result<hyper::HeaderMap> {
         let mut headers = hyper::HeaderMap::new();
         headers.append(
             PROXY_AUTHORIZATION,
             HeaderValue::from_str(&self.token).expect("valid header value"),
         );
 
-        Box::pin(future::ok(headers))
+        Ok(headers)
     }
 }

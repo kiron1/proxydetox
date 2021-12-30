@@ -40,8 +40,7 @@ impl Inner {
         last_headers: Option<hyper::HeaderMap>,
     ) -> crate::auth::Result<hyper::HeaderMap> {
         let guard = self.auth.lock().await;
-        let headers = guard.step(last_headers).await;
-        headers
+        guard.step(last_headers)
     }
 }
 

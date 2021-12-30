@@ -64,7 +64,7 @@ rust_library(
     data = [],
     edition = "2018",
     proc_macro_deps = [
-        "@raze__pin_project_internal__1_0_9//:pin_project_internal",
+        "@raze__pin_project_internal__1_0_10//:pin_project_internal",
     ],
     rustc_flags = [
         "--cap-lints=allow",
@@ -74,7 +74,7 @@ rust_library(
         "manual",
         "crate-name=pin-project"
     ],
-    version = "1.0.9",
+    version = "1.0.10",
     # buildifier: leave-alone
     deps = [
     ],

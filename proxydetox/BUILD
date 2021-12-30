@@ -37,6 +37,7 @@ rust_library(
         "//proxydetox/cargo:http",
         "//proxydetox/cargo:hyper",
         "//proxydetox/cargo:netrc",
+        "//proxydetox/cargo:parking_lot",
         "//proxydetox/cargo:thiserror",
         "//proxydetox/cargo:tokio",
         "//proxydetox/cargo:tracing",

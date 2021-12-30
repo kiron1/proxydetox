@@ -78,7 +78,7 @@ rust_library(
         "@raze__mio__0_7_14//:mio",
         "@raze__num_cpus__1_13_1//:num_cpus",
         "@raze__once_cell__1_9_0//:once_cell",
-        "@raze__pin_project_lite__0_2_7//:pin_project_lite",
+        "@raze__pin_project_lite__0_2_8//:pin_project_lite",
     ] + selects.with_or({
         # cfg(unix)
         (

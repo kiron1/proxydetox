@@ -7,31 +7,20 @@ use std::path::PathBuf;
 #[cfg(feature = "negotiate")]
 use self::kerberos::NegotiateAuthenticator;
 use self::netrc::BasicAuthenticator;
-use futures::future;
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
 pub trait Authenticator: Send + Sync {
-    fn step<'async_trait>(
-        &'async_trait self,
-        last_headers: Option<hyper::HeaderMap>,
-    ) -> std::pin::Pin<
-        Box<dyn std::future::Future<Output = Result<hyper::HeaderMap>> + Send + 'async_trait>,
-    >;
+    fn step(&self, last_headers: Option<hyper::HeaderMap>) -> Result<hyper::HeaderMap>;
 }
 
 struct NoneAuthenticator;
 
 impl Authenticator for NoneAuthenticator {
-    fn step<'async_trait>(
-        &'async_trait self,
-        _last_headers: Option<hyper::HeaderMap>,
-    ) -> std::pin::Pin<
-        Box<dyn std::future::Future<Output = Result<hyper::HeaderMap>> + Send + 'async_trait>,
-    > {
-        Box::pin(future::ok(Default::default()))
+    fn step(&self, _last_headers: Option<hyper::HeaderMap>) -> Result<hyper::HeaderMap> {
+        Ok(Default::default())
     }
 }
 
