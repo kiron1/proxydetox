@@ -45,7 +45,7 @@ impl Proxies {
             .split(';')
             .map(|s| s.trim().trim_matches(';').trim())
             .filter(|s| !s.is_empty())
-            .map(|s| ProxyDesc::parse(s))
+            .map(ProxyDesc::parse)
             .collect();
         match result {
             Ok(p) => {
