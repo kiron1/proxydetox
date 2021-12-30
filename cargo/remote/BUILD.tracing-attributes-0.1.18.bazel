@@ -10,9 +10,10 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 
 # buildifier: disable=load
 load(
-    "@rules_rust//rust:rust.bzl",
+    "@rules_rust//rust:defs.bzl",
     "rust_binary",
     "rust_library",
+    "rust_proc_macro",
     "rust_test",
 )
 
@@ -30,13 +31,12 @@ licenses([
 
 # Generated Targets
 
-rust_library(
+rust_proc_macro(
     name = "tracing_attributes",
     srcs = glob(["**/*.rs"]),
     crate_features = [
     ],
     crate_root = "src/lib.rs",
-    crate_type = "proc-macro",
     data = [],
     edition = "2018",
     rustc_flags = [
@@ -45,13 +45,14 @@ rust_library(
     tags = [
         "cargo-raze",
         "manual",
+        "crate-name=tracing-attributes"
     ],
     version = "0.1.18",
     # buildifier: leave-alone
     deps = [
-        "@raze__proc_macro2__1_0_29//:proc_macro2",
-        "@raze__quote__1_0_10//:quote",
-        "@raze__syn__1_0_80//:syn",
+        "@raze__proc_macro2__1_0_36//:proc_macro2",
+        "@raze__quote__1_0_14//:quote",
+        "@raze__syn__1_0_84//:syn",
     ],
 )
 

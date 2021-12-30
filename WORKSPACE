@@ -4,8 +4,11 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "build_bazel_rules_apple",
-    sha256 = "0052d452af7742c8f3a4e0929763388a66403de363775db7e90adecb2ba4944b",
-    url = "https://github.com/bazelbuild/rules_apple/releases/download/0.31.3/rules_apple.0.31.3.tar.gz",
+    sha256 = "77e8bf6fda706f420a55874ae6ee4df0c9d95da6c7838228b26910fc82eea5a2",
+    urls = [
+        # release from 2021-10-30
+        "https://github.com/bazelbuild/rules_apple/releases/download/0.32.0/rules_apple.0.32.0.tar.gz",
+    ],
 )
 
 load(
@@ -38,19 +41,19 @@ apple_support_dependencies()
 
 http_archive(
     name = "rules_rust",
-    sha256 = "5ef76c7ca318f0795c2a524a01e0a7a399fd845d7cdebf7bc7ea7321859069b6",
-    strip_prefix = "rules_rust-af2f908a2d342d79b74ea97fcbfbe7b0d03e2bdf",
+    sha256 = "285a4d967abf3739f1dcb34e2f5a7d056dde1de3e3bb3f0145522e9b9433cba9",
+    strip_prefix = "rules_rust-6630fd5b6b7fe143ea09f80f64dc20e3514495b4",
     urls = [
-        # `main` branch as of 2021-08-17
-        "https://github.com/bazelbuild/rules_rust/archive/af2f908a2d342d79b74ea97fcbfbe7b0d03e2bdf.tar.gz",
+        # `main` branch as of 2021-12-21
+        "https://github.com/bazelbuild/rules_rust/archive/6630fd5b6b7fe143ea09f80f64dc20e3514495b4.tar.gz",
     ],
 )
 
 load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 
 rust_repositories(
-    edition = "2018",
-    version = "1.55.0",
+    edition = "2021",
+    version = "1.57.0",
 )
 
 load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
@@ -65,6 +68,7 @@ http_archive(
     name = "rules_pkg",
     sha256 = "a89e203d3cf264e564fcb96b6e06dd70bc0557356eb48400ce4b5d97c2c3720d",
     urls = [
+        # release from 2021-08-18
         "https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/0.5.1/rules_pkg-0.5.1.tar.gz",
         "https://github.com/bazelbuild/rules_pkg/releases/download/0.5.1/rules_pkg-0.5.1.tar.gz",
     ],

@@ -13,6 +13,15 @@ licenses([
 
 # Aliased targets
 alias(
+    name = "argh",
+    actual = "@raze__argh__0_1_7//:argh",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
     name = "base64",
     actual = "@raze__base64__0_13_0//:base64",
     tags = [
@@ -22,8 +31,26 @@ alias(
 )
 
 alias(
+    name = "bindgen",
+    actual = "@raze__bindgen__0_59_2//:bindgen",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    name = "cc",
+    actual = "@raze__cc__1_0_72//:cc",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
     name = "clap",
-    actual = "@raze__clap__2_33_3//:clap",
+    actual = "@raze__clap__2_34_0//:clap",
     tags = [
         "cargo-raze",
         "manual",
@@ -33,6 +60,15 @@ alias(
 alias(
     name = "dirs",
     actual = "@raze__dirs__4_0_0//:dirs",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    name = "dns_parser",
+    actual = "@raze__dns_parser__0_8_0//:dns_parser",
     tags = [
         "cargo-raze",
         "manual",
@@ -50,7 +86,7 @@ alias(
 
 alias(
     name = "futures",
-    actual = "@raze__futures__0_3_17//:futures",
+    actual = "@raze__futures__0_3_19//:futures",
     tags = [
         "cargo-raze",
         "manual",
@@ -59,7 +95,7 @@ alias(
 
 alias(
     name = "futures_util",
-    actual = "@raze__futures_util__0_3_17//:futures_util",
+    actual = "@raze__futures_util__0_3_19//:futures_util",
     tags = [
         "cargo-raze",
         "manual",
@@ -68,7 +104,7 @@ alias(
 
 alias(
     name = "http",
-    actual = "@raze__http__0_2_5//:http",
+    actual = "@raze__http__0_2_6//:http",
     tags = [
         "cargo-raze",
         "manual",
@@ -77,7 +113,16 @@ alias(
 
 alias(
     name = "hyper",
-    actual = "@raze__hyper__0_14_13//:hyper",
+    actual = "@raze__hyper__0_14_16//:hyper",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    name = "hyper_tls",
+    actual = "@raze__hyper_tls__0_5_0//:hyper_tls",
     tags = [
         "cargo-raze",
         "manual",
@@ -86,7 +131,16 @@ alias(
 
 alias(
     name = "inotify",
-    actual = "@raze__inotify__0_9_5//:inotify",
+    actual = "@raze__inotify__0_10_0//:inotify",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    name = "lazy_static",
+    actual = "@raze__lazy_static__1_4_0//:lazy_static",
     tags = [
         "cargo-raze",
         "manual",
@@ -95,7 +149,16 @@ alias(
 
 alias(
     name = "libc",
-    actual = "@raze__libc__0_2_103//:libc",
+    actual = "@raze__libc__0_2_112//:libc",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    name = "log",
+    actual = "@raze__log__0_4_14//:log",
     tags = [
         "cargo-raze",
         "manual",
@@ -105,6 +168,15 @@ alias(
 alias(
     name = "netrc",
     actual = "@raze__netrc__0_4_1//:netrc",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    name = "regex",
+    actual = "@raze__regex__1_5_4//:regex",
     tags = [
         "cargo-raze",
         "manual",
@@ -122,7 +194,7 @@ alias(
 
 alias(
     name = "tokio",
-    actual = "@raze__tokio__1_12_0//:tokio",
+    actual = "@raze__tokio__1_15_0//:tokio",
     tags = [
         "cargo-raze",
         "manual",
@@ -158,7 +230,16 @@ alias(
 
 alias(
     name = "tracing_subscriber",
-    actual = "@raze__tracing_subscriber__0_2_25//:tracing_subscriber",
+    actual = "@raze__tracing_subscriber__0_3_5//:tracing_subscriber",
+    tags = [
+        "cargo-raze",
+        "manual",
+    ],
+)
+
+alias(
+    name = "windows",
+    actual = "@raze__windows__0_29_0//:windows",
     tags = [
         "cargo-raze",
         "manual",
