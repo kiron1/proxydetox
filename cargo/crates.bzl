@@ -183,6 +183,16 @@ def raze_fetch_remote_crates():
 
     maybe(
         http_archive,
+        name = "raze__clap__3_0_0",
+        url = "https://crates.io/api/v1/crates/clap/3.0.0/download",
+        type = "tar.gz",
+        sha256 = "d17bf219fcd37199b9a29e00ba65dfb8cd5b2688b7297ec14ff829c40ac50ca9",
+        strip_prefix = "clap-3.0.0",
+        build_file = Label("//cargo/remote:BUILD.clap-3.0.0.bazel"),
+    )
+
+    maybe(
+        http_archive,
         name = "raze__core_foundation__0_9_2",
         url = "https://crates.io/api/v1/crates/core-foundation/0.9.2/download",
         type = "tar.gz",
@@ -752,6 +762,16 @@ def raze_fetch_remote_crates():
 
     maybe(
         http_archive,
+        name = "raze__os_str_bytes__6_0_0",
+        url = "https://crates.io/api/v1/crates/os_str_bytes/6.0.0/download",
+        type = "tar.gz",
+        sha256 = "8e22443d1643a904602595ba1cd8f7d896afe56d26712531c5ff73a15b2fbf64",
+        strip_prefix = "os_str_bytes-6.0.0",
+        build_file = Label("//cargo/remote:BUILD.os_str_bytes-6.0.0.bazel"),
+    )
+
+    maybe(
+        http_archive,
         name = "raze__parking_lot__0_11_2",
         url = "https://crates.io/api/v1/crates/parking_lot/0.11.2/download",
         type = "tar.gz",
@@ -1072,6 +1092,16 @@ def raze_fetch_remote_crates():
 
     maybe(
         http_archive,
+        name = "raze__strsim__0_10_0",
+        url = "https://crates.io/api/v1/crates/strsim/0.10.0/download",
+        type = "tar.gz",
+        sha256 = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623",
+        strip_prefix = "strsim-0.10.0",
+        build_file = Label("//cargo/remote:BUILD.strsim-0.10.0.bazel"),
+    )
+
+    maybe(
+        http_archive,
         name = "raze__strsim__0_8_0",
         url = "https://crates.io/api/v1/crates/strsim/0.8.0/download",
         type = "tar.gz",
@@ -1118,6 +1148,16 @@ def raze_fetch_remote_crates():
         sha256 = "d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060",
         strip_prefix = "textwrap-0.11.0",
         build_file = Label("//cargo/remote:BUILD.textwrap-0.11.0.bazel"),
+    )
+
+    maybe(
+        http_archive,
+        name = "raze__textwrap__0_14_2",
+        url = "https://crates.io/api/v1/crates/textwrap/0.14.2/download",
+        type = "tar.gz",
+        sha256 = "0066c8d12af8b5acd21e00547c3797fde4e8677254a7ee429176ccebbe93dd80",
+        strip_prefix = "textwrap-0.14.2",
+        build_file = Label("//cargo/remote:BUILD.textwrap-0.14.2.bazel"),
     )
 
     maybe(
