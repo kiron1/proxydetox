@@ -16,6 +16,7 @@ pub struct Options {
     pub netrc_file: PathBuf,
     pub always_use_connect: bool,
     pub port: u16,
+    pub transparent: Option<u16>,
     pub pool_max_idle_per_host: usize,
     pub pool_idle_timeout: Option<Duration>,
 }
@@ -101,6 +102,14 @@ impl Options {
                     .takes_value(true),
             );
 
+        #[cfg(target_os = "linux")]
+        let app = app.arg(
+            Arg::with_name("transparent")
+                .long("transparent")
+                .help("Listening port for transparent mode")
+                .validator(is_num::<u16>),
+        );
+
         let mut args = Vec::new();
         args.extend(std::env::args_os().take(1));
         args.extend(readrc());
@@ -113,6 +122,12 @@ impl Options {
 
 impl From<ArgMatches<'_>> for Options {
     fn from(m: ArgMatches) -> Self {
+        #[cfg(target_os = "linux")]
+        let transparent = m.value_of("transparent").map(|s| s.parse::<u16>().unwrap());
+
+        #[cfg(not(target_os = "linux"))]
+        let transparent = None;
+
         Self {
             #[cfg(feature = "negotiate")]
             negotiate: m.is_present("negotiate"),
@@ -125,11 +140,12 @@ impl From<ArgMatches<'_>> for Options {
                     netrc_path.push(".netrc");
                     netrc_path
                 }),
-            always_use_connect: m.is_present("always_use_connect"),
+            always_use_connect: m.is_present("always_use_connect") || transparent.is_some(),
             port: m
                 .value_of("port")
                 .map(|s| s.parse::<u16>().unwrap())
                 .unwrap(),
+            transparent,
             pool_max_idle_per_host: m
                 .value_of("pool_max_idle_per_host")
                 .map(|s| s.parse::<usize>().unwrap())

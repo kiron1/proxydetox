@@ -1,26 +1,31 @@
-use http::{Request, Response, StatusCode};
+use http::{uri::Authority, Request, Response, StatusCode};
 use hyper::Body;
 use proxy_client::HttpProxyInfo;
 use std::{
     future::Future,
+    net::SocketAddr,
     pin::Pin,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc,
     },
 };
-use tokio::sync::Mutex;
+use tokio::{net::TcpStream, sync::Mutex};
 
 use crate::auth::Authenticator;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+    #[error("I/O error: {0}")]
+    Io(#[from] std::io::Error),
     #[error("hyper error: {0}")]
     Hyper(#[from] hyper::Error),
     #[error("authentication mechanism error: {0}")]
     Auth(#[from] crate::auth::Error),
     #[error("invalid URI")]
     InvalidUri,
+    #[error("bad request")]
+    BadRequest,
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -79,10 +84,12 @@ impl Client {
 }
 
 type ResponseFuture = Pin<Box<dyn Future<Output = Result<Response<Body>>> + Send>>;
+type TransparentFuture = Pin<Box<dyn Future<Output = Result<TcpStream>> + Send>>;
 
 pub trait ForwardClient {
     fn connect(&self, req: hyper::Request<Body>) -> ResponseFuture;
     fn http(&self, req: hyper::Request<Body>) -> ResponseFuture;
+    fn transparent(&self, dst: SocketAddr) -> TransparentFuture;
 }
 
 impl ForwardClient for hyper::Client<hyper::client::HttpConnector, Body> {
@@ -116,6 +123,11 @@ impl ForwardClient for hyper::Client<hyper::client::HttpConnector, Body> {
         let this = self.clone();
         let resp = async move { this.request(req).await.map_err(Error::Hyper) };
         Box::pin(resp)
+    }
+
+    fn transparent(&self, dst: SocketAddr) -> TransparentFuture {
+        let stream = async move { TcpStream::connect(dst).await.map_err(|e| e.into()) };
+        Box::pin(stream)
     }
 }
 
@@ -177,6 +189,55 @@ impl ForwardClient for Client {
             tracing::debug!("forward_http req: {:?}", req);
             let res = this.send(req).await?;
             Ok(res)
+        };
+        Box::pin(resp)
+    }
+
+    fn transparent(&self, dst: SocketAddr) -> TransparentFuture {
+        // let stream = async move { TcpStream::connect(dst).await };
+        // Box::pin(stream)
+
+        let this = self.clone();
+
+        let resp = async move {
+            // Make a client CONNECT request to the parent proxy to upgrade the connection
+            let host = format!("{}:{}", dst.ip(), dst.port())
+                .parse::<Authority>()
+                .unwrap();
+            let uri = http::Uri::builder().authority(host).build().unwrap();
+
+            let parent_req = Request::connect(authority_of(&uri)?)
+                .version(http::version::Version::HTTP_11)
+                .body(Body::empty())
+                .unwrap();
+
+            tracing::debug!("transparent_connect to {} req: {:?}", dst, parent_req);
+            let parent_res = this.send(parent_req).await?;
+
+            if parent_res.status() == StatusCode::OK {
+                let http_proxy_info = parent_res.extensions().get::<HttpProxyInfo>().cloned();
+                tracing::debug!("transparent_connect {:?}", &http_proxy_info);
+
+                // Upgrade connection to parent proxy
+                match hyper::upgrade::on(parent_res).await {
+                    Ok(parent_upgraded) => {
+                        // On a successful upgrade to the parent proxy, upgrade the
+                        // request of the client (the original request maker)
+                        let parts = parent_upgraded
+                            .downcast::<proxy_client::http_proxy_stream::HttpProxyStream>()
+                            .expect("http proxy stream");
+
+                        if !parts.read_buf.is_empty() {
+                            todo!("Write received bytes from server to client")
+                        }
+
+                        Ok(parts.io.into_inner())
+                    }
+                    Err(cause) => Err(Error::from(cause)),
+                }
+            } else {
+                Err(Error::BadRequest)
+            }
         };
         Box::pin(resp)
     }

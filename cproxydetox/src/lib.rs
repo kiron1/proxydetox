@@ -1,5 +1,6 @@
 use proxydetox::auth::AuthenticatorFactory;
 use proxydetox::detox::Config;
+use proxydetox::detox::Session;
 use proxydetox::http_file;
 use proxydetox::Server;
 use std::ffi::CStr;
@@ -33,6 +34,11 @@ fn load_pac_file(path: &str) -> String {
     }
 }
 
+pub struct ServerSession {
+    server: Server,
+    session: Session,
+}
+
 /// # Safety
 /// Caller must ensure `server` is valid.
 #[no_mangle]
@@ -40,7 +46,7 @@ pub unsafe extern "C" fn proxydetox_new(
     pac_file: *const libc::c_char,
     #[allow(unused_variables)] negotiate: bool,
     port: u16,
-) -> *mut Server {
+) -> *mut ServerSession {
     let pac_file = CStr::from_ptr(pac_file);
     let pac_file = pac_file.to_str().unwrap_or_default().to_owned();
 
@@ -58,18 +64,20 @@ pub unsafe extern "C" fn proxydetox_new(
 
     let config = Config::default();
 
-    let server = Box::new(Server::new(pac_script, auth, port, config));
+    let server = Server::new(port);
+    let session = Session::new(&pac_script, auth, config);
 
-    Box::<Server>::into_raw(server)
+    let server_session = Box::new(ServerSession { server, session });
+    Box::<ServerSession>::into_raw(server_session)
 }
 
 /// # Safety
 /// Caller must ensure `server` is valid.
 #[no_mangle]
-pub unsafe extern "C" fn proxydetox_run(server: *mut Server) {
+pub unsafe extern "C" fn proxydetox_run(server_session: *mut ServerSession) {
     use tokio::runtime::Builder;
 
-    let server = &mut *server;
+    let server_session = &mut *server_session;
 
     let runtime = Builder::new_multi_thread()
         .worker_threads(4)
@@ -79,20 +87,23 @@ pub unsafe extern "C" fn proxydetox_run(server: *mut Server) {
         .unwrap();
 
     runtime.block_on(async move {
-        let _ = server.run().await;
+        let _ = server_session
+            .server
+            .run(server_session.session.clone())
+            .await;
     });
 }
 
 /// # Safety
 /// Caller must ensure `server` is valid.
 #[no_mangle]
-pub unsafe extern "C" fn proxydetox_shutdown(server: *mut Server) {
+pub unsafe extern "C" fn proxydetox_shutdown(server_session: *mut ServerSession) {
     use tokio::runtime::Runtime;
 
-    if server.is_null() {
-        let server = &mut *server;
+    if !server_session.is_null() {
+        let server_session = &mut *server_session;
 
-        let tx = server.control_channel();
+        let tx = server_session.server.control_channel();
         let rt = Runtime::new().unwrap();
         rt.block_on(async {
             let _ = tx.send(proxydetox::Command::Shutdown).await;
@@ -103,8 +114,8 @@ pub unsafe extern "C" fn proxydetox_shutdown(server: *mut Server) {
 /// # Safety
 /// Caller must ensure `server` is valid.
 #[no_mangle]
-pub unsafe extern "C" fn proxydetox_drop(server: *mut Server) {
-    if server.is_null() {
-        Box::from_raw(server);
+pub unsafe extern "C" fn proxydetox_drop(server_session: *mut ServerSession) {
+    if !server_session.is_null() {
+        Box::from_raw(server_session);
     }
 }
