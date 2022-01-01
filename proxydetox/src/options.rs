@@ -20,14 +20,14 @@ pub struct Options {
     pub pool_idle_timeout: Option<Duration>,
 }
 
-fn is_num<T: FromStr + PartialOrd>(v: String) -> Result<(), String> {
+fn is_num<T: FromStr + PartialOrd>(v: &str) -> Result<(), String> {
     match v.parse::<T>() {
         Ok(_v) => Ok(()),
         Err(ref _cause) => Err("invalid number".to_string()),
     }
 }
 
-fn is_file(v: String) -> Result<(), String> {
+fn is_file(v: &str) -> Result<(), String> {
     if Path::new(&v).is_file() {
         Ok(())
     } else {
@@ -46,13 +46,13 @@ impl Options {
 
         #[cfg(feature = "negotiate")]
         let app = app.arg(
-            Arg::with_name("negotiate")
-                .short("n")
+            Arg::new("negotiate")
+                .short('n')
                 .long("negotiate")
                 .help("Enables Negotiate (SPNEGO) authentication"),
         );
 
-        let netrc_arg = Arg::with_name("netrc_file")
+        let netrc_arg = Arg::new("netrc_file")
             .long("netrc-file")
             .help("Path to a .netrc file to be used for basic authentication")
             .validator(is_file)
@@ -62,17 +62,17 @@ impl Options {
 
         let app = app
             .arg(
-                Arg::with_name("port")
-                    .short("P")
+                Arg::new("port")
+                    .short('P')
                     .long("port")
                     .help("Listening port")
                     .validator(is_num::<u16>)
                     .default_value("3128"),
             )
             .arg(
-                Arg::with_name("pac_file")
+                Arg::new("pac_file")
                     .long("pac-file")
-                    .short("p")
+                    .short('p')
                     .help(
                         "PAC file to be used to decide which upstream proxy to forward the request",
                     )
@@ -81,20 +81,20 @@ impl Options {
             )
             .arg(netrc_arg)
             .arg(
-                Arg::with_name("always_use_connect")
-                    .short("c")
+                Arg::new("always_use_connect")
+                    .short('c')
                     .long("always_use_connect")
                     .help("Always use CONNECT method even for http:// resources"),
             )
             .arg(
-                Arg::with_name("pool_max_idle_per_host")
+                Arg::new("pool_max_idle_per_host")
                     .long("pool-max-idle-per-host")
                     .help("Maximum idle connection per host allowed in the pool")
                     .validator(is_num::<usize>)
                     .default_value(&default_pool_max_idle_per_host),
             )
             .arg(
-                Arg::with_name("pool_idle_timeout")
+                Arg::new("pool_idle_timeout")
                     .long("pool-idle-timeout")
                     .help("Optional timeout for idle sockets being kept-alive")
                     .validator(is_num::<u64>)
@@ -111,7 +111,7 @@ impl Options {
     }
 }
 
-impl From<ArgMatches<'_>> for Options {
+impl From<ArgMatches> for Options {
     fn from(m: ArgMatches) -> Self {
         Self {
             #[cfg(feature = "negotiate")]

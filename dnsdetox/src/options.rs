@@ -11,7 +11,7 @@ pub struct Options {
     pub secondary: Uri,
 }
 
-fn is_num<T: FromStr + PartialOrd>(v: String) -> Result<(), String> {
+fn is_num<T: FromStr + PartialOrd>(v: &str) -> Result<(), String> {
     match v.parse::<T>() {
         Ok(_v) => Ok(()),
         Err(ref _cause) => Err("invalid number".to_string()),
@@ -27,7 +27,7 @@ impl Options {
 
         let app = app
             .arg(
-                Arg::with_name("port")
+                Arg::new("port")
                     .long("port")
                     .value_name("PORT")
                     .help("Listening port")
@@ -35,7 +35,7 @@ impl Options {
                     .default_value("5353"),
             )
             .arg(
-                Arg::with_name("proxy")
+                Arg::new("proxy")
                     .long("proxy")
                     .value_name("PROXY")
                     .env("http_proxy")
@@ -43,7 +43,7 @@ impl Options {
                     .default_value("http://127.0.0.1:3128"),
             )
             .arg(
-                Arg::with_name("primary")
+                Arg::new("primary")
                     .long("primary")
                     .value_name("IP:PORT")
                     .help("Primary DNS server using UDP protocol")
@@ -51,7 +51,7 @@ impl Options {
                     .takes_value(true),
             )
             .arg(
-                Arg::with_name("secondary")
+                Arg::new("secondary")
                     .long("secondary")
                     .value_name("URI")
                     .help("Secondary DNS server using DNS over HTTPS (DoH) protocol")
@@ -70,7 +70,7 @@ impl Options {
     }
 }
 
-impl From<ArgMatches<'_>> for Options {
+impl From<ArgMatches> for Options {
     fn from(m: ArgMatches) -> Self {
         Self {
             port: m

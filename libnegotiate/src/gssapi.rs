@@ -54,7 +54,7 @@ impl Context {
         // to be created. therefor we always create a fresh one (which seems to work).
 
         // Get client token, and create new gss client context.
-        let stepper = Self::make_client(self.target_name())?;
+        let mut stepper = Self::make_client(self.target_name())?;
         let token = stepper.step(server_token);
 
         match token {
