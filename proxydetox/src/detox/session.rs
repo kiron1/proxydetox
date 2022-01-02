@@ -56,20 +56,11 @@ type ProxyClient = crate::client::Client;
 pub struct Session(Arc<Inner>);
 
 struct Inner {
-    eval: Mutex<paclib::Evaluator>,
+    eval: paclib::Evaluator,
     direct_client: hyper::Client<hyper::client::HttpConnector>,
     proxy_clients: Mutex<HashMap<Uri, ProxyClient>>,
     auth: AuthenticatorFactory,
     config: super::Config,
-}
-
-impl Inner {
-    fn find_proxy(&self, uri: &Uri) -> paclib::Proxies {
-        self.eval.lock().find_proxy(uri).unwrap_or_else(|cause| {
-            tracing::error!("failed to find_proxy: {:?}", cause);
-            paclib::Proxies::direct()
-        })
-    }
 }
 
 impl std::fmt::Debug for Session {
@@ -80,7 +71,7 @@ impl std::fmt::Debug for Session {
 
 impl Session {
     pub fn new(pac_script: &str, auth: AuthenticatorFactory, config: super::Config) -> Self {
-        let eval = Mutex::new(Evaluator::new(pac_script).unwrap());
+        let eval = Evaluator::new(pac_script).unwrap();
         let direct_client = hyper::Client::builder()
             .pool_max_idle_per_host(config.pool_max_idle_per_host)
             .pool_idle_timeout(config.pool_idle_timeout)
@@ -96,11 +87,16 @@ impl Session {
     }
 
     // For now just use the first reportet proxy
-    async fn find_proxy(&mut self, uri: &http::Uri) -> paclib::proxy::ProxyDesc {
-        let inner = self.0.clone();
-        let uri = uri.clone();
-        let proxy = tokio::task::block_in_place(move || inner.find_proxy(&uri));
-        proxy.first()
+    async fn find_proxy(&mut self, uri: Uri) -> paclib::proxy::ProxyDesc {
+        self.0
+            .eval
+            .find_proxy(uri)
+            .await
+            .unwrap_or_else(|cause| {
+                tracing::error!("failed to find_proxy: {:?}", &cause);
+                paclib::Proxies::direct()
+            })
+            .first()
     }
 
     fn proxy_client(&mut self, uri: http::Uri) -> Result<ProxyClient> {
@@ -143,7 +139,7 @@ impl Session {
     }
 
     pub async fn dispatch(&mut self, mut req: hyper::Request<Body>) -> Result<Response<Body>> {
-        let proxy = self.find_proxy(req.uri()).await;
+        let proxy = self.find_proxy(req.uri().clone()).await;
         let is_connect = req.method() == hyper::Method::CONNECT || self.0.config.always_use_connect;
 
         tracing::info!(%proxy);
@@ -204,10 +200,9 @@ impl Session {
             resp
         } else {
             let body = format!(
-                "<!DOCTYPE html><html><h1>{}/{}</h1><h2>DNS Cache</h2><code>{:?}</code></html>",
+                "<!DOCTYPE html><html><h1>{}/{}</h1></html>",
                 env!("CARGO_PKG_NAME"),
                 env!("CARGO_PKG_VERSION"),
-                self.0.eval.lock().cache()
             );
             let mut resp = Response::new(Body::from(body));
             resp.headers_mut().insert(

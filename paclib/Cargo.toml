@@ -10,6 +10,7 @@ http = "0.2"
 log = "0.4"
 regex = "1.5"
 thiserror = "1.0"
+tokio = { version = "1", features = ["macros", "sync"] }
 lazy_static = "1.4"
-duktape = { path = "../duktape" }
-duktape-sys = { path = "../duktape-sys" }
+parking_lot = "0.11"
+quick-js = "0.4"

@@ -13,12 +13,13 @@ rust_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//duktape",
-        "//duktape-sys",
         "//paclib/cargo:http",
         "//paclib/cargo:lazy_static",
         "//paclib/cargo:log",
+        "//paclib/cargo:parking_lot",
+        "//paclib/cargo:quick_js",
         "//paclib/cargo:regex",
         "//paclib/cargo:thiserror",
+        "//paclib/cargo:tokio",
     ],
 )
