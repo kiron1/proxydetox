@@ -46,7 +46,7 @@ rust_library(
         "//paclib",
         "//proxy_client",
     ] + select({
-        "//:enable_negotiate": ["//libnegotiate"],
+        "//:enable_negotiate": ["//proxydetox/cargo:cross_krb5"],
         "//conditions:default": [],
     }),
 )

@@ -2,11 +2,9 @@ use http::{
     header::{PROXY_AUTHENTICATE, PROXY_AUTHORIZATION},
     HeaderValue,
 };
-use parking_lot::Mutex;
 use std::result::Result;
-use std::sync::Arc;
 
-use libnegotiate::Context;
+use cross_krb5::ClientCtx;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -18,32 +16,28 @@ pub enum Error {
 
 #[derive(Debug, Clone)]
 pub struct NegotiateAuthenticator {
-    cx: Arc<Mutex<Context>>,
+    target_principal: String,
 }
 
 impl NegotiateAuthenticator {
     pub fn new(proxy_fqdn: &str) -> Result<Self, Error> {
-        let cx = Context::new(proxy_fqdn).map_err(|e| Error::ContextCreationFailed(Box::new(e)))?;
-        let cx = Arc::new(Mutex::new(cx));
-
-        Ok(Self { cx })
+        let target_principal = format!("HTTP/{}", proxy_fqdn);
+        Ok(Self { target_principal })
     }
 }
 
 impl super::Authenticator for NegotiateAuthenticator {
     fn step(
         &self,
-        last_headers: Option<hyper::HeaderMap>,
+        _last_headers: Option<hyper::HeaderMap>,
     ) -> crate::auth::Result<hyper::HeaderMap> {
-        #[allow(unused_mut)]
-        let mut cx = self.cx.lock();
         let mut headers = hyper::HeaderMap::new();
-        let challenge = last_headers.map(|h| server_token(&h)).flatten();
-        let challenge = challenge.as_deref();
-        let token = cx.step(challenge).map_err(Box::new);
+        // let challenge = last_headers.map(|h| server_token(&h)).flatten();
+        // let challenge = challenge.as_deref();
+        let client_ctx = ClientCtx::initiate(None, &self.target_principal);
 
-        match token {
-            Ok(Some(token)) => {
+        match client_ctx {
+            Ok((_pending, token)) => {
                 let b64token = base64::encode(&*token);
                 tracing::debug!("negotiate token: {}", &b64token);
                 let auth_str = format!("Negotiate {}", b64token);
@@ -52,15 +46,14 @@ impl super::Authenticator for NegotiateAuthenticator {
                     HeaderValue::from_str(&auth_str).expect("valid header value"),
                 );
             }
-            Ok(None) => {}
-            Err(err) => {
+            Err(cause) => {
                 tracing::error!(
                     "negotiate error for {}: {} ({:?})",
-                    &cx.target_name(),
-                    &err,
-                    &err
+                    &self.target_principal,
+                    &cause,
+                    &cause
                 );
-                return Err(err.into());
+                return Err(cause.into());
             }
         }
         Ok(headers)
@@ -68,6 +61,7 @@ impl super::Authenticator for NegotiateAuthenticator {
 }
 
 // Extract the server token from "Proxy-Authenticate: Negotiate <base64>" header value
+#[allow(unused)]
 fn server_token(last_headers: &hyper::HeaderMap) -> Option<Vec<u8>> {
     let server_tok = last_headers
         .get_all(PROXY_AUTHENTICATE)
