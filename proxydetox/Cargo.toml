@@ -6,7 +6,7 @@ homepage = "https://github.com/kiron1/proxydetox"
 
 [features]
 default = []
-negotiate = ["libnegotiate/gssapi"]
+negotiate = ["cross-krb5"]
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
@@ -16,6 +16,7 @@ inotify = "0.10"
 
 [dependencies]
 clap = "3.0"
+cross-krb5 = { version = "0.1", default-features = false, optional = true }
 base64 = "0.13"
 dirs = "4.0"
 env_logger = "0.9"
@@ -23,7 +24,6 @@ futures = "0.3"
 futures-util = { version = "0.3", default-features = false }
 http = "0.2"
 hyper = { version = "0.14", features = ["http1", "http2", "client", "server", "tcp"] }
-libnegotiate = { path = "../libnegotiate", optional = true }
 netrc = { git = "https://github.com/kiron1/netrc-rs", branch = "modernize" }
 paclib = { path = "../paclib" }
 parking_lot = "0.11"
