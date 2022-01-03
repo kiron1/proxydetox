@@ -49,15 +49,14 @@ jobs:
       - name: Install Linux dependency
         run: sudo apt-get install llvm-10 clang-10 musl musl-tools musl-dev
         if: ${{ matrix.build == 'linux' }}
-      #  see https://github.com/rust-lang/rust-bindgen/issues/1797
-      - name: Install Windows dependency (LLVM)
-        uses: KyleMayes/install-llvm-action@v1.4.1
-        if: ${{ matrix.build == 'windows' }}
-        with:
-          version: "11.0"
-          directory: ${{ runner.temp }}/llvm
-      - name: Set LIBCLANG_PATH
-        run: echo "LIBCLANG_PATH=$((gcm clang).source -replace "clang.exe")" >> $env:GITHUB_ENV
+      - name: Set CC and LIBCLANG_PATH
+        run: |
+          rustup target add x86_64-pc-windows-gnu
+          echo "C:\msys64\mingw64\bin" >> $env:GITHUB_PATH
+          echo "CC=C:\msys64\mingw64\bin\clang.exe" >> $env:GITHUB_ENV
+          echo "RUSTUP_TOOLCHAIN=stable-x86_64-pc-windows-gnu" >> $env:GITHUB_ENV
+          echo "RUSTFLAGS=-Dwarnings -C linker=clang" >> $env:GITHUB_ENV
+          echo "LIBCLANG_PATH=C:\msys64\mingw64\bin" >> $env:GITHUB_ENV
         if: ${{ matrix.build == 'windows' }}
       - name: Install Rust
         uses: actions-rs/toolchain@v1
