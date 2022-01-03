@@ -105,6 +105,10 @@ jobs:
             ${{ steps.bazel_info.outputs.output_base }}
             ${{ steps.bazel_info.outputs.repository_cache }}
           key: bazel-cache-${{ runner.os }}
+      - name: Run cargo raze
+        run: |
+          cargo install cargo-raze
+          cargo raze
       - name: Run bazel build
         run: bazel build -c opt //...
 
