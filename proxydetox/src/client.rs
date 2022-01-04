@@ -1,5 +1,6 @@
 use http::{Request, Response, StatusCode};
 use hyper::Body;
+use parking_lot::Mutex;
 use proxy_client::HttpProxyInfo;
 use std::{
     future::Future,
@@ -9,7 +10,6 @@ use std::{
         Arc,
     },
 };
-use tokio::sync::Mutex;
 
 use crate::auth::Authenticator;
 
@@ -39,8 +39,8 @@ impl Inner {
         &self,
         last_headers: Option<hyper::HeaderMap>,
     ) -> crate::auth::Result<hyper::HeaderMap> {
-        let guard = self.auth.lock().await;
-        guard.step(last_headers)
+        let auth = self.auth.lock();
+        auth.step(last_headers)
     }
 }
 
