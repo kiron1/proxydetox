@@ -128,7 +128,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
     }
 
-    server.run().await
+    server.run(&config.interfaces).await
 }
 
 #[cfg(target_os = "linux")]

@@ -1,6 +1,7 @@
 use std::{
     ffi::OsString,
     fs::read_to_string,
+    net::IpAddr,
     path::{Path, PathBuf},
     str::FromStr,
     time::Duration,
@@ -10,12 +11,13 @@ use clap::{Arg, ArgMatches, Command};
 
 #[derive(Debug)]
 pub struct Options {
+    pub port: u16,
+    pub interfaces: Vec<IpAddr>,
+    pub pac_file: Option<String>,
     #[cfg(feature = "negotiate")]
     pub negotiate: bool,
-    pub pac_file: Option<String>,
     pub netrc_file: PathBuf,
     pub always_use_connect: bool,
-    pub port: u16,
     pub pool_max_idle_per_host: usize,
     pub pool_idle_timeout: Option<Duration>,
 }
@@ -32,6 +34,13 @@ fn is_file(v: &str) -> Result<(), String> {
         Ok(())
     } else {
         Err(format!("file '{}' does not exists", &v))
+    }
+}
+
+fn is_ip(v: &str) -> Result<(), String> {
+    match v.parse::<IpAddr>() {
+        Ok(_) => Ok(()),
+        Err(_) => Err(format!("file '{}' does not exists", &v)),
     }
 }
 
@@ -79,6 +88,16 @@ impl Options {
                     .validator(is_file)
                     .takes_value(true),
             )
+            .arg(
+                Arg::new("interfaces")
+                    .long("interface")
+                    .short('i')
+                    .help("Interface to listen on for incoming connections")
+                    .default_values(&["127.0.0.1"])
+                    .validator(is_ip)
+                    .multiple_occurrences(true)
+                    .takes_value(true),
+            )
             .arg(netrc_arg)
             .arg(
                 Arg::new("always_use_connect")
@@ -114,9 +133,18 @@ impl Options {
 impl From<ArgMatches> for Options {
     fn from(m: ArgMatches) -> Self {
         Self {
+            port: m
+                .value_of("port")
+                .map(|s| s.parse::<u16>().unwrap())
+                .unwrap(),
+            interfaces: m
+                .values_of("interfaces")
+                .unwrap()
+                .map(|s| s.parse().unwrap())
+                .collect(),
+            pac_file: m.value_of("pac_file").map(String::from),
             #[cfg(feature = "negotiate")]
             negotiate: m.is_present("negotiate"),
-            pac_file: m.value_of("pac_file").map(String::from),
             netrc_file: m
                 .value_of("netrc_file")
                 .map(PathBuf::from)
@@ -126,10 +154,6 @@ impl From<ArgMatches> for Options {
                     netrc_path
                 }),
             always_use_connect: m.is_present("always_use_connect"),
-            port: m
-                .value_of("port")
-                .map(|s| s.parse::<u16>().unwrap())
-                .unwrap(),
             pool_max_idle_per_host: m
                 .value_of("pool_max_idle_per_host")
                 .map(|s| s.parse::<usize>().unwrap())

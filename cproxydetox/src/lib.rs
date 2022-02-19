@@ -4,6 +4,8 @@ use proxydetox::http_file;
 use proxydetox::Server;
 use std::ffi::CStr;
 use std::fs::read_to_string;
+use std::net::IpAddr;
+use std::net::Ipv4Addr;
 use std::path::PathBuf;
 
 fn netrc_path() -> PathBuf {
@@ -79,7 +81,8 @@ pub unsafe extern "C" fn proxydetox_run(server: *mut Server) {
         .unwrap();
 
     runtime.block_on(async move {
-        let _ = server.run().await;
+        let interfaces = [IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))];
+        let _ = server.run(&interfaces).await;
     });
 }
 
