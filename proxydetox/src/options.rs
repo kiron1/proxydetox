@@ -6,7 +6,7 @@ use std::{
     time::Duration,
 };
 
-use clap::{App, AppSettings, Arg, ArgMatches};
+use clap::{Arg, ArgMatches, Command};
 
 #[derive(Debug)]
 pub struct Options {
@@ -39,10 +39,10 @@ impl Options {
     pub fn load() -> Self {
         let default_pool_max_idle_per_host = usize::MAX.to_string();
 
-        let app: _ = App::new(env!("CARGO_PKG_NAME"))
+        let app: _ = Command::new(env!("CARGO_PKG_NAME"))
             .version(env!("CARGO_PKG_VERSION"))
             .about("A small proxy to relive the pain of some corporate proxies")
-            .setting(AppSettings::AllArgsOverrideSelf);
+            .args_override_self(true);
 
         #[cfg(feature = "negotiate")]
         let app = app.arg(
