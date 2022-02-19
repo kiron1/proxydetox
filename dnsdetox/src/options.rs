@@ -1,7 +1,7 @@
 use http::Uri;
 use std::{ffi::OsString, fs::read_to_string, net::SocketAddr, path::PathBuf, str::FromStr};
 
-use clap::{App, AppSettings, Arg, ArgMatches};
+use clap::{Arg, ArgMatches, Command};
 
 #[derive(Debug)]
 pub struct Options {
@@ -20,10 +20,10 @@ fn is_num<T: FromStr + PartialOrd>(v: &str) -> Result<(), String> {
 
 impl Options {
     pub fn load() -> Self {
-        let app: _ = App::new(env!("CARGO_PKG_NAME"))
+        let app: _ = Command::new(env!("CARGO_PKG_NAME"))
             .version(env!("CARGO_PKG_VERSION"))
             .about("A small DNS proxy to relive the pain of some corporate networks")
-            .setting(AppSettings::AllArgsOverrideSelf);
+            .args_override_self(true);
 
         let app = app
             .arg(
