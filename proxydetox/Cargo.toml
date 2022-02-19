@@ -16,7 +16,7 @@ inotify = "0.10"
 
 [dependencies]
 clap = "3.0"
-cross-krb5 = { version = "0.1", default-features = false, optional = true }
+cross-krb5 = { version = "0.2", default-features = false, optional = true }
 base64 = "0.13"
 dirs = "4.0"
 env_logger = "0.9"

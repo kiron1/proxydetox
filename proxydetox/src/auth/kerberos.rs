@@ -4,7 +4,7 @@ use http::{
 };
 use std::result::Result;
 
-use cross_krb5::ClientCtx;
+use cross_krb5::{ClientCtx, InitiateFlags};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -34,7 +34,7 @@ impl super::Authenticator for NegotiateAuthenticator {
         let mut headers = hyper::HeaderMap::new();
         // let challenge = last_headers.map(|h| server_token(&h)).flatten();
         // let challenge = challenge.as_deref();
-        let client_ctx = ClientCtx::initiate(None, &self.target_principal);
+        let client_ctx = ClientCtx::initiate(InitiateFlags::empty(), None, &self.target_principal);
 
         match client_ctx {
             Ok((_pending, token)) => {
