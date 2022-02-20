@@ -9,10 +9,7 @@ pub use net::http_file;
 use parking_lot::Mutex;
 
 use crate::auth::AuthenticatorFactory;
-use std::{
-    net::{IpAddr, SocketAddr},
-    sync::Arc,
-};
+use std::{net::SocketAddr, sync::Arc};
 
 #[derive(Debug)]
 pub enum Command {
@@ -23,25 +20,18 @@ pub enum Command {
 pub struct Server {
     pac_script: String,
     auth: AuthenticatorFactory,
-    port: u16,
     config: detox::Config,
     tx: tokio::sync::mpsc::Sender<Command>,
     rx: Arc<Mutex<tokio::sync::mpsc::Receiver<Command>>>,
 }
 
 impl Server {
-    pub fn new(
-        pac_script: String,
-        auth: AuthenticatorFactory,
-        port: u16,
-        config: detox::Config,
-    ) -> Self {
+    pub fn new(pac_script: String, auth: AuthenticatorFactory, config: detox::Config) -> Self {
         let (tx, rx) = tokio::sync::mpsc::channel::<Command>(32);
 
         Self {
             pac_script,
             auth,
-            port,
             config,
             tx,
             rx: Arc::new(Mutex::new(rx)),
@@ -54,7 +44,7 @@ impl Server {
 
     pub async fn run(
         &mut self,
-        interfaces: &[IpAddr],
+        interfaces: &[SocketAddr],
     ) -> std::result::Result<(), Box<dyn std::error::Error>> {
         use futures::{
             future::FutureExt, // for `.fuse()`
@@ -67,10 +57,9 @@ impl Server {
 
         loop {
             let mut servers = Vec::new();
-            for ip in interfaces {
+            for addr in interfaces {
                 let mut shutdown_rx = shutdown_tx.subscribe();
-                let addr = SocketAddr::new(*ip, self.port);
-                let server = hyper::Server::bind(&addr).serve(detox::Service::new(
+                let server = hyper::Server::bind(addr).serve(detox::Service::new(
                     &self.pac_script,
                     self.auth.clone(),
                     self.config.clone(),

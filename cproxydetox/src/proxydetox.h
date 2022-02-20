@@ -10,10 +10,9 @@ extern "C" {
 
 struct ProxydetoxServer;
 
-struct ProxydetoxServer *proxydetox_new(char const *pac_script, bool negotiate,
-                                        uint16_t port);
+struct ProxydetoxServer *proxydetox_new(char const *pac_script, bool negotiate);
 
-void proxydetox_run(struct ProxydetoxServer *server);
+void proxydetox_run(struct ProxydetoxServer *server, uint16_t port);
 
 void proxydetox_shutdown(struct ProxydetoxServer *server);
 

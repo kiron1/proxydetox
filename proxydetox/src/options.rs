@@ -1,7 +1,7 @@
 use std::{
     ffi::OsString,
     fs::read_to_string,
-    net::IpAddr,
+    net::SocketAddr,
     path::{Path, PathBuf},
     str::FromStr,
     time::Duration,
@@ -11,8 +11,7 @@ use clap::{Arg, ArgMatches, Command};
 
 #[derive(Debug)]
 pub struct Options {
-    pub port: u16,
-    pub interfaces: Vec<IpAddr>,
+    pub listen_addrs: Vec<SocketAddr>,
     pub pac_file: Option<String>,
     #[cfg(feature = "negotiate")]
     pub negotiate: bool,
@@ -37,10 +36,10 @@ fn is_file(v: &str) -> Result<(), String> {
     }
 }
 
-fn is_ip(v: &str) -> Result<(), String> {
-    match v.parse::<IpAddr>() {
+fn is_addr(v: &str) -> Result<(), String> {
+    match v.parse::<SocketAddr>() {
         Ok(_) => Ok(()),
-        Err(_) => Err(format!("file '{}' does not exists", &v)),
+        Err(_) => Err(format!("invalid address '{}'", &v)),
     }
 }
 
@@ -71,14 +70,6 @@ impl Options {
 
         let app = app
             .arg(
-                Arg::new("port")
-                    .short('P')
-                    .long("port")
-                    .help("Listening port")
-                    .validator(is_num::<u16>)
-                    .default_value("3128"),
-            )
-            .arg(
                 Arg::new("pac_file")
                     .long("pac-file")
                     .short('p')
@@ -89,12 +80,12 @@ impl Options {
                     .takes_value(true),
             )
             .arg(
-                Arg::new("interfaces")
-                    .long("interface")
-                    .short('i')
+                Arg::new("listen")
+                    .long("listen")
+                    .short('l')
                     .help("Interface to listen on for incoming connections")
-                    .default_values(&["127.0.0.1"])
-                    .validator(is_ip)
+                    .default_values(&["127.0.0.1:3128"])
+                    .validator(is_addr)
                     .multiple_occurrences(true)
                     .takes_value(true),
             )
@@ -133,12 +124,8 @@ impl Options {
 impl From<ArgMatches> for Options {
     fn from(m: ArgMatches) -> Self {
         Self {
-            port: m
-                .value_of("port")
-                .map(|s| s.parse::<u16>().unwrap())
-                .unwrap(),
-            interfaces: m
-                .values_of("interfaces")
+            listen_addrs: m
+                .values_of("listen")
                 .unwrap()
                 .map(|s| s.parse().unwrap())
                 .collect(),

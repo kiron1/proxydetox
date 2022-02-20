@@ -75,7 +75,7 @@ public class ProxydetxoControl {
     func start() {
         stop()
         pd = pacFile.withCString { (filePath) -> OpaquePointer? in
-            proxydetox_new(filePath, negotiate, port)
+            proxydetox_new(filePath, negotiate)
         }
         worker = Thread(
             target:self,
@@ -105,7 +105,7 @@ public class ProxydetxoControl {
         // and after the shutdown is finished we can drop
         // the ProxydetoxServer.
         let thisPd = pd
-        proxydetox_run(thisPd)
+        proxydetox_run(thisPd, port)
         proxydetox_drop(thisPd)
     }
 

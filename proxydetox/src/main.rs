@@ -91,7 +91,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         always_use_connect: config.always_use_connect,
     };
 
-    let mut server = proxydetox::Server::new(pac_script.clone(), auth, config.port, detox_config);
+    let mut server = proxydetox::Server::new(pac_script.clone(), auth, detox_config);
 
     {
         use tokio::signal;
@@ -128,7 +128,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
     }
 
-    server.run(&config.interfaces).await
+    server.run(&config.listen_addrs).await
 }
 
 #[cfg(target_os = "linux")]

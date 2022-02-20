@@ -6,6 +6,7 @@ use std::ffi::CStr;
 use std::fs::read_to_string;
 use std::net::IpAddr;
 use std::net::Ipv4Addr;
+use std::net::SocketAddr;
 use std::path::PathBuf;
 
 fn netrc_path() -> PathBuf {
@@ -41,7 +42,6 @@ fn load_pac_file(path: &str) -> String {
 pub unsafe extern "C" fn proxydetox_new(
     pac_file: *const libc::c_char,
     #[allow(unused_variables)] negotiate: bool,
-    port: u16,
 ) -> *mut Server {
     let pac_file = CStr::from_ptr(pac_file);
     let pac_file = pac_file.to_str().unwrap_or_default().to_owned();
@@ -60,7 +60,7 @@ pub unsafe extern "C" fn proxydetox_new(
 
     let config = Config::default();
 
-    let server = Box::new(Server::new(pac_script, auth, port, config));
+    let server = Box::new(Server::new(pac_script, auth, config));
 
     Box::<Server>::into_raw(server)
 }
@@ -68,7 +68,7 @@ pub unsafe extern "C" fn proxydetox_new(
 /// # Safety
 /// Caller must ensure `server` is valid.
 #[no_mangle]
-pub unsafe extern "C" fn proxydetox_run(server: *mut Server) {
+pub unsafe extern "C" fn proxydetox_run(server: *mut Server, port: u16) {
     use tokio::runtime::Builder;
 
     let server = &mut *server;
@@ -81,8 +81,11 @@ pub unsafe extern "C" fn proxydetox_run(server: *mut Server) {
         .unwrap();
 
     runtime.block_on(async move {
-        let interfaces = [IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))];
-        let _ = server.run(&interfaces).await;
+        let addr = [SocketAddr::new(
+            IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+            port,
+        )];
+        let _ = server.run(&addr).await;
     });
 }
 
