@@ -9,7 +9,13 @@ pub use net::http_file;
 use parking_lot::Mutex;
 
 use crate::auth::AuthenticatorFactory;
-use std::{net::SocketAddr, sync::Arc};
+use std::{
+    net::SocketAddr,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+};
 
 #[derive(Debug)]
 pub enum Command {
@@ -52,10 +58,12 @@ impl Server {
             select,
         };
 
-        let (shutdown_tx, _) = tokio::sync::broadcast::channel::<()>(1);
-        let cmd_rx = self.rx.clone();
+        let keep_running = AtomicBool::new(true);
 
-        loop {
+        while keep_running.load(Ordering::Relaxed) {
+            let (shutdown_tx, _) = tokio::sync::broadcast::channel::<()>(1);
+            let cmd_rx = self.rx.clone();
+
             let mut servers = Vec::new();
             for addr in interfaces {
                 let mut shutdown_rx = shutdown_tx.subscribe();
@@ -65,7 +73,7 @@ impl Server {
                     self.config.clone(),
                 ));
                 let server = server.with_graceful_shutdown(async move {
-                    let _ = shutdown_rx.recv().await;
+                    shutdown_rx.recv().await.unwrap();
                 });
                 servers.push(server);
 
@@ -78,25 +86,29 @@ impl Server {
             let servers = join_all(servers).fuse();
             pin_mut!(servers, recv);
 
-            select! {
-                servers_result = servers => {
-                    for server_result in servers_result {
-                        if let Err(e) = server_result {
-                            tracing::error!("server error: {}", e);
-                            return Err(e.into());
-                        } else {
-                            tracing::info!("shuting down");
+            loop {
+                select! {
+                    servers_result = servers => {
+                        for server_result in servers_result {
+                            if let Err(e) = server_result {
+                                tracing::error!("server error: {}", e);
+                                return Err(e.into());
+                            }
                         }
-                    }
-                            break;
-                },
-                cmd = recv => {
-                    match cmd {
-                        Some(Command::Shutdown) => { let _ = shutdown_tx.send(()); },
-                        Some(Command::Restart) => continue,
-                        None => break,
-                    }
-                },
+                        tracing::info!("shuting down");
+                        break;
+                    },
+                    cmd = recv => {
+                        match cmd {
+                            Some(Command::Shutdown) => {
+                                keep_running.store(false, Ordering::Relaxed);
+                                shutdown_tx.send(()).unwrap();
+                            },
+                            Some(Command::Restart) => { shutdown_tx.send(()).unwrap(); },
+                            None => continue,
+                        }
+                    },
+                }
             }
         }
         Ok(())
