@@ -75,18 +75,10 @@ run JavaScript code.
 - [paceval](./paceval/) - A utility to evaluate PAC files for a given URL and
   print the result.
 
-### Authentication
-
-- [libsspi](./libsspi/) - Binding of the Windows SSPI API for Rust using
-  [`windows-rs`][windows-rs].
-- [libnegotiate](./libnegotiate/) - Authentication code using GSSAPI or SSPI
-  depending on the target system.
-
 ### HTTP Proxy code
 
 - [proxy_client](./proxy_client/) - Supporting code to allow [`hyper`][hyper] to
   utilize HTTP proxies.
-- [proxydetox](./proxydetox/) - The actual Proxydetox software.
 - [proxydetox](./proxydetox/) - The actual Proxydetox software.
 
 [windows-rs]: https://github.com/microsoft/windows-rs "Rust for the Windows SDK"
