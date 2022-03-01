@@ -116,8 +116,7 @@ fn readrc() -> Vec<OsString> {
                 .split('\n')
                 .map(|s| s.trim())
                 .filter(|s| !s.starts_with('#'))
-                .map(str::split_ascii_whitespace)
-                .flatten()
+                .flat_map(str::split_ascii_whitespace)
                 .filter(|s| !s.is_empty())
                 .map(OsString::from)
                 .collect::<Vec<_>>();
