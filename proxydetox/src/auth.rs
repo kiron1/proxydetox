@@ -16,7 +16,7 @@ pub trait Authenticator: Send + Sync {
     fn step(&self, last_headers: Option<hyper::HeaderMap>) -> Result<hyper::HeaderMap>;
 }
 
-struct NoneAuthenticator;
+pub struct NoneAuthenticator;
 
 impl Authenticator for NoneAuthenticator {
     fn step(&self, _last_headers: Option<hyper::HeaderMap>) -> Result<hyper::HeaderMap> {

@@ -12,7 +12,7 @@ pub enum Error {
     NoNetrcFile,
     #[error("failed to parse ~/.netrc file")]
     NetrcParserError,
-    #[error("no entry for this host: {0}")]
+    #[error("no entry for host: {0}")]
     NoEntryForHost(String),
 }
 
