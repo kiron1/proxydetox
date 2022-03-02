@@ -109,7 +109,14 @@ impl Session {
             Some(proxy) => Ok(proxy.clone()),
             None => {
                 tracing::debug!("new proxy client for {:?}", uri.host());
-                let auth = self.0.auth.make(&uri)?;
+                let auth = self.0.auth.make(&uri);
+                let auth = match auth {
+                    Ok(auth) => auth,
+                    Err(ref cause) => {
+                        tracing::warn!("error when makeing authenticator for {}: {}", &uri, cause);
+                        Box::new(crate::auth::NoneAuthenticator)
+                    }
+                };
                 let client = hyper::Client::builder()
                     .pool_max_idle_per_host(self.0.config.pool_max_idle_per_host)
                     .pool_idle_timeout(self.0.config.pool_idle_timeout)
