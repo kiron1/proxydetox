@@ -9,7 +9,7 @@ use std::{
     task::{self, Poll},
 };
 
-use http::header::VIA;
+use http::header::{HOST, VIA};
 use http::HeaderValue;
 use http::Uri;
 use http::{Request, Response};
@@ -187,18 +187,35 @@ impl Session {
         Ok(res?)
     }
 
-    pub async fn management(&mut self, _req: hyper::Request<Body>) -> Result<Response<Body>> {
-        let body = format!(
-            "<!DOCTYPE html><html><h1>{}/{}</h1><h2>DNS Cache</h2><code>{:?}</code></html>",
-            env!("CARGO_PKG_NAME"),
-            env!("CARGO_PKG_VERSION"),
-            self.0.eval.lock().cache()
-        );
-        let mut resp = Response::new(Body::from(body));
-        resp.headers_mut().insert(
-            http::header::CONTENT_TYPE,
-            http::header::HeaderValue::from_static("text/html"),
-        );
+    pub async fn management(&mut self, req: hyper::Request<Body>) -> Result<Response<Body>> {
+        let resp = if req.uri() == "/proxy.pac" {
+            let body = format!(
+                "function FindProxyForURL(url, host) {{ return \"PROXY {}\"; }}\n",
+                req.headers()
+                    .get(HOST)
+                    .and_then(|h| h.to_str().ok())
+                    .unwrap_or("127.0.0.1:3128")
+            );
+            let mut resp = Response::new(Body::from(body));
+            resp.headers_mut().insert(
+                http::header::CONTENT_TYPE,
+                http::header::HeaderValue::from_static("application/x-ns-proxy-autoconfig"),
+            );
+            resp
+        } else {
+            let body = format!(
+                "<!DOCTYPE html><html><h1>{}/{}</h1><h2>DNS Cache</h2><code>{:?}</code></html>",
+                env!("CARGO_PKG_NAME"),
+                env!("CARGO_PKG_VERSION"),
+                self.0.eval.lock().cache()
+            );
+            let mut resp = Response::new(Body::from(body));
+            resp.headers_mut().insert(
+                http::header::CONTENT_TYPE,
+                http::header::HeaderValue::from_static("text/html"),
+            );
+            resp
+        };
         Ok(resp)
     }
 }
