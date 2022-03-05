@@ -17,7 +17,7 @@ proxy by setting the environment variables `http_proxy`, and `https_proxy`.
 The following authentication methods are supported:
 
 - [Basic][basic]: use the username and password from `~/.netrc`.
-- [Negotiate][negotiate]<sup>1</sup>: on Linux and macOS it will use
+- [Negotiate][negotiate]<sup>1,2</sup>: on Linux and macOS it will use
   [GSSAPI][gssapi], on Windows [SSPI][sspi] will be used.
 
 Proxydetox supports the following systems:
@@ -29,8 +29,9 @@ Proxydetox supports the following systems:
 Prebuild versions of Proxydetox can be found on [the releaes page][releases].
 Installation instructions are provided in the [INSTALL.md](./INSTALL.md) file.
 
-<sup>1)</sup> Must be enabled via the `--features negotiate` flag during build
-time and activated with the `--negotiate` flag during runtime.
+<sup>1)</sup> Can be disabled via the `--no-default-features` flag during build
+time.<br>
+<sup>2)</sup> Can be activated with the `--negotiate` flag during runtime.
 
 [mdnpac]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Proxy_servers_and_tunneling/Proxy_Auto-Configuration_(PAC)_file "Proxy Auto-Configuration (PAC) file"
 [basic]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication#basic_authentication_scheme "Basic authentication scheme"

@@ -57,6 +57,9 @@ jobs:
             ~/.cargo/git
             target
           key: cargo-cache-${{ runner.os }}
+      - name: Install Linux dependency
+        run: sudo apt-get install libkrb5-dev
+        if: ${{ matrix.build == 'linux' }}
       #  see https://github.com/rust-lang/rust-bindgen/issues/1797
       - name: Install Windows dependency (LLVM)
         uses: KyleMayes/install-llvm-action@v1.4.1

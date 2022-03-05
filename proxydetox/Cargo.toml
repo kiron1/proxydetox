@@ -5,7 +5,7 @@ edition = "2021"
 homepage = "https://github.com/kiron1/proxydetox"
 
 [features]
-default = []
+default = ["negotiate"]
 negotiate = ["cross-krb5"]
 
 [target.'cfg(unix)'.dependencies]

@@ -3,10 +3,14 @@
 set -eu
 
 features=
-while getopts ":f:" o; do
+no_default_features=
+while getopts ":f:n" o; do
   case "${o}" in
     f)
         features=${features:+${features},}${OPTARG}
+        ;;
+    n)
+        no_default_features=y
         ;;
     *)
         echo "fatal error: invalid arguments"
@@ -24,7 +28,7 @@ trap "rm -rf ${workdir}" EXIT INT
 
 mkdir -p "${workdir}/DEBIAN" "${workdir}/lib/systemd/user"
 
-cargo install --path "${root}/proxydetox" --root "${workdir}/${prefix}" --no-track ${features:+--features=${features}}
+cargo install --path "${root}/proxydetox" --root "${workdir}/${prefix}" --no-track ${no_default_features:+--no-default-features} ${features:+--features=${features}}
 
 sed -e "s|\${prefix}|${prefix}|" "${root}/debian/proxydetox.service" > "${workdir}/lib/systemd/user/proxydetox.service"
 
