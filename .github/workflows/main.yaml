@@ -47,7 +47,7 @@ jobs:
             target
           key: cargo-cache-${{ runner.os }}
       - name: Install Linux dependency
-        run: sudo apt-get install llvm-10 clang-10 musl musl-tools musl-dev
+        run: sudo apt-get install libkrb5-dev
         if: ${{ matrix.build == 'linux' }}
       #  see https://github.com/rust-lang/rust-bindgen/issues/1797
       - name: Install Windows dependency (LLVM)
@@ -132,5 +132,8 @@ jobs:
           toolchain: stable
           components: rustfmt, clippy
           override: true
+      - name: Install Linux dependency
+        run: sudo apt-get install libkrb5-dev
+        if: ${{ matrix.lint == 'clippy' }}
       - name: Lint check
         run: cargo ${{ matrix.lint }} ${{ matrix.flags }}
