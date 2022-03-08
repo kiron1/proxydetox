@@ -1,6 +1,6 @@
 Package: proxydetox
 Version: ${version}-1
-Depends: libc6 (>= 2.34), libgssapi-krb5-2 (>= 1.17)
+Depends: libc6 (>= 2.17), libgssapi-krb5-2 (>= 1.17)
 Section: net
 Priority: optional
 Architecture: amd64
