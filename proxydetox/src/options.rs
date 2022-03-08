@@ -35,6 +35,14 @@ fn is_file(v: &str) -> Result<(), String> {
     }
 }
 
+fn is_file_or_http_uri(v: &str) -> Result<(), String> {
+    if v.starts_with("http://") | Path::new(&v).is_file() {
+        Ok(())
+    } else {
+        Err(format!("path '{}' is not a file nor a http URI", &v))
+    }
+}
+
 impl Options {
     pub fn load() -> Self {
         let default_pool_max_idle_per_host = usize::MAX.to_string();
@@ -74,9 +82,9 @@ impl Options {
                     .long("pac-file")
                     .short('p')
                     .help(
-                        "PAC file to be used to decide which upstream proxy to forward the request",
+                        "PAC file to be used to decide which upstream proxy to forward the request (local file path or http:// URI are accepted)",
                     )
-                    .validator(is_file)
+                    .validator(is_file_or_http_uri)
                     .takes_value(true),
             )
             .arg(netrc_arg)
