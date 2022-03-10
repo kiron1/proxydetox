@@ -10,7 +10,6 @@ rust_library(
         "src/client.rs",
         "src/detox.rs",
         "src/detox/config.rs",
-        "src/detox/service.rs",
         "src/detox/session.rs",
         "src/io.rs",
         "src/lib.rs",
