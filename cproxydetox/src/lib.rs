@@ -1,14 +1,23 @@
+use proxydetox::auth::netrc;
 use proxydetox::auth::AuthenticatorFactory;
 use proxydetox::http_file;
 use proxydetox::Server;
 use std::ffi::CStr;
 use std::fs::read_to_string;
+use std::fs::File;
 use std::path::PathBuf;
 
 fn netrc_path() -> PathBuf {
     let mut netrc_path = dirs::home_dir().unwrap_or_default();
     netrc_path.push(".netrc");
     netrc_path
+}
+
+fn load_netrc_store() -> netrc::Store {
+    File::open(netrc_path())
+        .ok()
+        .and_then(|f| netrc::Store::new(std::io::BufReader::new(f)).ok())
+        .unwrap_or_default()
 }
 
 fn load_pac_file(path: &str) -> String {
@@ -47,13 +56,13 @@ pub unsafe extern "C" fn proxydetox_new(
 
     #[cfg(feature = "negotiate")]
     let auth = if negotiate {
+        #[cfg(feature = "negotiate")]
         AuthenticatorFactory::negotiate()
     } else {
-        AuthenticatorFactory::basic(netrc_path())
+        AuthenticatorFactory::basic(load_netrc_store())
     };
-
     #[cfg(not(feature = "negotiate"))]
-    let auth = AuthenticatorFactory::basic(netrc_path());
+    let auth = AuthenticatorFactory::basic(load_netrc_store());
 
     let session = proxydetox::Session::builder()
         .pac_script(Some(pac_script))
