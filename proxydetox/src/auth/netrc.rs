@@ -1,8 +1,9 @@
 use http::{header::PROXY_AUTHORIZATION, HeaderValue};
-use std::fs::File;
-use std::io::BufReader;
-use std::path::Path;
-use std::result::Result;
+use parking_lot::RwLock;
+use std::collections::HashMap;
+use std::io::BufRead;
+use std::sync::Arc;
+use Result;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -22,28 +23,8 @@ pub struct BasicAuthenticator {
 }
 
 impl BasicAuthenticator {
-    pub fn new(netrc_path: &Path, proxy_fqdn: &str) -> Result<Self, Error> {
-        let netrc = BasicAuthenticator::read_netrc(netrc_path)?;
-
-        if let Some(&(_, ref machine)) = netrc.hosts.iter().find(|&x| x.0 == proxy_fqdn) {
-            let token = if let Some(ref password) = machine.password {
-                format!("{}:{}", machine.login, password)
-            } else {
-                machine.login.to_string()
-            };
-            let token = format!("Basic {}", base64::encode(&token));
-            tracing::debug!("auth netrc {}@{}: ", &machine.login, &proxy_fqdn);
-            Ok(Self { token })
-        } else {
-            Err(Error::NoEntryForHost(proxy_fqdn.into()))
-        }
-    }
-
-    fn read_netrc(netrc_path: &Path) -> Result<netrc::Netrc, Error> {
-        let input = File::open(netrc_path).map_err(|_| Error::NoNetrcFile)?;
-        let netrc =
-            netrc::Netrc::parse(BufReader::new(input)).map_err(|_| Error::NetrcParserError)?;
-        Ok(netrc)
+    pub fn new(token: String) -> Self {
+        Self { token }
     }
 }
 
@@ -59,5 +40,63 @@ impl super::Authenticator for BasicAuthenticator {
         );
 
         Ok(headers)
+    }
+}
+
+#[derive(Clone, Default)]
+pub struct Store {
+    /// Maps host names to base64 encoded login strings.
+    hosts: Arc<RwLock<HashMap<String, String>>>,
+}
+
+impl Store {
+    pub fn new(input: impl BufRead) -> Result<Self, Error> {
+        let hosts = Self::map_from_netrc(input)?;
+
+        Ok(Self {
+            hosts: Arc::new(RwLock::new(hosts)),
+        })
+    }
+
+    fn map_from_netrc(input: impl BufRead) -> Result<HashMap<String, String>, Error> {
+        let netrc = netrc::Netrc::parse(input).map_err(|_| Error::NetrcParserError)?;
+
+        let hosts = netrc
+            .hosts
+            .iter()
+            .map(|(host, machine)| {
+                (
+                    host.to_owned(),
+                    format!(
+                        "{}:{}",
+                        machine.login,
+                        machine.password.to_owned().unwrap_or_default()
+                    ),
+                )
+            })
+            .map(|(host, login)| (host, base64::encode(&login)))
+            .map(|(host, login)| (host, format!("Basic {}", login)))
+            .collect();
+        Ok(hosts)
+    }
+
+    pub fn update(&self, input: impl BufRead) -> Result<(), Error> {
+        let mut hosts = self.hosts.write();
+        *hosts = Self::map_from_netrc(input)?;
+        Ok(())
+    }
+
+    pub(crate) fn get(&self, k: &str) -> Result<String, Error> {
+        let hosts = self.hosts.read();
+        hosts
+            .get(k)
+            .map(|k| k.to_owned())
+            .ok_or_else(|| Error::NoEntryForHost(k.to_string()))
+    }
+}
+
+impl std::fmt::Debug for Store {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_list().entries(self.hosts.read().keys()).finish()
     }
 }
