@@ -2,8 +2,6 @@
 pub mod kerberos;
 pub mod netrc;
 
-use std::path::PathBuf;
-
 #[cfg(feature = "negotiate")]
 use self::kerberos::NegotiateAuthenticator;
 use self::netrc::BasicAuthenticator;
@@ -27,14 +25,14 @@ impl Authenticator for NoneAuthenticator {
 #[derive(Clone, Debug)]
 pub enum AuthenticatorFactory {
     None,
-    Basic(PathBuf),
+    Basic(netrc::Store),
     #[cfg(feature = "negotiate")]
     Negotiate,
 }
 
 impl AuthenticatorFactory {
-    pub fn basic(netrc_path: PathBuf) -> Self {
-        AuthenticatorFactory::Basic(netrc_path)
+    pub fn basic(store: netrc::Store) -> Self {
+        AuthenticatorFactory::Basic(store)
     }
 
     #[cfg(feature = "negotiate")]
@@ -46,10 +44,10 @@ impl AuthenticatorFactory {
         let proxy_fqdn = proxy_url.host().unwrap_or_default();
         match self {
             Self::None => Ok(Box::new(NoneAuthenticator)),
-            Self::Basic(ref netrc_path) => Ok(Box::new(BasicAuthenticator::new(
-                netrc_path.as_path(),
-                proxy_fqdn,
-            )?)),
+            Self::Basic(ref store) => {
+                let token = store.get(proxy_fqdn)?;
+                Ok(Box::new(BasicAuthenticator::new(token.to_owned())))
+            }
             #[cfg(feature = "negotiate")]
             Self::Negotiate => Ok(Box::new(NegotiateAuthenticator::new(proxy_fqdn)?)),
         }
