@@ -4,7 +4,7 @@ use std::io::{Error, ErrorKind};
 use tokio::net::TcpStream;
 use tracing_attributes::instrument;
 
-#[instrument]
+#[instrument(level = "debug")]
 pub async fn dial(uri: &http::Uri) -> tokio::io::Result<TcpStream> {
     match (uri.host(), uri.port_u16()) {
         (Some(host), Some(port)) => TcpStream::connect((host, port)).await,
