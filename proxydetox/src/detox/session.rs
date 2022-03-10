@@ -129,7 +129,7 @@ impl Session {
         }
     }
 
-    #[instrument(skip(req), fields(method=?req.method(), uri=?req.uri()))]
+    #[instrument(level = "debug", skip(req), fields(method=?req.method(), uri=?req.uri()))]
     pub async fn process(&mut self, req: hyper::Request<Body>) -> Result<Response<Body>> {
         let res = if req.uri().authority().is_some() {
             self.dispatch(req).await
@@ -147,7 +147,7 @@ impl Session {
         let proxy = self.find_proxy(req.uri()).await;
         let is_connect = req.method() == hyper::Method::CONNECT || self.0.config.always_use_connect;
 
-        tracing::info!(%proxy);
+        tracing::debug!(%proxy);
 
         // Remove hop-by-hop headers which are meant for the proxy.
         // "proxy-connection" is not an official header, but used by many clients.
@@ -282,7 +282,7 @@ impl<'a> Service<&'a hyper::server::conn::AddrStream> for Session {
         Ok(()).into()
     }
 
-    #[instrument]
+    #[instrument(level = "debug")]
     fn call(&mut self, socket: &hyper::server::conn::AddrStream) -> Self::Future {
         tracing::debug!( remote_addr = %socket.remote_addr(), "new client");
         future::ok(self.clone())
