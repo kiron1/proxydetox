@@ -9,6 +9,7 @@ use std::{
     task::{self, Poll},
 };
 
+use futures::future;
 use http::header::{HOST, VIA};
 use http::HeaderValue;
 use http::Uri;
@@ -266,5 +267,24 @@ impl Service<Request<Body>> for Session {
             Ok(out)
         };
         Box::pin(resp)
+    }
+}
+
+impl<'a> Service<&'a hyper::server::conn::AddrStream> for Session {
+    type Response = Self;
+    type Error = std::convert::Infallible;
+    type Future = future::Ready<std::result::Result<Self::Response, Self::Error>>;
+
+    fn poll_ready(
+        &mut self,
+        _cx: &mut task::Context<'_>,
+    ) -> Poll<std::result::Result<(), Self::Error>> {
+        Ok(()).into()
+    }
+
+    #[instrument]
+    fn call(&mut self, socket: &hyper::server::conn::AddrStream) -> Self::Future {
+        tracing::debug!( remote_addr = %socket.remote_addr(), "new client");
+        future::ok(self.clone())
     }
 }
