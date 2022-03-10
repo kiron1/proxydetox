@@ -60,7 +60,7 @@ impl Server {
         let addr = SocketAddr::from(([127, 0, 0, 1], self.port));
 
         loop {
-            let server = hyper::Server::bind(&addr).serve(detox::Service::new(
+            let server = hyper::Server::bind(&addr).serve(detox::Session::new(
                 &self.pac_script,
                 self.auth.clone(),
                 self.config.clone(),
