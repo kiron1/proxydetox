@@ -36,9 +36,13 @@ impl Rlimit {
 
 pub fn update_limits() {
     let mut maxfiles_limit = Rlimit::maxfiles().expect("getrlimit");
-    tracing::info!("Currnet number of files limit: {}", maxfiles_limit.cur);
+    let old_maxfiles_limit = maxfiles_limit.cur;
     maxfiles_limit.cur = maxfiles_limit.cur.max(4096);
     Rlimit::set_maxfiles(&maxfiles_limit).expect("setrlimit");
     maxfiles_limit = Rlimit::maxfiles().expect("getrlimit");
-    tracing::info!("New number of files limit: {}", maxfiles_limit.cur);
+    tracing::info!(
+        "Changed number of files limit from {} to {}",
+        old_maxfiles_limit,
+        maxfiles_limit.cur
+    );
 }
