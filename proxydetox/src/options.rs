@@ -8,12 +8,16 @@ use std::{
 
 use clap::{Arg, ArgMatches, Command};
 
+#[derive(Debug, PartialEq)]
+pub enum Authorization {
+    Basic(PathBuf),
+    Negotiate,
+}
+
 #[derive(Debug)]
 pub struct Options {
-    #[cfg(feature = "negotiate")]
-    pub negotiate: bool,
     pub pac_file: Option<String>,
-    pub netrc_file: PathBuf,
+    pub authorization: Authorization,
     pub always_use_connect: bool,
     pub port: u16,
     pub pool_max_idle_per_host: usize,
@@ -124,18 +128,27 @@ impl Options {
 
 impl From<ArgMatches> for Options {
     fn from(m: ArgMatches) -> Self {
+        let netrc_file = m
+            .value_of("netrc_file")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| {
+                let mut netrc_path = dirs::home_dir().unwrap_or_default();
+                netrc_path.push(".netrc");
+                netrc_path
+            });
+
+        #[cfg(feature = "negotiate")]
+        let authorization = if m.is_present("negotiate") {
+            Authorization::Negotiate
+        } else {
+            Authorization::Basic(netrc_file)
+        };
+        #[cfg(not(feature = "negotiate"))]
+        let auth = Authorization::Basic(netrc_file);
+
         Self {
-            #[cfg(feature = "negotiate")]
-            negotiate: m.is_present("negotiate"),
             pac_file: m.value_of("pac_file").map(String::from),
-            netrc_file: m
-                .value_of("netrc_file")
-                .map(PathBuf::from)
-                .unwrap_or_else(|| {
-                    let mut netrc_path = dirs::home_dir().unwrap_or_default();
-                    netrc_path.push(".netrc");
-                    netrc_path
-                }),
+            authorization,
             always_use_connect: m.is_present("always_use_connect"),
             port: m
                 .value_of("port")
@@ -244,6 +257,12 @@ mod tests {
     #[test]
     fn test_negotiate() {
         let args = Options::parse_args(&["proxydetox".into(), "--negotiate".into()]);
-        assert_eq!(args.negotiate, true);
+        assert_eq!(args.authorization, Authorization::Negotiate);
+    }
+
+    #[test]
+    fn test_basic() {
+        let args = Options::parse_args(&["proxydetox".into()]);
+        assert!(matches!(args.authorization, Authorization::Basic(_)));
     }
 }

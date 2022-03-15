@@ -7,7 +7,7 @@
 mod limit;
 mod options;
 
-use options::Options;
+use options::{Authorization, Options};
 use std::boxed::Box;
 use std::fs::{read_to_string, File};
 use std::result::Result;
@@ -73,38 +73,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let pac_script = pac_script.as_ref().expect("inline PAC config");
-    let mut netrc_store = None;
 
-    #[cfg(feature = "negotiate")]
-    let auth = if config.negotiate {
-        AuthenticatorFactory::negotiate()
-    } else {
-        let store = if let Ok(file) = File::open(&config.netrc_file) {
-            netrc::Store::new(std::io::BufReader::new(file))?
-        } else {
-            netrc::Store::default()
-        };
-        netrc_store = Some(store.clone());
-        AuthenticatorFactory::basic(store)
+    let auth = match config.authorization {
+        #[cfg(feature = "negotiate")]
+        Authorization::Negotiate => AuthenticatorFactory::negotiate(),
+        Authorization::Basic(netrc_file) => {
+            let store = if let Ok(file) = File::open(&netrc_file) {
+                let netrc_store = netrc::Store::new(std::io::BufReader::new(file));
+                let netrc_store = match netrc_store {
+                    Err(cause) => return Err(cause.into()),
+                    Ok(netrc_store) => netrc_store,
+                };
+                let monitored_netrc_store = netrc_store.clone();
+                tokio::spawn(async move {
+                    monitor_netrc(&netrc_file, monitored_netrc_store).await;
+                });
+                netrc_store
+            } else {
+                netrc::Store::default()
+            };
+            AuthenticatorFactory::basic(store)
+        }
     };
-    #[cfg(not(feature = "negotiate"))]
-    let auth = {
-        let store = if let Ok(file) = File::open(&config.netrc_file) {
-            netrc::Store::new(std::io::BufReader::new(file))?
-        } else {
-            netrc::Store::default()
-        };
-        netrc_store = Some(store.clone());
-        AuthenticatorFactory::basic(store)
-    };
-
-    #[cfg(target_os = "linux")]
-    if let Some(netrc_store) = netrc_store {
-        let netrc_path = config.netrc_file.clone();
-        tokio::spawn(async move {
-            monitor_netrc(&netrc_path, netrc_store).await;
-        });
-    }
 
     tracing::info!("Authenticator factory: {}", &auth);
 
