@@ -45,6 +45,14 @@ fn is_file_or_http_uri(v: &str) -> Result<(), String> {
 
 impl Options {
     pub fn load() -> Self {
+        let mut args = Vec::new();
+        args.extend(std::env::args_os().take(1));
+        args.extend(readrc());
+        args.extend(std::env::args_os().skip(1));
+        Self::parse_args(&args)
+    }
+
+    fn parse_args(args: &[OsString]) -> Self {
         let default_pool_max_idle_per_host = usize::MAX.to_string();
 
         let app: _ = Command::new(env!("CARGO_PKG_NAME"))
@@ -109,12 +117,7 @@ impl Options {
                     .takes_value(true),
             );
 
-        let mut args = Vec::new();
-        args.extend(std::env::args_os().take(1));
-        args.extend(readrc());
-        args.extend(std::env::args_os().skip(1));
         let matches = app.get_matches_from(args);
-
         matches.into()
     }
 }
@@ -197,4 +200,50 @@ pub fn portable_dir(path: impl AsRef<Path>) -> PathBuf {
         })
         .unwrap_or_default();
     sys_config
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_pac_file_path() {
+        let mut example_pac = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .to_owned();
+        example_pac.push("paceval");
+        example_pac.push("example.pac");
+        let example_pac = example_pac.to_str().unwrap().to_owned();
+        let args = Options::parse_args(&[
+            "proxydetox".into(),
+            "--pac-file".into(),
+            example_pac.clone().into(),
+        ]);
+        assert_eq!(args.pac_file, Some(example_pac));
+    }
+
+    #[test]
+    fn test_pac_file_uri() {
+        let proxy_pac = String::from("http://example.org/proxy.pac");
+        let args = Options::parse_args(&[
+            "proxydetox".into(),
+            "--pac-file".into(),
+            proxy_pac.clone().into(),
+        ]);
+        assert_eq!(args.pac_file, Some(proxy_pac));
+    }
+
+    #[test]
+    fn test_port() {
+        let args = Options::parse_args(&["proxydetox".into(), "--port".into(), "8080".into()]);
+        assert_eq!(args.port, 8080);
+    }
+
+    #[cfg(feature = "negotiate")]
+    #[test]
+    fn test_negotiate() {
+        let args = Options::parse_args(&["proxydetox".into(), "--negotiate".into()]);
+        assert_eq!(args.negotiate, true);
+    }
 }
