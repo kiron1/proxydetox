@@ -46,7 +46,7 @@ impl AuthenticatorFactory {
             Self::None => Ok(Box::new(NoneAuthenticator)),
             Self::Basic(ref store) => {
                 let token = store.get(proxy_fqdn)?;
-                Ok(Box::new(BasicAuthenticator::new(token.to_owned())))
+                Ok(Box::new(BasicAuthenticator::new(token)))
             }
             #[cfg(feature = "negotiate")]
             Self::Negotiate => Ok(Box::new(NegotiateAuthenticator::new(proxy_fqdn)?)),

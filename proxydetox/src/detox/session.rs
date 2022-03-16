@@ -113,13 +113,12 @@ impl Session {
 
 impl Shared {
     fn find_proxy(&self, uri: &Uri) -> paclib::Proxies {
-        let proxys = tokio::task::block_in_place(move || {
+        tokio::task::block_in_place(move || {
             self.eval.lock().find_proxy(uri).unwrap_or_else(|cause| {
                 tracing::error!("failed to find_proxy: {:?}", cause);
                 paclib::Proxies::direct()
             })
-        });
-        proxys
+        })
     }
 
     fn proxy_client(&self, uri: http::Uri) -> Result<ProxyClient> {
@@ -192,7 +191,7 @@ impl PeerSession {
             proxy.clone(),
             req.method().clone(),
             req.uri().clone(),
-            req.version().clone(),
+            req.version(),
             req.headers()
                 .get(USER_AGENT)
                 .and_then(|v| v.to_str().ok())
@@ -252,7 +251,7 @@ impl PeerSession {
                 let stream = BroadcastStream::new(stream);
                 let stream = stream.map(|entry| match entry {
                     Ok(entry) => {
-                        let chunk = format!("data:{}\n\n", entry.to_string());
+                        let chunk = format!("data:{}\n\n", entry);
                         std::result::Result::<_, std::io::Error>::Ok(chunk)
                     }
                     Err(tokio_stream::wrappers::errors::BroadcastStreamRecvError::Lagged(
