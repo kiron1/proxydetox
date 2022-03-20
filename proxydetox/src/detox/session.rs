@@ -4,6 +4,7 @@ use std::convert::Infallible;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
+use std::time::Duration;
 use std::{
     collections::HashMap,
     task::{self, Poll},
@@ -53,6 +54,78 @@ type Result<T> = std::result::Result<T, Error>;
 
 type ProxyClient = crate::client::Client;
 
+#[derive(Debug)]
+pub struct Builder {
+    pac_script: Option<String>,
+    auth: Option<AuthenticatorFactory>,
+    pool_max_idle_per_host: usize,
+    pool_idle_timeout: Option<Duration>,
+    always_use_connect: bool,
+}
+
+impl std::default::Default for Builder {
+    fn default() -> Self {
+        Self {
+            pac_script: None,
+            auth: None,
+            pool_max_idle_per_host: usize::MAX,
+            pool_idle_timeout: None,
+            always_use_connect: false,
+        }
+    }
+}
+
+impl Builder {
+    /// PAC script used for evaluation
+    /// If `None`, FindProxy will evaluate to DIRECT
+    pub fn pac_script(mut self, pac_script: Option<String>) -> Self {
+        self.pac_script = pac_script;
+        self
+    }
+    /// Authenticator factory (Basic or Negotiate)
+    /// If `None`, use no authentication toward the proxy.
+    pub fn authenticator_factory(mut self, factory: Option<AuthenticatorFactory>) -> Self {
+        self.auth = factory;
+        self
+    }
+    /// sets the maximum idle connection per host allowed in the pool
+    pub fn pool_max_idle_per_host(mut self, max: usize) -> Self {
+        self.pool_max_idle_per_host = max;
+        self
+    }
+    /// set an optional timeout for idle sockets being kept-aliv.
+    pub fn pool_idle_timeout(mut self, timeout: Option<Duration>) -> Self {
+        self.pool_idle_timeout = timeout;
+        self
+    }
+    /// use the CONNECT method even for HTTP requests.
+    pub fn always_use_connect(mut self, yesno: bool) -> Self {
+        self.always_use_connect = yesno;
+        self
+    }
+
+    pub fn build(self) -> Session {
+        let pac_script = self
+            .pac_script
+            .unwrap_or_else(|| "function FindProxyForURL(url, host) { return \"DIRECT\"; }".into());
+        let eval = Mutex::new(Evaluator::new(&pac_script).unwrap());
+        let auth = self.auth.unwrap_or(AuthenticatorFactory::None);
+        let direct_client = hyper::Client::builder()
+            .pool_max_idle_per_host(self.pool_max_idle_per_host)
+            .pool_idle_timeout(self.pool_idle_timeout)
+            .build_http();
+        Session(Arc::new(Inner {
+            eval,
+            direct_client,
+            proxy_clients: Default::default(),
+            auth,
+            pool_idle_timeout: self.pool_idle_timeout,
+            pool_max_idle_per_host: self.pool_max_idle_per_host,
+            always_use_connect: self.always_use_connect,
+        }))
+    }
+}
+
 #[derive(Clone)]
 pub struct Session(Arc<Inner>);
 
@@ -61,7 +134,9 @@ struct Inner {
     direct_client: hyper::Client<hyper::client::HttpConnector>,
     proxy_clients: Mutex<HashMap<Uri, ProxyClient>>,
     auth: AuthenticatorFactory,
-    config: super::Config,
+    pool_max_idle_per_host: usize,
+    pool_idle_timeout: Option<Duration>,
+    always_use_connect: bool,
 }
 
 impl Inner {
@@ -80,20 +155,8 @@ impl std::fmt::Debug for Session {
 }
 
 impl Session {
-    pub fn new(pac_script: &str, auth: AuthenticatorFactory, config: super::Config) -> Self {
-        let eval = Mutex::new(Evaluator::new(pac_script).unwrap());
-        let direct_client = hyper::Client::builder()
-            .pool_max_idle_per_host(config.pool_max_idle_per_host)
-            .pool_idle_timeout(config.pool_idle_timeout)
-            .build_http();
-        let proxy_clients = Default::default();
-        Self(Arc::new(Inner {
-            eval,
-            direct_client,
-            proxy_clients,
-            auth,
-            config,
-        }))
+    pub fn builder() -> Builder {
+        Default::default()
     }
 
     // For now just use the first reportet proxy
@@ -119,8 +182,8 @@ impl Session {
                     }
                 };
                 let client = hyper::Client::builder()
-                    .pool_max_idle_per_host(self.0.config.pool_max_idle_per_host)
-                    .pool_idle_timeout(self.0.config.pool_idle_timeout)
+                    .pool_max_idle_per_host(self.0.pool_max_idle_per_host)
+                    .pool_idle_timeout(self.0.pool_idle_timeout)
                     .build(HttpProxyConnector::new(uri.clone()));
                 let client = ProxyClient::new(client, auth);
                 proxies.insert(uri, client.clone());
@@ -145,7 +208,7 @@ impl Session {
 
     pub async fn dispatch(&mut self, mut req: hyper::Request<Body>) -> Result<Response<Body>> {
         let proxy = self.find_proxy(req.uri()).await;
-        let is_connect = req.method() == hyper::Method::CONNECT || self.0.config.always_use_connect;
+        let is_connect = req.method() == hyper::Method::CONNECT || self.0.always_use_connect;
 
         tracing::debug!(%proxy);
 
