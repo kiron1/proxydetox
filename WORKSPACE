@@ -4,10 +4,10 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "build_bazel_rules_apple",
-    sha256 = "77e8bf6fda706f420a55874ae6ee4df0c9d95da6c7838228b26910fc82eea5a2",
+    sha256 = "a5f00fd89eff67291f6cd3efdc8fad30f4727e6ebb90718f3f05bbf3c3dd5ed7",
     urls = [
-        # release from 2021-10-30
-        "https://github.com/bazelbuild/rules_apple/releases/download/0.32.0/rules_apple.0.32.0.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_apple/releases/download/0.33.0/rules_apple.0.33.0.tar.gz",
+        "https://github.com/bazelbuild/rules_apple/releases/download/0.33.0/rules_apple.0.33.0.tar.gz",
     ],
 )
 
@@ -41,11 +41,10 @@ apple_support_dependencies()
 
 http_archive(
     name = "rules_rust",
-    sha256 = "285a4d967abf3739f1dcb34e2f5a7d056dde1de3e3bb3f0145522e9b9433cba9",
-    strip_prefix = "rules_rust-6630fd5b6b7fe143ea09f80f64dc20e3514495b4",
+    sha256 = "7453856d239a004c9e29cde2e45903a068446e4a69501ee7393faf08e1a30403",
     urls = [
-        # `main` branch as of 2021-12-21
-        "https://github.com/bazelbuild/rules_rust/archive/6630fd5b6b7fe143ea09f80f64dc20e3514495b4.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_rust/releases/download/0.1.0/rules_rust-v0.1.0.tar.gz",
+        "https://github.com/bazelbuild/rules_rust/releases/download/0.1.0/rules_rust-v0.1.0.tar.gz",
     ],
 )
 
@@ -53,7 +52,7 @@ load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 
 rust_repositories(
     edition = "2021",
-    version = "1.57.0",
+    version = "1.59.0",
 )
 
 load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
@@ -66,12 +65,11 @@ raze_fetch_remote_crates()
 
 http_archive(
     name = "rules_pkg",
-    sha256 = "a89e203d3cf264e564fcb96b6e06dd70bc0557356eb48400ce4b5d97c2c3720d",
     urls = [
-        # release from 2021-08-18
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/0.5.1/rules_pkg-0.5.1.tar.gz",
-        "https://github.com/bazelbuild/rules_pkg/releases/download/0.5.1/rules_pkg-0.5.1.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/0.6.0/rules_pkg-0.6.0.tar.gz",
+        "https://github.com/bazelbuild/rules_pkg/releases/download/0.6.0/rules_pkg-0.6.0.tar.gz",
     ],
+    sha256 = "62eeb544ff1ef41d786e329e1536c1d541bb9bcad27ae984d57f18f314018e66",
 )
 
 load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
