@@ -244,6 +244,6 @@ mod tests {
     #[test]
     fn test_negotiate() {
         let args = Options::parse_args(&["proxydetox".into(), "--negotiate".into()]);
-        assert_eq!(args.negotiate, true);
+        assert!(args.negotiate);
     }
 }

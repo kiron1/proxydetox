@@ -8,12 +8,10 @@ rust_library(
         "src/auth/kerberos.rs",
         "src/auth/netrc.rs",
         "src/client.rs",
-        "src/detox.rs",
-        "src/detox/config.rs",
-        "src/detox/session.rs",
         "src/io.rs",
         "src/lib.rs",
         "src/net.rs",
+        "src/session.rs",
     ],
     compile_data = [
         "src/502.html",

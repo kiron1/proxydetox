@@ -1,13 +1,13 @@
 pub mod auth;
 pub mod client;
-pub mod detox;
 pub mod io;
 pub mod net;
+pub mod session;
 
 pub use net::http_file;
 use parking_lot::Mutex;
 
-pub use crate::detox::Session;
+pub use crate::session::Session;
 use std::{net::SocketAddr, sync::Arc};
 
 #[derive(Debug)]
