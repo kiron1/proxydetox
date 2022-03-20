@@ -25,7 +25,8 @@ Proxydetox supports the following systems:
 - Windows
 
 Prebuild versions of Proxydetox can be found on [the releaes page][releases].
-Installation instructions are provided in the [installation section](installation.md).
+Installation instructions are provided in the
+[installation section](installation.md).
 
 <sup>1)</sup> Can be disabled via the `--no-default-features` flag during build
 time.<br>

@@ -1,0 +1,30 @@
+#!/bin/sh
+#
+# Publish the mdbook output to the gh-pages branch to make it viewable online.
+# 
+# Working directory must be root of checkout.
+#
+# Usage:
+#
+#     ./tools/publish-gh-pages
+#
+
+set -eu
+
+GIT_WORK_TREE=$(mktemp -d /tmp/gh_pages.XXXXXX)
+MDBOOK_DEST=$(mktemp -d /tmp/mdbook.XXXXXX)
+trap 'rm -rf -- "${GIT_WORK_TREE}" "${MDBOOK_DEST}"' EXIT
+
+REMOTE=$(git config --get remote.origin.url)
+git clone --quiet --single-branch --branch gh-pages "${REMOTE}" "${GIT_WORK_TREE}"
+
+# copy arround, since `mdbook build` deletes destination directory
+mdbook build -d "${MDBOOK_DEST}"
+rm -rf -- "${GIT_WORK_TREE}/*"
+cp --recursive "${MDBOOK_DEST}/"* "${GIT_WORK_TREE}/"
+
+git -C "${GIT_WORK_TREE}" config user.email "action@github.com"
+git -C "${GIT_WORK_TREE}" config user.name "GitHub Action"
+git -C "${GIT_WORK_TREE}" add --all
+git -C "${GIT_WORK_TREE}" commit --amend --message "Publish GitHub Pages"
+git -C "${GIT_WORK_TREE}" push --force origin HEAD

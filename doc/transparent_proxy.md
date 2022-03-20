@@ -1,4 +1,3 @@
-
 ```sh
 sysctl -w net.ipv4.ip_forward=1
 ```
@@ -16,8 +15,9 @@ iptables -A OUTPUT -t nat -p tcp --dport 80 -m owner ! --gid-owner proxydetox -j
 iptables -t nat -L -v --line-numbers
 ```
 
-Run `proxydetox` in the `proxydetox` group sucht that the own `proxydetox` traffic does not get matched
-with the `iptables` rule from above (otherwise we would end up in a endless loop).
+Run `proxydetox` in the `proxydetox` group sucht that the own `proxydetox`
+traffic does not get matched with the `iptables` rule from above (otherwise we
+would end up in a endless loop).
 
 ```sh
 sg proxydetox -c proxydetox

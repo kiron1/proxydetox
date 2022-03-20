@@ -11,3 +11,7 @@
 
 - [Building Proxydetox](build.md)
   - [Autostart](service.md)
+
+---
+
+[Alternatives](alternatives.md)
