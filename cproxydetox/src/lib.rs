@@ -1,5 +1,4 @@
 use proxydetox::auth::AuthenticatorFactory;
-use proxydetox::detox::Config;
 use proxydetox::http_file;
 use proxydetox::Server;
 use std::ffi::CStr;
@@ -56,9 +55,12 @@ pub unsafe extern "C" fn proxydetox_new(
     #[cfg(not(feature = "negotiate"))]
     let auth = AuthenticatorFactory::basic(netrc_path());
 
-    let config = Config::default();
+    let session = proxydetox::Session::builder()
+        .pac_script(Some(pac_script))
+        .authenticator_factory(Some(auth))
+        .build();
 
-    let server = Box::new(Server::new(pac_script, auth, port, config));
+    let server = Box::new(Server::new(port, session));
 
     Box::<Server>::into_raw(server)
 }

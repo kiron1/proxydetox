@@ -7,7 +7,7 @@ pub mod net;
 pub use net::http_file;
 use parking_lot::Mutex;
 
-use crate::auth::AuthenticatorFactory;
+pub use crate::detox::Session;
 use std::{net::SocketAddr, sync::Arc};
 
 #[derive(Debug)]
@@ -17,28 +17,19 @@ pub enum Command {
 }
 
 pub struct Server {
-    pac_script: String,
-    auth: AuthenticatorFactory,
     port: u16,
-    config: detox::Config,
+    session: Session,
     tx: tokio::sync::mpsc::Sender<Command>,
     rx: Arc<Mutex<tokio::sync::mpsc::Receiver<Command>>>,
 }
 
 impl Server {
-    pub fn new(
-        pac_script: String,
-        auth: AuthenticatorFactory,
-        port: u16,
-        config: detox::Config,
-    ) -> Self {
+    pub fn new(port: u16, session: Session) -> Self {
         let (tx, rx) = tokio::sync::mpsc::channel::<Command>(32);
 
         Self {
-            pac_script,
-            auth,
             port,
-            config,
+            session,
             tx,
             rx: Arc::new(Mutex::new(rx)),
         }
@@ -60,11 +51,7 @@ impl Server {
         let addr = SocketAddr::from(([127, 0, 0, 1], self.port));
 
         loop {
-            let server = hyper::Server::bind(&addr).serve(detox::Session::new(
-                &self.pac_script,
-                self.auth.clone(),
-                self.config.clone(),
-            ));
+            let server = hyper::Server::bind(&addr).serve(self.session.clone());
             let server = server
                 .with_graceful_shutdown(async {
                     let _ = shutdown_rx.recv().await;

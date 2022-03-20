@@ -8,11 +8,10 @@ mod limit;
 mod options;
 
 use options::Options;
+use proxydetox::{auth::AuthenticatorFactory, http_file};
 use std::boxed::Box;
 use std::fs::read_to_string;
 use std::result::Result;
-
-use proxydetox::{auth::AuthenticatorFactory, detox, http_file};
 
 fn load_pac_file(opt: &Options) -> (Option<String>, std::io::Result<String>) {
     // For Windows, accept a proxy.pac file located next to the binary.
@@ -71,8 +70,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
     }
 
-    let pac_script = pac_script.as_ref().expect("inline PAC config");
-
     #[cfg(feature = "negotiate")]
     let auth = if config.negotiate {
         AuthenticatorFactory::negotiate()
@@ -85,13 +82,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     tracing::info!("Authenticator factory: {}", &auth);
 
-    let detox_config = detox::Config {
-        pool_idle_timeout: config.pool_idle_timeout,
-        pool_max_idle_per_host: config.pool_max_idle_per_host,
-        always_use_connect: config.always_use_connect,
-    };
+    let session = proxydetox::Session::builder()
+        .pac_script(pac_script.ok())
+        .authenticator_factory(Some(auth))
+        .always_use_connect(config.always_use_connect)
+        .pool_idle_timeout(config.pool_idle_timeout)
+        .pool_max_idle_per_host(config.pool_max_idle_per_host)
+        .build();
 
-    let mut server = proxydetox::Server::new(pac_script.clone(), auth, config.port, detox_config);
+    let mut server = proxydetox::Server::new(config.port, session);
 
     {
         use tokio::signal;
