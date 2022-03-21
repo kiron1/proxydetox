@@ -1,4 +1,4 @@
-# Build and Install `proxydetox`
+# Building Proxydetox
 
 Proxydetox can be build using [cargo][cargo] or [Bazel][bazel]. The macOS
 application can only build via Bazel.
@@ -71,8 +71,13 @@ bazel build //macos/app:ProxydetoxApp
 
 ### Enable build features
 
-Append `--negotiate=1` to bazel to enable the negotiate feature:
+Append `--features=negotiate` to bazel to enable the negotiate feature:
 
 ```sh
 bazel build --features=negotiate //...
 ```
+
+## Autostart
+
+To start Proxydetox automatically when a user is logged in, please see the
+[Autostart](service.md) section.

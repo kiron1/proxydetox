@@ -1,0 +1,6 @@
+[book]
+title = "Proxydetox"
+src = "doc/"
+
+[output.html]
+default-theme = "rust"
