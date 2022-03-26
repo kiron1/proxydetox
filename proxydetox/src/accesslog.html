@@ -1,0 +1,44 @@
+<!DOCTYPE html> <html lang="en">
+<head>
+<meta charset="utf-8">
+<title>access.log</title>
+<style type="text/css"><!--
+body { background: #111111; color: white; font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif; }
+hr { border: 0; border-bottom: 1px dashed; }
+--></style>
+</head>
+<body>
+<h1>access.log</h1>
+<button id="stop">Stop</button>
+<ul id="events"></ul>
+<hr>
+<script>
+  const button = document.getElementById("stop");
+  const eventList = document.getElementById("events");
+  const sse = new EventSource(location.origin + "/access.log");
+
+  sse.addEventListener("open", (e) => {
+  });
+
+  sse.addEventListener("message", (e) => {
+    const newElement = document.createElement("li");
+
+    newElement.textContent = e.data;
+    eventList.appendChild(newElement);
+  });
+
+  sse.addEventListener("lagged", (e) => {
+    console.log(`lagged ${e.data}`);
+  });
+
+  sse.addEventListener("error", (e) => {
+    console.log("EventSource error");
+  });
+
+  button.addEventListener("click", (e) => {
+    console.log("Connection closed");
+    sse.close();
+  });
+</script>
+</body>
+</html>

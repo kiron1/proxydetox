@@ -12,6 +12,7 @@ use tracing_subscriber::filter::LevelFilter;
 #[derive(Debug, PartialEq)]
 pub enum Authorization {
     Basic(PathBuf),
+    #[allow(dead_code)]
     Negotiate,
 }
 

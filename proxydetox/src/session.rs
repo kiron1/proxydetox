@@ -2,6 +2,7 @@
 
 use std::convert::Infallible;
 use std::future::Future;
+use std::net::SocketAddr;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
@@ -10,7 +11,8 @@ use std::{
     task::{self, Poll},
 };
 
-use http::header::{HOST, VIA};
+use futures::stream::StreamExt;
+use http::header::{ACCEPT, CACHE_CONTROL, CONTENT_LENGTH, CONTENT_TYPE, HOST, USER_AGENT, VIA};
 use http::HeaderValue;
 use http::Uri;
 use http::{Request, Response};
@@ -18,9 +20,12 @@ use hyper::service::Service;
 use hyper::Body;
 use parking_lot::Mutex;
 use proxy_client::HttpProxyConnector;
+use tokio::sync::broadcast::{self, Sender};
+use tokio_stream::wrappers::BroadcastStream;
 use tracing_attributes::instrument;
 use tracing_futures::Instrument;
 
+use crate::accesslog;
 use crate::auth::AuthenticatorFactory;
 use paclib::proxy::ProxyDesc;
 use paclib::Evaluator;
@@ -114,7 +119,18 @@ impl Builder {
             .pool_max_idle_per_host(self.pool_max_idle_per_host)
             .pool_idle_timeout(self.pool_idle_timeout)
             .build_http();
-        Session(Arc::new(Inner {
+        let (accesslog_tx, mut accesslog_rx) = broadcast::channel(16);
+        tokio::spawn(async move {
+            loop {
+                let entry = accesslog_rx.recv().await;
+                if let Err(cause) = entry {
+                    if cause == broadcast::error::RecvError::Closed {
+                        break;
+                    }
+                }
+            }
+        });
+        Session(Arc::new(Shared {
             eval,
             direct_client,
             proxy_clients: Default::default(),
@@ -122,14 +138,21 @@ impl Builder {
             pool_idle_timeout: self.pool_idle_timeout,
             pool_max_idle_per_host: self.pool_max_idle_per_host,
             always_use_connect: self.always_use_connect,
+            accesslog_tx,
         }))
     }
 }
 
 #[derive(Clone)]
-pub struct Session(Arc<Inner>);
+pub struct Session(Arc<Shared>);
 
-struct Inner {
+#[derive(Clone)]
+pub struct PeerSession {
+    peer: Arc<SocketAddr>,
+    shared: Arc<Shared>,
+}
+
+struct Shared {
     eval: Mutex<paclib::Evaluator>,
     direct_client: hyper::Client<hyper::client::HttpConnector>,
     proxy_clients: Mutex<HashMap<Uri, ProxyClient>>,
@@ -137,15 +160,7 @@ struct Inner {
     pool_max_idle_per_host: usize,
     pool_idle_timeout: Option<Duration>,
     always_use_connect: bool,
-}
-
-impl Inner {
-    fn find_proxy(&self, uri: &Uri) -> paclib::Proxies {
-        self.eval.lock().find_proxy(uri).unwrap_or_else(|cause| {
-            tracing::error!("failed to find_proxy: {:?}", cause);
-            paclib::Proxies::direct()
-        })
-    }
+    accesslog_tx: Sender<accesslog::Entry>,
 }
 
 impl std::fmt::Debug for Session {
@@ -158,23 +173,26 @@ impl Session {
     pub fn builder() -> Builder {
         Default::default()
     }
+}
 
-    // For now just use the first reportet proxy
-    async fn find_proxy(&mut self, uri: &http::Uri) -> paclib::proxy::ProxyDesc {
-        let inner = self.0.clone();
-        let uri = uri.clone();
-        let proxy = tokio::task::block_in_place(move || inner.find_proxy(&uri));
-        proxy.first()
+impl Shared {
+    fn find_proxy(&self, uri: &Uri) -> paclib::Proxies {
+        tokio::task::block_in_place(move || {
+            self.eval.lock().find_proxy(uri).unwrap_or_else(|cause| {
+                tracing::error!("failed to find_proxy: {:?}", cause);
+                paclib::Proxies::direct()
+            })
+        })
     }
 
     #[instrument(level = "trace", skip(self))]
-    fn proxy_client(&mut self, uri: http::Uri) -> Result<ProxyClient> {
-        let mut proxies = self.0.proxy_clients.lock();
+    fn proxy_client(&self, uri: http::Uri) -> Result<ProxyClient> {
+        let mut proxies = self.proxy_clients.lock();
         match proxies.get(&uri) {
             Some(proxy) => Ok(proxy.clone()),
             None => {
-                tracing::trace!("new proxy client");
-                let auth = self.0.auth.make(&uri);
+                tracing::debug!("new proxy client for {:?}", uri.host());
+                let auth = self.auth.make(&uri);
                 let auth = match auth {
                     Ok(auth) => auth,
                     Err(ref cause) => {
@@ -183,8 +201,8 @@ impl Session {
                     }
                 };
                 let client = hyper::Client::builder()
-                    .pool_max_idle_per_host(self.0.pool_max_idle_per_host)
-                    .pool_idle_timeout(self.0.pool_idle_timeout)
+                    .pool_max_idle_per_host(self.pool_max_idle_per_host)
+                    .pool_idle_timeout(self.pool_idle_timeout)
                     .build(HttpProxyConnector::new(uri.clone()));
                 let client = ProxyClient::new(client, auth);
                 proxies.insert(uri, client.clone());
@@ -192,7 +210,9 @@ impl Session {
             }
         }
     }
+}
 
+impl PeerSession {
     pub async fn process(&mut self, req: hyper::Request<Body>) -> Result<Response<Body>> {
         let res = if req.uri().authority().is_some() {
             self.dispatch(req).await
@@ -216,7 +236,7 @@ impl Session {
             .remove(http::header::HeaderName::from_static("proxy-connection"));
         let _proxy_auth = req.headers_mut().remove(http::header::PROXY_AUTHORIZATION);
 
-        let proxy = self.find_proxy(req.uri()).await;
+        let proxy = self.shared.find_proxy(req.uri()).first();
         self.dispatch_with_proxy(proxy, req).await
     }
 
@@ -228,40 +248,110 @@ impl Session {
     ) -> Result<Response<Body>> {
         let proxy_client;
         let client: &(dyn crate::client::ForwardClient + Send + Sync) = match proxy {
-            ProxyDesc::Direct => &self.0.direct_client,
+            ProxyDesc::Direct => &self.shared.direct_client,
             ProxyDesc::Proxy(ref proxy) => {
-                proxy_client = self.proxy_client(proxy.clone())?;
+                proxy_client = self.shared.proxy_client(proxy.clone())?;
                 &proxy_client
             }
         };
 
-        let is_connect = req.method() == hyper::Method::CONNECT || self.0.always_use_connect;
+        let access = accesslog::Entry::begin(
+            *self.peer,
+            proxy.clone(),
+            req.method().clone(),
+            req.uri().clone(),
+            req.version(),
+            req.headers()
+                .get(USER_AGENT)
+                .and_then(|v| v.to_str().ok())
+                .map(|s| s.to_owned()),
+        );
+
+        let is_connect = req.method() == hyper::Method::CONNECT || self.shared.always_use_connect;
         let mut res = if is_connect {
             client.connect(req).await
         } else {
             client.http(req).await
         };
 
-        if let Ok(ref mut res) = res {
-            if res.status() == http::StatusCode::PROXY_AUTHENTICATION_REQUIRED {
-                tracing::error!("407 proxy authentication required for {}", &proxy);
-                return Err(Error::ProxyAuthenticationRequired(proxy));
-            }
+        match res {
+            Ok(ref mut res) => {
+                let entry = access.success(
+                    res.status(),
+                    res.headers()
+                        .get(CONTENT_LENGTH)
+                        .and_then(|v| v.to_str().ok())
+                        .and_then(|s| s.parse::<u64>().ok()),
+                );
+                let _ = self.shared.accesslog_tx.send(entry);
 
-            let via = HeaderValue::from_str(&format!(
-                "{}; {}/{}",
-                &proxy,
-                env!("CARGO_PKG_NAME"),
-                env!("CARGO_PKG_VERSION")
-            ))
-            .unwrap();
-            res.headers_mut().insert(VIA, via);
+                if res.status() == http::StatusCode::PROXY_AUTHENTICATION_REQUIRED {
+                    tracing::error!("407 proxy authentication required for {}", &proxy);
+                    return Err(Error::ProxyAuthenticationRequired(proxy));
+                }
+
+                let via = HeaderValue::from_str(&format!(
+                    "{}; {}/{}",
+                    &proxy,
+                    env!("CARGO_PKG_NAME"),
+                    env!("CARGO_PKG_VERSION")
+                ))
+                .unwrap();
+                res.headers_mut().insert(VIA, via);
+            }
+            Err(ref cause) => {
+                let entry = access.error(&cause);
+                let _ = self.shared.accesslog_tx.send(entry);
+            }
         }
         Ok(res?)
     }
 
     pub async fn management(&mut self, req: hyper::Request<Body>) -> Result<Response<Body>> {
-        let resp = if req.uri() == "/proxy.pac" {
+        let resp = if req.uri() == "/access.log" {
+            let accept_event_stream = req
+                .headers()
+                .get(ACCEPT)
+                .map(|v| v == "text/event-stream")
+                .unwrap_or(false);
+
+            if accept_event_stream {
+                // the client accepts an SSE event stream
+                let stream = self.shared.accesslog_tx.subscribe();
+                let stream = BroadcastStream::new(stream);
+                let stream = stream.map(|entry| match entry {
+                    Ok(entry) => {
+                        let chunk = format!("data:{}\n\n", entry);
+                        std::result::Result::<_, std::io::Error>::Ok(chunk)
+                    }
+                    Err(tokio_stream::wrappers::errors::BroadcastStreamRecvError::Lagged(
+                        count,
+                    )) => {
+                        let chunk = format!("event:lagged\ndata:{}\n\n", count);
+                        Ok(chunk)
+                    }
+                });
+
+                let mut resp = Response::new(Body::wrap_stream(stream));
+                resp.headers_mut().insert(
+                    CACHE_CONTROL,
+                    http::header::HeaderValue::from_static("no-store"),
+                );
+                resp.headers_mut().insert(
+                    CONTENT_TYPE,
+                    http::header::HeaderValue::from_static("text/event-stream"),
+                );
+                resp
+            } else {
+                let body = include_str!("accesslog.html");
+                let mut resp = Response::new(Body::from(body));
+                resp.headers_mut().insert(
+                    CONTENT_TYPE,
+                    http::header::HeaderValue::from_static("text/html"),
+                );
+                resp
+            }
+        } else if req.uri() == "/proxy.pac" {
             let body = format!(
                 "function FindProxyForURL(url, host) {{ return \"PROXY {}\"; }}\n",
                 req.headers()
@@ -271,7 +361,7 @@ impl Session {
             );
             let mut resp = Response::new(Body::from(body));
             resp.headers_mut().insert(
-                http::header::CONTENT_TYPE,
+                CONTENT_TYPE,
                 http::header::HeaderValue::from_static("application/x-ns-proxy-autoconfig"),
             );
             resp
@@ -280,11 +370,11 @@ impl Session {
                 "<!DOCTYPE html><html><h1>{}/{}</h1><h2>DNS Cache</h2><code>{:?}</code></html>",
                 env!("CARGO_PKG_NAME"),
                 env!("CARGO_PKG_VERSION"),
-                self.0.eval.lock().cache()
+                self.shared.eval.lock().cache()
             );
             let mut resp = Response::new(Body::from(body));
             resp.headers_mut().insert(
-                http::header::CONTENT_TYPE,
+                CONTENT_TYPE,
                 http::header::HeaderValue::from_static("text/html"),
             );
             resp
@@ -313,7 +403,7 @@ where
     resp
 }
 
-impl Service<Request<Body>> for Session {
+impl Service<Request<Body>> for PeerSession {
     type Response = Response<Body>;
     type Error = Infallible;
     type Future =
@@ -327,14 +417,14 @@ impl Service<Request<Body>> for Session {
     }
 
     fn call(&mut self, req: Request<Body>) -> Self::Future {
-        let mut detox = self.clone();
+        let mut this = self.clone();
         let method = req.method().clone();
         let uri = req.uri().clone();
         let version = req.version();
 
         let res = async move {
             tracing::trace!("request: {:?}", &req);
-            let res = detox.process(req).await;
+            let res = this.process(req).await;
             tracing::trace!("response: {:?}", &res);
             let out = match res {
                 Err(ref error) => make_error_response(error),
@@ -349,7 +439,7 @@ impl Service<Request<Body>> for Session {
 }
 
 impl<'a> Service<&'a hyper::server::conn::AddrStream> for Session {
-    type Response = Self;
+    type Response = PeerSession;
     type Error = std::convert::Infallible;
     type Future =
         Pin<Box<dyn Future<Output = std::result::Result<Self::Response, Self::Error>> + Send>>;
@@ -362,11 +452,14 @@ impl<'a> Service<&'a hyper::server::conn::AddrStream> for Session {
     }
 
     fn call(&mut self, socket: &hyper::server::conn::AddrStream) -> Self::Future {
-        let this = self.clone();
+        let shared = self.0.clone();
         let addr = socket.remote_addr();
         let res = async move {
             tracing::debug!("new connection");
-            Ok(this)
+            Ok(PeerSession {
+                peer: Arc::new(addr),
+                shared,
+            })
         };
         let res = res.instrument(tracing::debug_span!("call", addr=%addr));
         Box::pin(res)
