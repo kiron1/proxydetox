@@ -4,6 +4,7 @@ load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
 rust_library(
     name = "proxydetoxlib",
     srcs = [
+        "src/accesslog.rs",
         "src/auth.rs",
         "src/auth/kerberos.rs",
         "src/auth/netrc.rs",
@@ -14,6 +15,7 @@ rust_library(
     ],
     compile_data = [
         "src/502.html",
+        "src/accesslog.html",
     ],
     crate_features = select({
         "//:enable_negotiate": ["negotiate"],
@@ -35,6 +37,8 @@ rust_library(
         "//proxydetox/cargo:parking_lot",
         "//proxydetox/cargo:thiserror",
         "//proxydetox/cargo:tokio",
+        "//proxydetox/cargo:chrono",
+        "//proxydetox/cargo:tokio_stream",
         "//proxydetox/cargo:tracing",
         "//proxydetox/cargo:tracing_futures",
         "//proxydetox/cargo:tracing_subscriber",
