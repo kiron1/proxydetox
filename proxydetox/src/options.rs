@@ -7,6 +7,7 @@ use std::{
 };
 
 use clap::{Arg, ArgMatches, Command};
+use tracing_subscriber::filter::LevelFilter;
 
 #[derive(Debug, PartialEq)]
 pub enum Authorization {
@@ -16,6 +17,7 @@ pub enum Authorization {
 
 #[derive(Debug)]
 pub struct Options {
+    pub log_level: LevelFilter,
     pub pac_file: Option<String>,
     pub authorization: Authorization,
     pub always_use_connect: bool,
@@ -82,6 +84,20 @@ impl Options {
 
         let app = app
             .arg(
+                Arg::new("verbose")
+                    .short('v')
+                    .long("verbose")
+                    .multiple_occurrences(true)
+                    .help("Increases verbosity level"),
+            )
+            .arg(
+                 Arg::new("quiet")
+                    .short('q')
+                    .long("quiet")
+                    .multiple_occurrences(true)
+                    .help("Decreases verbosity level"),
+            )
+            .arg(
                 Arg::new("port")
                     .short('P')
                     .long("port")
@@ -128,6 +144,17 @@ impl Options {
 
 impl From<ArgMatches> for Options {
     fn from(m: ArgMatches) -> Self {
+        let log_level = 2 /* INFO */;
+        let log_level = log_level + m.occurrences_of("verbose") as i32;
+        let log_level = log_level - m.occurrences_of("quiet") as i32;
+        let log_level = match log_level {
+            0 => LevelFilter::ERROR,
+            1 => LevelFilter::WARN,
+            2 => LevelFilter::INFO,
+            3 => LevelFilter::DEBUG,
+            4.. => LevelFilter::TRACE,
+            _ => LevelFilter::OFF,
+        };
         let netrc_file = m
             .value_of("netrc_file")
             .map(PathBuf::from)
@@ -147,6 +174,7 @@ impl From<ArgMatches> for Options {
         let authorization = Authorization::Basic(netrc_file);
 
         Self {
+            log_level,
             pac_file: m.value_of("pac_file").map(String::from),
             authorization,
             always_use_connect: m.is_present("always_use_connect"),

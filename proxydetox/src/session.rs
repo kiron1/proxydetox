@@ -10,7 +10,6 @@ use std::{
     task::{self, Poll},
 };
 
-use futures::future;
 use http::header::{HOST, VIA};
 use http::HeaderValue;
 use http::Uri;
@@ -20,6 +19,7 @@ use hyper::Body;
 use parking_lot::Mutex;
 use proxy_client::HttpProxyConnector;
 use tracing_attributes::instrument;
+use tracing_futures::Instrument;
 
 use crate::auth::AuthenticatorFactory;
 use paclib::proxy::ProxyDesc;
@@ -167,17 +167,18 @@ impl Session {
         proxy.first()
     }
 
+    #[instrument(level = "trace", skip(self))]
     fn proxy_client(&mut self, uri: http::Uri) -> Result<ProxyClient> {
         let mut proxies = self.0.proxy_clients.lock();
         match proxies.get(&uri) {
             Some(proxy) => Ok(proxy.clone()),
             None => {
-                tracing::debug!("new proxy client for {:?}", uri.host());
+                tracing::trace!("new proxy client");
                 let auth = self.0.auth.make(&uri);
                 let auth = match auth {
                     Ok(auth) => auth,
                     Err(ref cause) => {
-                        tracing::warn!("error when makeing authenticator for {}: {}", &uri, cause);
+                        tracing::warn!("error makeing authenticator: {}", cause);
                         Box::new(crate::auth::NoneAuthenticator)
                     }
                 };
@@ -192,26 +193,22 @@ impl Session {
         }
     }
 
-    #[instrument(level = "debug", skip(req), fields(method=?req.method(), uri=?req.uri()))]
     pub async fn process(&mut self, req: hyper::Request<Body>) -> Result<Response<Body>> {
         let res = if req.uri().authority().is_some() {
             self.dispatch(req).await
         } else if req.method() == hyper::Method::GET {
             self.management(req).await
         } else {
-            let mut resp = Response::new(Body::from(String::from("Invalid Requst")));
-            *resp.status_mut() = http::StatusCode::BAD_REQUEST;
-            Ok(resp)
+            let mut res = Response::new(Body::from(String::from("Invalid Requst")));
+            *res.status_mut() = http::StatusCode::BAD_REQUEST;
+            Ok(res)
         };
+
+        tracing::debug!("response: {:?}", res.as_ref().map(|r| r.status()));
         res
     }
 
     pub async fn dispatch(&mut self, mut req: hyper::Request<Body>) -> Result<Response<Body>> {
-        let proxy = self.find_proxy(req.uri()).await;
-        let is_connect = req.method() == hyper::Method::CONNECT || self.0.always_use_connect;
-
-        tracing::debug!(%proxy);
-
         // Remove hop-by-hop headers which are meant for the proxy.
         // "proxy-connection" is not an official header, but used by many clients.
         let _proxy_connection = req
@@ -219,6 +216,16 @@ impl Session {
             .remove(http::header::HeaderName::from_static("proxy-connection"));
         let _proxy_auth = req.headers_mut().remove(http::header::PROXY_AUTHORIZATION);
 
+        let proxy = self.find_proxy(req.uri()).await;
+        self.dispatch_with_proxy(proxy, req).await
+    }
+
+    #[instrument(level = "debug", skip(self, req))]
+    pub async fn dispatch_with_proxy(
+        &mut self,
+        proxy: ProxyDesc,
+        req: hyper::Request<Body>,
+    ) -> Result<Response<Body>> {
         let proxy_client;
         let client: &(dyn crate::client::ForwardClient + Send + Sync) = match proxy {
             ProxyDesc::Direct => &self.0.direct_client,
@@ -228,6 +235,7 @@ impl Session {
             }
         };
 
+        let is_connect = req.method() == hyper::Method::CONNECT || self.0.always_use_connect;
         let mut res = if is_connect {
             client.connect(req).await
         } else {
@@ -236,6 +244,7 @@ impl Session {
 
         if let Ok(ref mut res) = res {
             if res.status() == http::StatusCode::PROXY_AUTHENTICATION_REQUIRED {
+                tracing::error!("407 proxy authentication required for {}", &proxy);
                 return Err(Error::ProxyAuthenticationRequired(proxy));
             }
 
@@ -319,24 +328,31 @@ impl Service<Request<Body>> for Session {
 
     fn call(&mut self, req: Request<Body>) -> Self::Future {
         let mut detox = self.clone();
+        let method = req.method().clone();
+        let uri = req.uri().clone();
+        let version = req.version();
 
-        let resp = async move {
-            let resp = detox.process(req).await;
-            tracing::trace!("response {:?}", resp);
-            let out = match resp {
+        let res = async move {
+            tracing::trace!("request: {:?}", &req);
+            let res = detox.process(req).await;
+            tracing::trace!("response: {:?}", &res);
+            let out = match res {
                 Err(ref error) => make_error_response(error),
-                Ok(resp) => resp,
+                Ok(res) => res,
             };
             Ok(out)
         };
-        Box::pin(resp)
+        let res = res
+            .instrument(tracing::debug_span!("call", method=%method, uri=%uri, version=?version));
+        Box::pin(res)
     }
 }
 
 impl<'a> Service<&'a hyper::server::conn::AddrStream> for Session {
     type Response = Self;
     type Error = std::convert::Infallible;
-    type Future = future::Ready<std::result::Result<Self::Response, Self::Error>>;
+    type Future =
+        Pin<Box<dyn Future<Output = std::result::Result<Self::Response, Self::Error>> + Send>>;
 
     fn poll_ready(
         &mut self,
@@ -345,9 +361,14 @@ impl<'a> Service<&'a hyper::server::conn::AddrStream> for Session {
         Ok(()).into()
     }
 
-    #[instrument(level = "debug")]
     fn call(&mut self, socket: &hyper::server::conn::AddrStream) -> Self::Future {
-        tracing::debug!( remote_addr = %socket.remote_addr(), "new client");
-        future::ok(self.clone())
+        let this = self.clone();
+        let addr = socket.remote_addr();
+        let res = async move {
+            tracing::debug!("new connection");
+            Ok(this)
+        };
+        let res = res.instrument(tracing::debug_span!("call", addr=%addr));
+        Box::pin(res)
     }
 }

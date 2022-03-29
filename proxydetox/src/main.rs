@@ -13,6 +13,7 @@ use proxydetox::{auth::AuthenticatorFactory, http_file};
 use std::boxed::Box;
 use std::fs::{read_to_string, File};
 use std::result::Result;
+use tracing_subscriber::filter::EnvFilter;
 
 fn load_pac_file(opt: &Options) -> (Option<String>, std::io::Result<String>) {
     // For Windows, accept a proxy.pac file located next to the binary.
@@ -54,9 +55,23 @@ fn load_pac_file(opt: &Options) -> (Option<String>, std::io::Result<String>) {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    tracing_subscriber::fmt::init();
-
     let config = Options::load();
+
+    let env_name = format!("{}_LOG", env!("CARGO_PKG_NAME").to_uppercase());
+
+    let filter = if let Ok(filter) = EnvFilter::try_from_env(&env_name) {
+        filter
+    } else {
+        EnvFilter::default()
+            .add_directive(format!("proxydetox={0}", config.log_level).parse()?)
+            // .add_directive(format!("paclib={0}", config.log_level).parse()?)
+            .add_directive(format!("proxy_client={0}", config.log_level).parse()?)
+    };
+
+    tracing_subscriber::fmt()
+        .compact()
+        .with_env_filter(filter)
+        .init();
 
     #[cfg(target_family = "unix")]
     limit::update_limits();
