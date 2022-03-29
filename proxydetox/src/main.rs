@@ -85,6 +85,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             pac_script.as_ref().expect("inline PAC config")
         );
     }
+    if let Err(cause) = pac_script {
+        tracing::error!("PAC config error: {}", cause);
+        return Err(cause.into());
+    }
 
     let auth = match config.authorization {
         #[cfg(feature = "negotiate")]
