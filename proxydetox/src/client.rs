@@ -10,6 +10,7 @@ use std::{
         Arc,
     },
 };
+use tracing_futures::Instrument;
 
 use crate::auth::Authenticator;
 
@@ -109,12 +110,14 @@ impl ForwardClient for hyper::Client<hyper::client::HttpConnector, Body> {
                 Ok(resp)
             }
         };
+        let resp = resp.instrument(tracing::trace_span!("HyperClient::connect"));
         Box::pin(resp)
     }
 
     fn http(&self, req: http::Request<Body>) -> ResponseFuture {
         let this = self.clone();
         let resp = async move { this.request(req).await.map_err(Error::Hyper) };
+        let resp = resp.instrument(tracing::trace_span!("HyperClient::connect"));
         Box::pin(resp)
     }
 }
@@ -168,16 +171,17 @@ impl ForwardClient for Client {
                 bad_request("CONNECT failed")
             }
         };
+        let resp = resp.instrument(tracing::trace_span!("ProxyClient::connect"));
         Box::pin(resp)
     }
 
     fn http(&self, req: hyper::Request<Body>) -> ResponseFuture {
         let this = self.clone();
         let resp = async move {
-            tracing::debug!("forward_http req: {:?}", req);
             let res = this.send(req).await?;
             Ok(res)
         };
+        let resp = resp.instrument(tracing::trace_span!("ProxyClient::http"));
         Box::pin(resp)
     }
 }
