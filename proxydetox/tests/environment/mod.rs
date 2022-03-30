@@ -35,13 +35,11 @@ impl Environment {
         self.local_addr
     }
 
-    // pub(crate) fn proxy_uri(&self) -> http::Uri {
-    //     http::Uri::builder()
-    //         .scheme("http")
-    //         .authority(self.server_control.local_addr().to_string())
-    //         .build()
-    //         .unwrap()
-    // }
+    pub(crate) fn proxy_uri(&self) -> http::uri::Builder {
+        http::Uri::builder()
+            .scheme("http")
+            .authority(self.local_addr.to_string())
+    }
 
     pub(crate) async fn send(&self, request: http::Request<Body>) -> http::Response<Body> {
         let stream = TcpStream::connect(self.proxy_addr()).await.unwrap();
