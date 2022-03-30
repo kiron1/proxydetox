@@ -1,6 +1,7 @@
 use http::header::LOCATION;
-use http::StatusCode;
+use http::{Response, StatusCode};
 use hyper::body::Buf;
+use hyper::Body;
 use std::io::prelude::*;
 use std::io::{Error, ErrorKind};
 use tokio::net::TcpStream;
@@ -15,6 +16,15 @@ pub async fn dial(uri: &http::Uri) -> tokio::io::Result<TcpStream> {
             "invalid URI",
         )),
     }
+}
+
+pub async fn read_to_string(res: Response<Body>) -> std::io::Result<String> {
+    let body = hyper::body::aggregate(res)
+        .await
+        .map_err(|e| Error::new(ErrorKind::Other, format!("aggregate: {}", e)))?;
+    let mut buffer = String::new();
+    body.reader().read_to_string(&mut buffer)?;
+    Ok(buffer)
 }
 
 /// We currently support only IETF RFC 2616, which requires absolute URIs in case of an redirect
@@ -76,11 +86,5 @@ pub async fn http_file(mut uri: http::Uri) -> std::io::Result<String> {
             ));
         }
     };
-
-    let body = hyper::body::aggregate(res)
-        .await
-        .map_err(|_| Error::new(ErrorKind::Other, "aggregate"))?;
-    let mut buffer = String::new();
-    body.reader().read_to_string(&mut buffer)?;
-    Ok(buffer)
+    read_to_string(res).await
 }

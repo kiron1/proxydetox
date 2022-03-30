@@ -2,8 +2,8 @@ mod environment;
 
 use crate::environment::Environment;
 use http::{header::PROXY_AUTHORIZATION, Request, Response, Uri};
-use hyper::{body, body::Buf, Body};
-use std::io::Read;
+use hyper::Body;
+use proxydetox::net::read_to_string;
 use tokio::join;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
@@ -31,10 +31,8 @@ async fn http_get_via_proxy_request() {
     let resp = env.send(req).await;
 
     assert_eq!(resp.status(), http::StatusCode::OK);
-    let body = body::aggregate(resp).await.unwrap();
-    let mut buffer = String::new();
-    body.reader().read_to_string(&mut buffer).unwrap();
-    assert_eq!(buffer, "Hello World!");
+    let body = read_to_string(resp).await.unwrap();
+    assert_eq!(body, "Hello World!");
 
     join!(env.shutdown(), http1.shutdown());
 }
@@ -75,10 +73,8 @@ async fn http_get_via_proxy_with_auth_request() {
     let resp = env.send(req).await;
 
     assert_eq!(resp.status(), http::StatusCode::OK);
-    let body = body::aggregate(resp).await.unwrap();
-    let mut buffer = String::new();
-    body.reader().read_to_string(&mut buffer).unwrap();
-    assert_eq!(buffer, "Hello World!");
+    let body = read_to_string(resp).await.unwrap();
+    assert_eq!(body, "Hello World!");
 
     join!(env.shutdown(), proxy1.shutdown());
 }
