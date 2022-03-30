@@ -51,6 +51,7 @@ impl Server {
         Uri::builder()
             .scheme("http")
             .authority(self.local_addr.to_string())
+            .path_and_query("/")
     }
 
     pub(crate) async fn shutdown(self) {
