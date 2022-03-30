@@ -9,6 +9,7 @@ negotiate = ["proxydetox/negotiate"]
 
 [lib]
 crate-type = ["staticlib"]
+doctest = false
 
 [dependencies]
 dirs = "4.0"
