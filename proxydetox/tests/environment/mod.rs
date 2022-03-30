@@ -76,6 +76,11 @@ impl Builder {
         self
     }
 
+    pub(crate) fn netrc_content(mut self, netrc_content: Option<String>) -> Self {
+        self.netrc_content = netrc_content;
+        self
+    }
+
     pub(crate) fn build(self) -> Environment {
         let auth = self
             .netrc_content
