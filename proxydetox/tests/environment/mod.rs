@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 mod httpd;
 
 use std::{io::Cursor, net::SocketAddr};
@@ -70,6 +71,11 @@ pub(crate) struct Builder {
 }
 
 impl Builder {
+    pub(crate) fn pac_script(mut self, pac_script: Option<String>) -> Self {
+        self.pac_script = pac_script;
+        self
+    }
+
     pub(crate) fn build(self) -> Environment {
         let auth = self
             .netrc_content
