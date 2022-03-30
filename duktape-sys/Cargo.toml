@@ -10,3 +10,6 @@ bindgen = "0.59"
 cc = "1.0"
 
 [dependencies]
+
+[lib]
+doctest = false

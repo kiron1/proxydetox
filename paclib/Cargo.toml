@@ -13,3 +13,6 @@ thiserror = "1.0"
 lazy_static = "1.4"
 duktape = { path = "../duktape" }
 duktape-sys = { path = "../duktape-sys" }
+
+[lib]
+doctest = false
