@@ -106,7 +106,6 @@ public class ProxydetxoControl {
         // the ProxydetoxServer.
         let thisPd = pd
         proxydetox_run(thisPd)
-        proxydetox_drop(thisPd)
     }
 
     func setSystemProxy() {
