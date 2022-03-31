@@ -9,12 +9,9 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 async fn http_connect_direct() {
     let env = Environment::new();
     let server1 = tcp::Server::new(|mut s| {
-        tracing::trace!("handle created");
         async move {
-            tracing::trace!("handle");
             let mut buf = [0u8, 0, 0, 0];
             s.read_exact(&mut buf).await.unwrap();
-            tracing::trace!("got {:?}", buf);
             assert_eq!(&buf, b"PING");
 
             let buf = b"PONG";
@@ -23,16 +20,13 @@ async fn http_connect_direct() {
 
             loop {
                 // wait for close on client side
-                tracing::trace!("wait for close");
                 let mut buf = [0u8; 128];
                 let n = s.read(&mut buf).await.unwrap();
-                tracing::trace!("wait for close: {}", n);
                 if n == 0 {
                     break;
                 }
             }
             s.shutdown().await.unwrap();
-            tracing::trace!("handle done");
         }
     });
 
