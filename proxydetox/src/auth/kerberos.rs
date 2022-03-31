@@ -72,8 +72,7 @@ fn server_token(last_headers: &hyper::HeaderMap) -> Option<Vec<u8>> {
         .map(|mut i| (i.next(), i.next()))
         .filter_map(|k| if Some("Negotiate") == k.0 { k.1 } else { None })
         .map(base64::decode)
-        .filter_map(std::result::Result::ok)
-        .next();
+        .find_map(std::result::Result::ok);
 
     server_tok
 }
