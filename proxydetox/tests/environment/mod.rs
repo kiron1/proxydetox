@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 mod httpd;
+pub mod tcp;
 
 use std::{io::Cursor, net::SocketAddr};
 
@@ -53,6 +54,23 @@ impl Environment {
 
         let response = request_sender.send_request(request).await.unwrap();
         response
+    }
+
+    pub(crate) async fn connect(
+        &self,
+        request: http::Request<Body>,
+    ) -> (http::Response<Body>, hyper::body::Bytes, TcpStream) {
+        let stream = TcpStream::connect(self.proxy_addr()).await.unwrap();
+        stream.set_nodelay(true).unwrap();
+        let (mut request_sender, connection) =
+            hyper::client::conn::handshake(stream).await.unwrap();
+
+        // spawn a task to poll the connection and drive the HTTP state
+        let parts = tokio::spawn(async move { connection.without_shutdown().await.unwrap() });
+
+        let response = request_sender.send_request(request).await.unwrap();
+        let parts = parts.await.unwrap();
+        (response, parts.read_buf, parts.io)
     }
 
     pub(crate) async fn shutdown(self) {
