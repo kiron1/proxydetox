@@ -138,8 +138,6 @@ impl ForwardClient for Client {
             let parent_res = this.send(parent_req).await?;
 
             if parent_res.status() == StatusCode::OK {
-                let http_proxy_info = parent_res.extensions().get::<HttpProxyInfo>().cloned();
-
                 // Upgrade connection to parent proxy
                 match hyper::upgrade::on(parent_res).await {
                     Ok(parent_upgraded) => {
@@ -151,13 +149,7 @@ impl ForwardClient for Client {
                                     if let Err(cause) =
                                         crate::io::tunnel(parent_upgraded, client_upgraded).await
                                     {
-                                        let uri = req.uri();
-                                        tracing::error!(
-                                            ?http_proxy_info,
-                                            ?cause,
-                                            ?uri,
-                                            "tunnel error"
-                                        )
+                                        tracing::error!(?cause, "tunnel error")
                                     }
                                 }
                                 Err(e) => tracing::error!("upgrade error: {}", e),
@@ -169,6 +161,9 @@ impl ForwardClient for Client {
                     Err(cause) => bad_request(&format!("upgrade failed: {}", cause)),
                 }
             } else {
+                let status = parent_res.status();
+                tracing::error!(?status, "CONNECT {}", req.uri(),);
+
                 bad_request("CONNECT failed")
             }
         };
