@@ -193,4 +193,13 @@ mod tests {
         dbg!(&progress);
         assert!(progress.is_err());
     }
+
+    #[tokio::test]
+    async fn dial_error() {
+        assert!(
+            super::dial(&http::Uri::builder().path_and_query("/").build().unwrap())
+                .await
+                .is_err()
+        );
+    }
 }
