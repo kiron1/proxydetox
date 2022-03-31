@@ -303,14 +303,16 @@ where
         env!("CARGO_PKG_NAME"),
         env!("CARGO_PKG_VERSION")
     );
-    let mut resp = Response::new(Body::from(body));
-    resp.headers_mut().insert(
-        http::header::CONTENT_TYPE,
-        http::header::HeaderValue::from_static("text/html"),
-    );
-    *resp.status_mut() = http::StatusCode::BAD_GATEWAY;
 
-    resp
+    Response::builder()
+        .status(http::StatusCode::BAD_GATEWAY)
+        .header(
+            http::header::CONTENT_TYPE,
+            http::header::HeaderValue::from_static("text/html"),
+        )
+        .header(http::header::CONNECTION, "close")
+        .body(Body::from(body))
+        .unwrap()
 }
 
 impl Service<Request<Body>> for Session {
@@ -370,5 +372,16 @@ impl<'a> Service<&'a hyper::server::conn::AddrStream> for Session {
         };
         let res = res.instrument(tracing::debug_span!("call", addr=%addr));
         Box::pin(res)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::make_error_response;
+
+    #[test]
+    fn test_error_response() {
+        let resp = make_error_response(&super::Error::InvalidUri);
+        assert_ne!(resp.status(), http::StatusCode::OK);
     }
 }
