@@ -34,7 +34,7 @@ impl super::Authenticator for NegotiateAuthenticator {
         let mut headers = hyper::HeaderMap::new();
         // let challenge = last_headers.map(|h| server_token(&h)).flatten();
         // let challenge = challenge.as_deref();
-        let client_ctx = ClientCtx::initiate(InitiateFlags::empty(), None, &self.target_principal);
+        let client_ctx = ClientCtx::new(InitiateFlags::empty(), None, &self.target_principal, None);
 
         match client_ctx {
             Ok((_pending, token)) => {
