@@ -8,7 +8,6 @@ rust_library(
         "src/auth/kerberos.rs",
         "src/auth/netrc.rs",
         "src/client.rs",
-        "src/io.rs",
         "src/lib.rs",
         "src/net.rs",
         "src/session.rs",
