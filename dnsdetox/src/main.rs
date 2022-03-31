@@ -1,7 +1,7 @@
 use std::{net::SocketAddr, sync::Arc};
 
 use dnsdetox::{dns, doh};
-use futures::stream::StreamExt;
+use futures_util::StreamExt;
 use http::Uri;
 
 mod options;
