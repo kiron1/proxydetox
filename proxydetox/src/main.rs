@@ -10,9 +10,10 @@ mod options;
 use options::{Authorization, Options};
 use proxydetox::auth::netrc;
 use proxydetox::{auth::AuthenticatorFactory, http_file};
-use std::boxed::Box;
 use std::fs::{read_to_string, File};
+use std::net::SocketAddr;
 use std::result::Result;
+use tokio::sync::oneshot;
 use tracing_subscriber::filter::EnvFilter;
 
 fn load_pac_file(opt: &Options) -> (Option<String>, std::io::Result<String>) {
@@ -54,7 +55,7 @@ fn load_pac_file(opt: &Options) -> (Option<String>, std::io::Result<String>) {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), proxydetox::Error> {
     let config = Options::load();
 
     let env_name = format!("{}_LOG", env!("CARGO_PKG_NAME").to_uppercase());
@@ -63,9 +64,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         filter
     } else {
         EnvFilter::default()
-            .add_directive(format!("proxydetox={0}", config.log_level).parse()?)
-            // .add_directive(format!("paclib={0}", config.log_level).parse()?)
-            .add_directive(format!("proxy_client={0}", config.log_level).parse()?)
+            .add_directive(
+                format!("proxydetox={0}", config.log_level)
+                    .parse()
+                    .expect("directive"),
+            )
+            .add_directive(
+                format!("proxy_client={0}", config.log_level)
+                    .parse()
+                    .expect("directive"),
+            )
     };
 
     tracing_subscriber::fmt()
@@ -127,35 +135,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .pool_max_idle_per_host(config.pool_max_idle_per_host)
         .build();
 
-    let mut server = proxydetox::Server::new(config.port, session);
+    // let mut server = proxydetox::Server::new(config.port, session);
+    let addr = SocketAddr::from(([127, 0, 0, 1], config.port));
+    let server = hyper::Server::bind(&addr).serve(session);
+    tracing::info!("Listening on http://{}", server.local_addr());
+    let (shutdown_tx, shutdown_rx) = oneshot::channel();
+    let server = server.with_graceful_shutdown(async {
+        shutdown_rx.await.ok();
+    });
 
     {
         use tokio::signal;
-        let tx = server.control_channel();
         tokio::spawn(async move {
-            loop {
-                signal::ctrl_c().await.expect("ctrl_c event");
-                tracing::info!("received Ctrl-C, trigger shutdown");
-                let _ = tx.send(proxydetox::Command::Shutdown).await;
-            }
+            signal::ctrl_c().await.expect("ctrl_c event");
+            tracing::info!("received Ctrl-C, trigger shutdown");
+            shutdown_tx.send(()).ok();
         });
     }
 
-    #[cfg(target_family = "unix")]
-    {
-        use tokio::signal::unix::{signal, SignalKind};
-        let tx = server.control_channel();
-        let mut stream = signal(SignalKind::hangup())?;
-        tokio::spawn(async move {
-            loop {
-                stream.recv().await;
-                tracing::info!("received SIGHUP, trigger restart");
-                let _ = tx.send(proxydetox::Command::Restart).await;
-            }
-        });
+    if let Err(cause) = server.await {
+        tracing::error!("fatal error: {}", cause);
     }
-
-    server.run().await
+    Ok(())
 }
 
 #[cfg(target_os = "linux")]

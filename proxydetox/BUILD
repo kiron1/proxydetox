@@ -62,6 +62,7 @@ rust_binary(
         "//proxydetox/cargo:dirs",
         "//proxydetox/cargo:futures",
         "//proxydetox/cargo:futures_util",
+        "//proxydetox/cargo:hyper",
         "//proxydetox/cargo:inotify",
         "//proxydetox/cargo:libc",
         "//proxydetox/cargo:tokio",

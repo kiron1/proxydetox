@@ -12,6 +12,7 @@ rust_static_library(
     }),
     deps = [
         "//cproxydetox/cargo:dirs",
+        "//cproxydetox/cargo:hyper",
         "//cproxydetox/cargo:libc",
         "//cproxydetox/cargo:tokio",
         "//proxydetox:proxydetoxlib",

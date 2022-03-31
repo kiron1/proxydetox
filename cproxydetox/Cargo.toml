@@ -15,3 +15,4 @@ dirs = "4.0"
 libc = "0.2"
 proxydetox = { path = "../proxydetox" }
 tokio = { version = "1", features = ["rt-multi-thread"] }
+hyper = { version = "0.14", features = ["http1",  "http2", "client", "server", "tcp"] }

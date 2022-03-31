@@ -1,11 +1,21 @@
 use proxydetox::auth::netrc;
 use proxydetox::auth::AuthenticatorFactory;
 use proxydetox::http_file;
-use proxydetox::Server;
 use std::ffi::CStr;
 use std::fs::read_to_string;
 use std::fs::File;
+use std::future::Future;
+use std::net::SocketAddr;
 use std::path::PathBuf;
+use std::pin::Pin;
+use tokio::sync::oneshot;
+
+type ServerFuture = dyn Future<Output = std::result::Result<(), hyper::Error>>;
+
+pub struct Server {
+    server: Option<Pin<Box<ServerFuture>>>,
+    shutdown_tx: Option<oneshot::Sender<()>>,
+}
 
 fn netrc_path() -> PathBuf {
     let mut netrc_path = dirs::home_dir().unwrap_or_default();
@@ -35,7 +45,7 @@ fn load_pac_file(path: &str) -> String {
     };
 
     if content.trim().is_empty() {
-        "function FindProxyForURL(url, host) { return \"DIRECT\"; }".into()
+        proxydetox::DEFAULT_PAC_SCRIPT.into()
     } else {
         content
     }
@@ -69,7 +79,18 @@ pub unsafe extern "C" fn proxydetox_new(
         .authenticator_factory(Some(auth))
         .build();
 
-    let server = Box::new(Server::new(port, session));
+    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+    let server = hyper::Server::bind(&addr).serve(session);
+    let (shutdown_tx, shutdown_rx) = oneshot::channel();
+    let server = server.with_graceful_shutdown(async {
+        shutdown_rx.await.ok();
+    });
+    let server = Some(Box::pin(server) as Pin<Box<dyn Future<Output = Result<(), hyper::Error>>>>);
+
+    let server = Box::new(Server {
+        server,
+        shutdown_tx: Some(shutdown_tx),
+    });
 
     Box::<Server>::into_raw(server)
 }
@@ -82,40 +103,28 @@ pub unsafe extern "C" fn proxydetox_run(server: *mut Server) {
 
     let server = &mut *server;
 
-    let runtime = Builder::new_multi_thread()
-        .worker_threads(4)
-        .thread_name("proxydetox-tokio-rt")
-        .enable_all()
-        .build()
-        .unwrap();
+    if let Some(mut server) = server.server.take() {
+        let runtime = Builder::new_multi_thread()
+            .worker_threads(4)
+            .thread_name("proxydetox-tokio-rt")
+            .enable_all()
+            .build()
+            .unwrap();
 
-    runtime.block_on(async move {
-        let _ = server.run().await;
-    });
-}
-
-/// # Safety
-/// Caller must ensure `server` is valid.
-#[no_mangle]
-pub unsafe extern "C" fn proxydetox_shutdown(server: *mut Server) {
-    use tokio::runtime::Runtime;
-
-    if server.is_null() {
-        let server = &mut *server;
-
-        let tx = server.control_channel();
-        let rt = Runtime::new().unwrap();
-        rt.block_on(async {
-            let _ = tx.send(proxydetox::Command::Shutdown).await;
+        runtime.block_on(async move {
+            let server = std::pin::Pin::new(&mut server).get_mut();
+            let _ = server.await;
         });
     }
 }
 
+/// Will stop the proxydetox server and releases the memory of the server struct.
 /// # Safety
 /// Caller must ensure `server` is valid.
 #[no_mangle]
-pub unsafe extern "C" fn proxydetox_drop(server: *mut Server) {
-    if server.is_null() {
-        Box::from_raw(server);
+pub unsafe extern "C" fn proxydetox_shutdown(server: *mut Server) {
+    if !server.is_null() {
+        let server = Box::from_raw(server);
+        server.shutdown_tx.map(|x| x.send(()).ok());
     }
 }
