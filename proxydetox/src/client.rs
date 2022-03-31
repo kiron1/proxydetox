@@ -208,8 +208,11 @@ fn authority_of(uri: &http::Uri) -> Result<http::Uri> {
 }
 
 fn bad_request(slice: &str) -> Result<Response<Body>> {
-    let mut resp = Response::new(Body::from(String::from(slice)));
-    *resp.status_mut() = http::StatusCode::BAD_REQUEST;
+    let resp = Response::builder()
+        .status(http::StatusCode::BAD_REQUEST)
+        .header(http::header::CONNECTION, "close")
+        .body(Body::from(String::from(slice)))
+        .unwrap();
     Ok(resp)
 }
 
