@@ -47,15 +47,19 @@ fn load_pac_file(opt: &Options) -> (Option<String>, std::io::Result<String>) {
                 return (Some(path.to_string_lossy().to_string()), Ok(content));
             }
         }
-        (
-            None,
-            Ok("function FindProxyForURL(url, host) { return \"DIRECT\"; }".into()),
-        )
+        (None, Ok(proxydetox::DEFAULT_PAC_SCRIPT.into()))
     }
 }
 
 #[tokio::main]
-async fn main() -> Result<(), proxydetox::Error> {
+async fn main() {
+    if let Err(cause) = run().await {
+        tracing::error!("fatal error: {}", cause);
+        std::process::exit(1);
+    }
+}
+
+async fn run() -> Result<(), proxydetox::Error> {
     let config = Options::load();
 
     let env_name = format!("{}_LOG", env!("CARGO_PKG_NAME").to_uppercase());
@@ -78,6 +82,7 @@ async fn main() -> Result<(), proxydetox::Error> {
 
     tracing_subscriber::fmt()
         .compact()
+        .with_timer(tracing_subscriber::fmt::time::uptime())
         .with_env_filter(filter)
         .init();
 
