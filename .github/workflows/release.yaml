@@ -50,13 +50,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Cargo cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: cargo-cache-${{ runner.os }}
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
       - name: Install Linux dependency
         run: sudo apt-get install libkrb5-dev
         if: ${{ matrix.build == 'linux' }}

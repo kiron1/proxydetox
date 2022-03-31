@@ -39,13 +39,17 @@ jobs:
         with:
           fetch-depth: 1
       - name: Cargo cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: cargo-cache-${{ runner.os }}
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
       - name: Install Linux dependency
         run: sudo apt-get install libkrb5-dev
         if: ${{ matrix.build == 'linux' }}
@@ -100,12 +104,14 @@ jobs:
         run: |
           cargo raze
       - name: Bazel cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/bazel_build_cache
             ~/bazel_repo_cache
-          key: bazel-cache-${{ runner.os }}
+          key: ${{ runner.os }}-bazel-${{ hashFiles('**/WORKSPACE', '**/BUILD', '**/*.bazel') }}
+          restore-keys: |
+            ${{ runner.os }}-bazel-
       - name: Bazel build
         run: bazel build --disk_cache=~/bazel_build_cache --repository_cache=~/bazel_repo_cache -c opt //...
 
