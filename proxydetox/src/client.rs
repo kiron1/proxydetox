@@ -10,6 +10,7 @@ use std::{
         Arc,
     },
 };
+use tokio::io::copy_bidirectional;
 use tracing_futures::Instrument;
 
 use crate::auth::Authenticator;
@@ -89,12 +90,12 @@ pub trait ForwardClient {
 impl ForwardClient for hyper::Client<hyper::client::HttpConnector, Body> {
     fn connect(&self, req: http::Request<Body>) -> ResponseFuture {
         let resp = async move {
-            if let Ok(stream) = crate::net::dial(req.uri()).await {
+            if let Ok(mut stream) = crate::net::dial(req.uri()).await {
                 tracing::trace!("connected to: {:?}", stream.peer_addr().ok());
                 tokio::task::spawn(async move {
                     match hyper::upgrade::on(req).await {
-                        Ok(upgraded) => {
-                            if let Err(e) = crate::io::tunnel(upgraded, stream).await {
+                        Ok(mut upgraded) => {
+                            if let Err(e) = copy_bidirectional(&mut upgraded, &mut stream).await {
                                 tracing::error!("tunnel error: {}", e)
                             }
                         }
@@ -140,14 +141,17 @@ impl ForwardClient for Client {
             if parent_res.status() == StatusCode::OK {
                 // Upgrade connection to parent proxy
                 match hyper::upgrade::on(parent_res).await {
-                    Ok(parent_upgraded) => {
+                    Ok(mut parent_upgraded) => {
                         // On a successful upgrade to the parent proxy, upgrade the
                         // request of the client (the original request maker)
                         tokio::task::spawn(async move {
                             match hyper::upgrade::on(&mut req).await {
-                                Ok(client_upgraded) => {
-                                    if let Err(cause) =
-                                        crate::io::tunnel(parent_upgraded, client_upgraded).await
+                                Ok(mut client_upgraded) => {
+                                    if let Err(cause) = copy_bidirectional(
+                                        &mut parent_upgraded,
+                                        &mut client_upgraded,
+                                    )
+                                    .await
                                     {
                                         tracing::error!(?cause, "tunnel error")
                                     }
