@@ -249,6 +249,32 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_is_num() {
+        assert!(is_num::<u16>("3128").is_ok());
+        assert!(is_num::<u16>("hello").is_err());
+    }
+
+    #[test]
+    fn test_is_file() {
+        let mut example_pac = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .to_owned();
+        example_pac.push("paceval");
+        example_pac.push("example.pac");
+        let example_pac = example_pac.to_str().unwrap().to_owned();
+
+        assert!(is_file(&example_pac).is_ok());
+        assert!(is_file("/does/not/exist").is_err());
+    }
+
+    #[test]
+    fn test_is_file_or_uri() {
+        assert!(is_file_or_http_uri("http://example.org/").is_ok());
+        assert!(is_file_or_http_uri("/does/not/exist").is_err());
+    }
+
+    #[test]
     fn test_pac_file_path() {
         let mut example_pac = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .parent()
