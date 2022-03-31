@@ -100,3 +100,26 @@ impl std::fmt::Debug for Store {
         f.debug_list().entries(self.hosts.read().keys()).finish()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Store;
+
+    #[test]
+    fn store_new_get_update() {
+        let netrc = Store::new(std::io::Cursor::new(
+            "machine example.org\nlogin hello\npassword world\n",
+        ))
+        .unwrap();
+        let e = netrc.get("example.org").unwrap();
+        assert_eq!(e, "Basic aGVsbG86d29ybGQ=");
+        netrc
+            .update(std::io::Cursor::new(
+                "machine example.net\nlogin Hello\npassword World\n",
+            ))
+            .unwrap();
+        assert!(netrc.get("example.org").is_err());
+        let e = netrc.get("example.net").unwrap();
+        assert_eq!(e, "Basic SGVsbG86V29ybGQ=");
+    }
+}
