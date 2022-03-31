@@ -90,6 +90,7 @@ impl ForwardClient for hyper::Client<hyper::client::HttpConnector, Body> {
     fn connect(&self, req: http::Request<Body>) -> ResponseFuture {
         let resp = async move {
             if let Ok(stream) = crate::net::dial(req.uri()).await {
+                tracing::trace!("connected to: {:?}", stream.peer_addr().ok());
                 tokio::task::spawn(async move {
                     match hyper::upgrade::on(req).await {
                         Ok(upgraded) => {
