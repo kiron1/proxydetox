@@ -1,7 +1,7 @@
 use std::{pin::Pin, sync::Arc, task::Poll, time::Duration};
 
 use crate::error::Result;
-use futures::Stream;
+use futures_util::Stream;
 use std::net::SocketAddr;
 use tokio::{io::ReadBuf, net::UdpSocket, time::timeout};
 

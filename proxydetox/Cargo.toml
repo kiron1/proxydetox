@@ -20,7 +20,6 @@ cross-krb5 = { version = "0.3", default-features = false, optional = true }
 base64 = "0.13"
 dirs = "4.0"
 env_logger = "0.9"
-futures = "0.3"
 futures-util = { version = "0.3", default-features = false }
 http = "0.2"
 hyper = { version = "0.14", features = ["http1", "http2", "client", "server", "tcp"] }

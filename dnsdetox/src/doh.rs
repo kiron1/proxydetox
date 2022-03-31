@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use crate::error::Result;
-use futures::stream::TryStreamExt;
+use futures_util::TryStreamExt;
 use hyper::{body::Bytes, Body};
 use hyper_tls::HttpsConnector;
 use proxy_client::HttpProxyConnector;
@@ -39,7 +39,7 @@ impl Client {
         let body: Vec<u8> = body
             .try_fold(Vec::new(), |mut vec, data| {
                 vec.extend(data);
-                futures::future::ok(vec)
+                futures_util::future::ok(vec)
             })
             .await
             .unwrap();

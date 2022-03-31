@@ -16,16 +16,14 @@ use std::result::Result;
 use tokio::sync::oneshot;
 use tracing_subscriber::filter::EnvFilter;
 
-fn load_pac_file(opt: &Options) -> (Option<String>, std::io::Result<String>) {
+async fn load_pac_file(opt: &Options) -> (Option<String>, std::io::Result<String>) {
     // For Windows, accept a proxy.pac file located next to the binary.
     #[cfg(target_family = "windows")]
     let sys_pac = options::portable_dir("proxy.pac");
 
     if let Some(pac_path) = &opt.pac_file {
         if pac_path.starts_with("http://") {
-            let pac = futures::executor::block_on(async {
-                http_file(pac_path.parse().expect("URI")).await
-            });
+            let pac = http_file(pac_path.parse().expect("URI")).await;
             return (Some(pac_path.to_string()), pac);
         }
         (Some(pac_path.to_string()), read_to_string(pac_path))
@@ -89,7 +87,7 @@ async fn run() -> Result<(), proxydetox::Error> {
     #[cfg(target_family = "unix")]
     limit::update_limits();
 
-    let (pac_path, pac_script) = load_pac_file(&config);
+    let (pac_path, pac_script) = load_pac_file(&config).await;
     if let Some(path) = pac_path {
         tracing::info!("PAC path: {}", &path);
     } else {
@@ -111,6 +109,7 @@ async fn run() -> Result<(), proxydetox::Error> {
         Authorization::Basic(netrc_file) => {
             let store = if let Ok(file) = File::open(&netrc_file) {
                 let netrc_store = netrc::Store::new(std::io::BufReader::new(file));
+                #[allow(clippy::let_and_return)]
                 let netrc_store = match netrc_store {
                     Err(cause) => return Err(cause.into()),
                     Ok(netrc_store) => netrc_store,
