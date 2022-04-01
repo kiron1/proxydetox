@@ -55,7 +55,7 @@ jobs:
         if: ${{ matrix.build == 'linux' }}
       #  see https://github.com/rust-lang/rust-bindgen/issues/1797
       - name: Install Windows dependency (LLVM)
-        uses: KyleMayes/install-llvm-action@v1.4.1
+        uses: KyleMayes/install-llvm-action@v1.5.1
         if: ${{ matrix.build == 'windows' }}
         with:
           version: "11.0"
