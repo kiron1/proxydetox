@@ -39,7 +39,7 @@ jobs:
         with:
           fetch-depth: 1
       - name: Cargo cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3.0.1
         with:
           path: |
             ~/.cargo/registry
@@ -100,7 +100,7 @@ jobs:
         run: |
           cargo raze
       - name: Bazel cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3.0.1
         with:
           path: |
             ~/bazel_build_cache
