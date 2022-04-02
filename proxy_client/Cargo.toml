@@ -10,6 +10,7 @@ http = "0.2"
 hyper = { version = "0.14", features = ["http1", "http2", "client", "server", "tcp"] }
 tokio = { version = "1", features = ["rt-multi-thread", "net", "macros", "sync"] }
 thiserror = "1.0"
+tower = { version = "0.4", features = ["util"] }
 
 [lib]
 doctest = false

@@ -12,6 +12,14 @@ pub enum Error {
         #[source]
         tokio::time::error::Elapsed,
     ),
+    #[error("Unexpected HTTP status code: {0}")]
+    UnexpectedHttpStatusCode(http::StatusCode),
+    #[error("DNS parser error: {0}")]
+    DnsParser(
+        #[from]
+        #[source]
+        dns_parser::Error,
+    ),
     #[error("HTTP error: {0}")]
     Http(
         #[from]
@@ -24,11 +32,17 @@ pub enum Error {
         #[source]
         hyper::Error,
     ),
-    #[error("DNS parser error: {0}")]
-    DnsParser(
+    #[error("HTTP CONNECT error: {0}")]
+    HttpConnect(
         #[from]
         #[source]
-        dns_parser::Error,
+        proxy_client::http_connect_connector::Error,
+    ),
+    #[error("internal error: {0}")]
+    JoinError(
+        #[from]
+        #[source]
+        tokio::task::JoinError,
     ),
 }
 
