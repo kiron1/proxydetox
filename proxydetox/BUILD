@@ -53,7 +53,6 @@ rust_library(
 rust_binary(
     name = "proxydetox",
     srcs = [
-        "src/limit.rs",
         "src/main.rs",
         "src/options.rs",
     ],

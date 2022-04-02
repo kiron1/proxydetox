@@ -3,8 +3,6 @@
     windows_subsystem = "windows"
 )]
 
-#[cfg(target_family = "unix")]
-mod limit;
 mod options;
 
 use options::{Authorization, Options};
@@ -83,9 +81,6 @@ async fn run() -> Result<(), proxydetox::Error> {
         .with_timer(tracing_subscriber::fmt::time::uptime())
         .with_env_filter(filter)
         .init();
-
-    #[cfg(target_family = "unix")]
-    limit::update_limits();
 
     let (pac_path, pac_script) = load_pac_file(&config).await;
     if let Some(path) = pac_path {
