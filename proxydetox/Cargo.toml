@@ -22,7 +22,7 @@ base64 = "0.13"
 bytes = "1.1"
 dirs = "4.0"
 env_logger = "0.9"
-futures-util = { version = "0.3", default-features = false }
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
 http = "0.2"
 hyper = { version = "0.14", features = ["http1", "http2", "client", "server", "stream", "tcp"] }
 netrc = { git = "https://github.com/kiron1/netrc-rs", branch = "modernize" }

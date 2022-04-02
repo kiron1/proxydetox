@@ -5,6 +5,7 @@
 
 mod options;
 
+use futures_util::future::FutureExt;
 use options::{Authorization, Options};
 use proxydetox::auth::netrc;
 use proxydetox::{auth::AuthenticatorFactory, http_file};
@@ -118,12 +119,20 @@ async fn run(config: &Options) -> Result<(), proxydetox::Error> {
         }
     };
 
+    let (keep_alive_token, idle_signal) = if let Some(exit_idle_time) = config.exit_idle_time {
+        let (token, signal) = proxydetox::idle_timeout::idle_timeout(exit_idle_time);
+        (Some(token), signal.boxed())
+    } else {
+        (None, futures_util::future::pending().boxed())
+    };
+
     let session = proxydetox::Session::builder()
         .pac_script(pac_script.ok())
         .authenticator_factory(Some(auth.clone()))
         .always_use_connect(config.always_use_connect)
         .pool_idle_timeout(config.pool_idle_timeout)
         .pool_max_idle_per_host(config.pool_max_idle_per_host)
+        .keep_alive_token(keep_alive_token)
         .build();
 
     let addr = SocketAddr::from(([127, 0, 0, 1], config.port));
@@ -131,7 +140,10 @@ async fn run(config: &Options) -> Result<(), proxydetox::Error> {
     let addr = server.local_addr();
     let (shutdown_tx, shutdown_rx) = oneshot::channel();
     let server = server.with_graceful_shutdown(async {
-        shutdown_rx.await.ok();
+        tokio::select! {
+            rx = shutdown_rx => { rx.ok(); },
+            _ = idle_signal => {},
+        }
     });
 
     #[cfg(unix)]

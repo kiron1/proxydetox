@@ -9,6 +9,7 @@ rust_library(
         "src/auth/kerberos.rs",
         "src/auth/netrc.rs",
         "src/client.rs",
+        "src/idle_timeout.rs",
         "src/lib.rs",
         "src/net.rs",
         "src/session.rs",
