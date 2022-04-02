@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -eu
+
+label=com.github.kiron1.proxydetox
+
+if /bin/launchctl list "${label}" 2>/dev/null 1>/dev/null; then
+    /bin/launchctl unload -F "${label}"
+fi

@@ -9,6 +9,7 @@ ExecStart=${prefix}/bin/proxydetox
 KillMode=process
 RestartSec=5s
 Restart=on-failure
+LimitNOFILE=65536
 
 [Install]
 WantedBy=default.target
