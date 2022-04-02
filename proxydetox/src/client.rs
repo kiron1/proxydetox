@@ -187,9 +187,8 @@ impl ForwardClient for Client {
 }
 
 fn authority_of(uri: &http::Uri) -> Result<http::Uri> {
-    match (uri.scheme(), uri.port()) {
-        (None, None) => Err(Error::InvalidUri),
-        (Some(scheme), None) => {
+    match (uri.scheme(), uri.host(), uri.port()) {
+        (Some(scheme), Some(host), None) => {
             let port = if *scheme == http::uri::Scheme::HTTP {
                 "80"
             } else if *scheme == http::uri::Scheme::HTTPS {
@@ -197,17 +196,16 @@ fn authority_of(uri: &http::Uri) -> Result<http::Uri> {
             } else {
                 return Err(Error::InvalidUri);
             };
-            let host = uri.host().ok_or(Error::InvalidUri)?;
             let uri = format!("{}:{}", host, port);
             let uri = uri.parse().map_err(|_| Error::InvalidUri)?;
             Ok(uri)
         }
-        (_, Some(port)) => {
-            let host = uri.host().ok_or(Error::InvalidUri)?;
+        (_, Some(host), Some(port)) => {
             let uri = format!("{}:{}", host, port);
             let uri = uri.parse().map_err(|_| Error::InvalidUri)?;
             Ok(uri)
         }
+        (_, _, _) => Err(Error::InvalidUri),
     }
 }
 
