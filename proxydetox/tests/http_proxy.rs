@@ -78,3 +78,39 @@ async fn http_get_via_proxy_with_auth_request() {
 
     join!(env.shutdown(), proxy1.shutdown());
 }
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn http_get_via_proxy_with_auth_request_407() {
+    let proxy1 = environment::Server::new(|r| {
+        assert_eq!(r.method(), http::method::Method::GET);
+        assert!(r.uri().authority().is_some());
+        assert_eq!(r.uri().path(), "/text1.html");
+        assert!(r.headers().get(PROXY_AUTHORIZATION).is_some());
+        Response::builder()
+            .status(http::StatusCode::PROXY_AUTHENTICATION_REQUIRED)
+            .body(Body::empty())
+            .unwrap()
+    });
+    let env = Environment::builder()
+        .pac_script(Some(format!(
+            "function FindProxyForURL(url, host) {{ return \"PROXY {}\"; }}",
+            proxy1.uri().build().unwrap().authority().unwrap()
+        )))
+        .netrc_content(Some(format!(
+            "machine {}\nlogin {}\npassword {}\n",
+            proxy1.uri().build().unwrap().host().unwrap(),
+            "hello",
+            "world"
+        )))
+        .build();
+
+    let req = Request::get("http://example.org/text1.html".parse::<Uri>().unwrap())
+        .body(Body::empty())
+        .unwrap();
+
+    let resp = env.send(req).await;
+
+    assert_eq!(resp.status(), http::StatusCode::BAD_GATEWAY);
+
+    join!(env.shutdown(), proxy1.shutdown());
+}
