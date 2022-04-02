@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>com.github.kiron1.proxydetox</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>Program</key>
+    <key>ProgramArguments</key>
+    <string>/usr/local/bin/proxydetox</string>
+    <array>
+      <string>proxydetox</string>
+    </array>
+    <key>SoftResourceLimits</key>
+    <dict>
+      <key>NumberOfFiles</key>
+      <integer>65536</integer>
+    </dict>
+  </dict>
+</plist>
