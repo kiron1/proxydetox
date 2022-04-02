@@ -11,7 +11,7 @@ use std::{
     task::{self, Poll},
 };
 
-use futures::stream::StreamExt;
+use futures_util::stream::StreamExt;
 use http::header::{ACCEPT, CACHE_CONTROL, CONTENT_LENGTH, CONTENT_TYPE, HOST, USER_AGENT, VIA};
 use http::HeaderValue;
 use http::Uri;
