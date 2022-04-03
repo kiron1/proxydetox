@@ -13,7 +13,9 @@ set -eu
 
 GIT_WORK_TREE=$(mktemp -d /tmp/gh_pages.XXXXXX)
 MDBOOK_DEST=$(mktemp -d /tmp/mdbook.XXXXXX)
-trap 'rm -rf -- "${GIT_WORK_TREE}" "${MDBOOK_DEST}"' EXIT
+# trap 'rm -rf -- "${GIT_WORK_TREE}" "${MDBOOK_DEST}"' EXIT
+
+echo ${MDBOOK_DEST}
 
 REMOTE=$(git config --get remote.origin.url)
 git clone --quiet --single-branch --branch gh-pages "${REMOTE}" "${GIT_WORK_TREE}"
@@ -21,7 +23,15 @@ git clone --quiet --single-branch --branch gh-pages "${REMOTE}" "${GIT_WORK_TREE
 # copy arround, since `mdbook build` deletes destination directory
 mdbook build -d "${MDBOOK_DEST}"
 rm -rf -- "${GIT_WORK_TREE}/*"
-cp --recursive "${MDBOOK_DEST}/"* "${GIT_WORK_TREE}/"
+install -d "${GIT_WORK_TREE}/book"
+cp -R "${MDBOOK_DEST}/"* "${GIT_WORK_TREE}/book"
+install www/CNAME "${GIT_WORK_TREE}"
+install www/bootstrap.min.css "${GIT_WORK_TREE}"
+install www/bootstrap.min.js "${GIT_WORK_TREE}"
+install www/cover.css "${GIT_WORK_TREE}"
+install www/index.html "${GIT_WORK_TREE}"
+install www/jquery-slim.min.js "${GIT_WORK_TREE}"
+install www/popper.min.js "${GIT_WORK_TREE}"
 
 git -C "${GIT_WORK_TREE}" config user.email "action@github.com"
 git -C "${GIT_WORK_TREE}" config user.name "GitHub Action"
