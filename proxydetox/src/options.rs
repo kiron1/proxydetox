@@ -26,6 +26,7 @@ pub struct Options {
     pub pool_max_idle_per_host: usize,
     pub pool_idle_timeout: Option<Duration>,
     pub exit_idle_time: Option<Duration>,
+    pub activate_socket: Option<String>,
 }
 
 fn is_num<T: FromStr + PartialOrd>(v: &str) -> Result<(), String> {
@@ -144,6 +145,12 @@ impl Options {
                     .takes_value(true),
             )
             .arg(
+                Arg::new("activate_socket")
+                    .long("activate-socket")
+                    .help("Socket name create by the service manager which needs to be activated")
+                    .takes_value(true),
+            )
+            .arg(
                 Arg::new("exit_idle_time")
                     .long("exit-idle-time")
                     .help("Time before exiting when there are no connections in seconds")
@@ -206,6 +213,7 @@ impl From<ArgMatches> for Options {
             exit_idle_time: m
                 .value_of("exit_idle_time")
                 .map(|s| std::time::Duration::from_secs(s.parse::<u64>().unwrap())),
+            activate_socket: m.value_of("activate_socket").map(String::from),
         }
     }
 }

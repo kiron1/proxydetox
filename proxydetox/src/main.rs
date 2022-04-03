@@ -8,9 +8,11 @@ mod options;
 use futures_util::future::FutureExt;
 use options::{Authorization, Options};
 use proxydetox::auth::netrc;
+use proxydetox::socket;
 use proxydetox::{auth::AuthenticatorFactory, http_file};
 use std::fs::{read_to_string, File};
 use std::net::SocketAddr;
+use std::os::unix::prelude::FromRawFd;
 use std::result::Result;
 use tokio::sync::oneshot;
 use tracing_subscriber::filter::EnvFilter;
@@ -135,8 +137,18 @@ async fn run(config: &Options) -> Result<(), proxydetox::Error> {
         .keep_alive_token(keep_alive_token)
         .build();
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], config.port));
-    let server = hyper::Server::bind(&addr).serve(session);
+    let server = if let Some(name) = &config.activate_socket {
+        let sockets = socket::activate_socket(name)?;
+        let rawfd = sockets
+            .first()
+            .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "no socket found"))?;
+        let listener = unsafe { std::net::TcpListener::from_raw_fd(*rawfd) };
+        hyper::Server::from_tcp(listener)?
+    } else {
+        let addr = SocketAddr::from(([127, 0, 0, 1], config.port));
+        hyper::Server::try_bind(&addr)?
+    };
+    let server = server.serve(session);
     let addr = server.local_addr();
     let (shutdown_tx, shutdown_rx) = oneshot::channel();
     let server = server.with_graceful_shutdown(async {
