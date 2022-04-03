@@ -1,7 +1,0 @@
-#!/bin/sh
-
-set -eu
-
-label=com.github.kiron1.proxydetox
-
-/bin/launchctl load -Fw /Library/LaunchAgents/com.github.kiron1.proxydetox.plist
