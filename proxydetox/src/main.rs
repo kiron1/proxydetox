@@ -142,11 +142,26 @@ async fn run() -> Result<(), proxydetox::Error> {
         shutdown_rx.await.ok();
     });
 
+    #[cfg(unix)]
     {
-        use tokio::signal;
+        use tokio::signal::unix::signal;
+        use tokio::signal::unix::SignalKind;
+        let mut sigint = signal(SignalKind::interrupt())?;
+        let mut sigterm = signal(SignalKind::terminate())?;
         tokio::spawn(async move {
-            signal::ctrl_c().await.expect("ctrl_c event");
-            tracing::info!("received Ctrl-C, trigger shutdown");
+            tokio::select! {
+                _ = sigint.recv() => {},
+                _ = sigterm.recv() => {},
+            }
+            tracing::info!("Triggering graceful shutdown");
+            shutdown_tx.send(()).ok();
+        });
+    }
+    #[cfg(not(unix))]
+    {
+        tokio::spawn(async move {
+            tokio::signal::ctrl_c().await.expect("ctrl_c event");
+            tracing::info!("Triggering graceful shutdown");
             shutdown_tx.send(()).ok();
         });
     }
