@@ -6,11 +6,9 @@
     <string>com.github.kiron1.proxydetox</string>
     <key>RunAtLoad</key>
     <true/>
-    <key>Program</key>
     <key>ProgramArguments</key>
-    <string>/usr/local/bin/proxydetox</string>
     <array>
-      <string>proxydetox</string>
+      <string>/usr/local/bin/proxydetox</string>
     </array>
     <key>SoftResourceLimits</key>
     <dict>
