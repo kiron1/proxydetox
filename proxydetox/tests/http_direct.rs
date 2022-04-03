@@ -39,7 +39,7 @@ async fn pac_script_error() {
         .pac_script(Some(String::from("function brokenPacScript(url, host) {}")))
         .build();
 
-    let req = Request::get(http1.uri().path_and_query("/").build().unwrap())
+    let req = Request::get(http1.uri().build().unwrap())
         .body(Body::empty())
         .unwrap();
 
@@ -63,7 +63,7 @@ async fn pac_script_invalid_result() {
         )))
         .build();
 
-    let req = Request::get(http1.uri().path_and_query("/").build().unwrap())
+    let req = Request::get(http1.uri().build().unwrap())
         .body(Body::empty())
         .unwrap();
 
