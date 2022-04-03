@@ -134,10 +134,9 @@ async fn run() -> Result<(), proxydetox::Error> {
         .pool_max_idle_per_host(config.pool_max_idle_per_host)
         .build();
 
-    // let mut server = proxydetox::Server::new(config.port, session);
     let addr = SocketAddr::from(([127, 0, 0, 1], config.port));
     let server = hyper::Server::bind(&addr).serve(session);
-    tracing::info!("Listening on http://{}", server.local_addr());
+    let addr = server.local_addr();
     let (shutdown_tx, shutdown_rx) = oneshot::channel();
     let server = server.with_graceful_shutdown(async {
         shutdown_rx.await.ok();
@@ -152,6 +151,7 @@ async fn run() -> Result<(), proxydetox::Error> {
         });
     }
 
+    tracing::info!("Listening on http://{}", addr);
     if let Err(cause) = server.await {
         tracing::error!("fatal error: {}", cause);
     }
