@@ -125,7 +125,7 @@ impl Options {
             .arg(
                 Arg::new("always_use_connect")
                     .short('c')
-                    .long("always_use_connect")
+                    .long("always-use-connect")
                     .help("Always use CONNECT method even for http:// resources"),
             )
             .arg(
