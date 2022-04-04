@@ -2,7 +2,7 @@
 name = "proxydetox"
 version = "0.4.4"
 edition = "2021"
-homepage = "https://github.com/kiron1/proxydetox"
+homepage = "https://proxydetox.colorto.cc/"
 
 [features]
 default = ["negotiate"]

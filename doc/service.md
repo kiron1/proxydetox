@@ -27,17 +27,17 @@ systemctl --user start proxydetox.service
 
 ### macOS
 
-Create a file `~/Library/LaunchAgents/com.github.kiron1.proxydetox.plist`, you can use
-[`com.github.kiron1.proxydetox.plist`][plist] as template, but make sure to update the 
+Create a file `~/Library/LaunchAgents/cc.colorto.proxydetox.plist`, you can use
+[`cc.colorto.proxydetox.plist`][plist] as template, but make sure to update the 
 `Program` value with an *absolute* path.
 
 To finally enable the service, us the following commands:
 
 ```sh
-launchctl load -w -F ~/Library/LaunchAgents/com.github.kiron1.proxydetox.plist
-launchctl start com.github.kiron1.proxydetox
+launchctl load -w -F ~/Library/LaunchAgents/cc.colorto.proxydetox.plist
+launchctl start cc.colorto.proxydetox
 ```
 
 [service]: https://github.com/kiron1/proxydetox/blob/main/debian/proxydetox.service "proxydetox.service file"
 [execstart]: https://man7.org/linux/man-pages/man5/systemd.service.5.html "man 5 systemd.service"
-[plist]: https://github.com/kiron1/proxydetox/blob/main/pkg/macos/Library/LaunchAgents/com.github.kiron1.proxydetox.plist "proxydetox launchd plist file"
+[plist]: https://github.com/kiron1/proxydetox/blob/main/pkg/macos/cc.colorto.proxydetox.plist "proxydetox launchd plist file"

@@ -16,7 +16,7 @@ extension AppDelegate: NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
 
-        let mainAppIdentifier = "com.github.kiron1.Proxydetox"
+        let mainAppIdentifier = "cc.colorto.Proxydetox"
         let runningApps = NSWorkspace.shared.runningApplications
         let isRunning = !runningApps.filter { $0.bundleIdentifier == mainAppIdentifier }.isEmpty
 

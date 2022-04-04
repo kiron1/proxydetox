@@ -2,7 +2,7 @@
 
 set -eu
 
-pkgid=com.github.kiron1.proxydetox
+pkgid=cc.colorto.proxydetox
 prefix=/usr/local
 root=$( cd "$(dirname "$0")/.." ; pwd -P )
 workdir=$(mktemp -dt proxydetox-pkgbuild)

@@ -7,7 +7,7 @@ extension Notification.Name {
 
 // @NSApplicationMain
 class AppDelegate: NSObject {
-    static let launcherAppId = "com.github.kiron1.ProxydetoxLauncher";
+    static let launcherAppId = "cc.colorto.ProxydetoxLauncher";
     let proxydetox = ProxydetxoControl();
     var statusItemController : StatusItemController?;
 }

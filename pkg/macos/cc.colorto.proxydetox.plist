@@ -3,7 +3,7 @@
 <plist version="1.0">
   <dict>
     <key>Label</key>
-    <string>com.github.kiron1.proxydetox</string>
+    <string>cc.colorto.proxydetox</string>
     <key>RunAtLoad</key>
     <true/>
     <key>ProgramArguments</key>
