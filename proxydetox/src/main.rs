@@ -12,7 +12,6 @@ use proxydetox::socket;
 use proxydetox::{auth::AuthenticatorFactory, http_file};
 use std::fs::{read_to_string, File};
 use std::net::SocketAddr;
-use std::os::unix::prelude::FromRawFd;
 use std::result::Result;
 use tokio::sync::oneshot;
 use tracing_subscriber::filter::EnvFilter;
@@ -142,7 +141,16 @@ async fn run(config: &Options) -> Result<(), proxydetox::Error> {
         let rawfd = sockets
             .first()
             .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "no socket found"))?;
-        let listener = unsafe { std::net::TcpListener::from_raw_fd(*rawfd) };
+        #[cfg(unix)]
+        let listener = unsafe {
+            use std::os::unix::io::FromRawFd;
+            std::net::TcpListener::from_raw_fd(*rawfd)
+        };
+        #[cfg(windows)]
+        let listener = unsafe {
+            use std::os::windows::io::FromRawSocket;
+            std::net::TcpListener::from_raw_socket(*rawfd)
+        };
         hyper::Server::from_tcp(listener)?
     } else {
         let addr = SocketAddr::from(([127, 0, 0, 1], config.port));

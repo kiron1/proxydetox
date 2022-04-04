@@ -1,0 +1,10 @@
+[Unit]
+Description=Proxydetox Daemon
+PartOf=proxydetox.service
+
+[Socket]
+ListenStream=127.0.0.1:3128
+FileDescriptorName=Listeners
+
+[Install]
+WantedBy=sockets.target

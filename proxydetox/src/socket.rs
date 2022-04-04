@@ -6,12 +6,6 @@ extern "C" {
         fds: *mut *mut libc::c_int,
         cnt: *mut libc::size_t,
     ) -> libc::c_int;
-
-    // https://man7.org/linux/man-pages/man3/sd_listen_fds.3.html
-    // fn sd_listen_fds_with_names(
-    //     unset_environment: libc::c_int,
-    //     names: *mut *mut *mut libc::c_char,
-    // ) -> libc::c_int;
 }
 
 /// Pass the name of a socket listed in a launchd.plist, receive `RawFd`s.
@@ -38,10 +32,77 @@ pub fn activate_socket(name: &str) -> std::io::Result<Vec<std::os::unix::io::Raw
     Ok(out)
 }
 
-#[cfg(not(target_os = "macos"))]
-pub fn activate_socket(_name: &str) -> std::io::Result<Vec<std::os::unix::io::RawFd>> {
+#[cfg(target_family = "windows")]
+pub fn activate_socket(_name: &str) -> std::io::Result<Vec<std::os::windows::io::RawSocket>> {
     Err(std::io::Error::new(
         std::io::ErrorKind::Other,
         "not implemented",
     ))
+}
+
+#[cfg(all(target_family = "unix", not(target_os = "macos")))]
+pub fn activate_socket(name: &str) -> std::io::Result<Vec<std::os::unix::io::RawFd>> {
+    let pid = std::env::var("LISTEN_PID")
+        .ok()
+        .and_then(|v| v.parse().ok());
+    let fds = std::env::var("LISTEN_FDS")
+        .ok()
+        .and_then(|v| v.parse().ok());
+    let fdnames = std::env::var("LISTEN_FDNAMES")
+        .ok()
+        .and_then(|v| v.parse().ok());
+    listenfds(name, pid, fds, fdnames)
+}
+
+#[cfg(all(target_family = "unix", not(target_os = "macos")))]
+fn listenfds(
+    name: &str,
+    pid: Option<u32>,
+    fds: Option<std::os::unix::io::RawFd>,
+    names: Option<String>,
+) -> std::io::Result<Vec<std::os::unix::io::RawFd>> {
+    const SD_LISTEN_FDS_START: std::os::unix::io::RawFd = 3;
+
+    let fds =
+        fds.ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "LISTEN_FDS missing"))?;
+    let names = names
+        .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "LISTEN_FDNAMES missing"))?;
+    if !pid.map(|p| p == std::process::id()).unwrap_or(true) {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "protocol error, PID does not match",
+        ));
+    }
+    let names = names.split(':').map(String::from).collect::<Vec<_>>();
+    if names.len() != fds as usize {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "protocol error, LISTEN_FDNAMES length does not match",
+        ));
+    }
+    let result = (SD_LISTEN_FDS_START..(SD_LISTEN_FDS_START + fds))
+        .zip(names)
+        .filter_map(|(fd, n)| if n == name { Some(fd) } else { None })
+        .collect();
+    Ok(result)
+}
+
+#[cfg(test)]
+mod tests {
+    #[cfg(all(target_family = "unix", not(target_os = "macos")))]
+    #[test]
+    fn test_listenfds() {
+        use super::listenfds;
+        let pid = std::process::id();
+        assert!(listenfds("test", None, Some(1), Some("test".into())).is_ok());
+        assert!(listenfds("test", Some(pid), Some(1), Some("test".into())).is_ok());
+        // Missmatch in process id is an error
+        assert!(listenfds("test", Some(1), Some(1), Some("test".into())).is_err());
+        // socket not found by name
+        assert!(listenfds("test", None, Some(1), Some("mismatch".into()))
+            .unwrap()
+            .is_empty());
+        // mismatch in length
+        assert!(listenfds("test", None, Some(2), Some("test".into())).is_err());
+    }
 }
