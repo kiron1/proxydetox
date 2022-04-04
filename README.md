@@ -20,7 +20,7 @@ methods.
 Proxydetox is compatible with POSIX-compliant systems (tested on Ubuntu and
 OpenBSD), macOS, and Windows.
 
-**Get started** by looking over the [documentation](https://kiron1.github.io/proxydetox/).
+**Get started** by looking over the [documentation](https://proxydetox.colorto.cc/).
 
 [mdnpac]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Proxy_servers_and_tunneling/Proxy_Auto-Configuration_(PAC)_file "Proxy Auto-Configuration (PAC) file"
 [basic]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication#basic_authentication_scheme "Basic authentication scheme"

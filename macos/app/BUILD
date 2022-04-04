@@ -21,7 +21,7 @@ macos_application(
     additional_contents = {
         "//macos/launcher:ProxydetoxLauncher": "Library/LoginItems",
     },
-    bundle_id = "com.github.kiron1.Proxydetox",
+    bundle_id = "cc.colorto.Proxydetox",
     entitlements = ":ProxydetoxApp.entitlements",
     infoplists = ["Info.plist"],
     linkopts = [

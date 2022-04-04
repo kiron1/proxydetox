@@ -12,7 +12,7 @@ swift_library(
 
 macos_application(
     name = "ProxydetoxLauncher",
-    bundle_id = "com.github.kiron1.ProxydetoxLauncher",
+    bundle_id = "cc.colorto.ProxydetoxLauncher",
     infoplists = ["Info.plist"],
     minimum_os_version = "10.14",
     target_compatible_with = ["@platforms//os:macos"],

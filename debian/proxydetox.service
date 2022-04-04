@@ -1,6 +1,6 @@
 [Unit]
 Description=Proxydetox Daemon
-Documentation=https://github.com/kiron1/proxydetox
+Documentation=https://proxydetox.colorto.cc/
 After=network-online.target
 Wants=network-online.target
 
