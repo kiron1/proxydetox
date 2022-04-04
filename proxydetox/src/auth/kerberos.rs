@@ -39,7 +39,6 @@ impl super::Authenticator for NegotiateAuthenticator {
         match client_ctx {
             Ok((_pending, token)) => {
                 let b64token = base64::encode(&*token);
-                tracing::debug!("negotiate token: {}", &b64token);
                 let auth_str = format!("Negotiate {}", b64token);
                 headers.append(
                     PROXY_AUTHORIZATION,
