@@ -11,6 +11,9 @@ on:
 
 jobs:
   buildpkg:
+    name: GitHub Pages
+    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
