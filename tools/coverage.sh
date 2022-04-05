@@ -9,7 +9,7 @@ set -eu
 # rustup component add llvm-tools-preview
 
 profrawdir=$(mktemp -dt proxydetox-profraw.XXXXXX)
-trap "rm -rf ${profrawdir}" EXIT
+trap 'rm -rf ${profrawdir}' EXIT
 
 export RUSTFLAGS="-Zinstrument-coverage"
 export LLVM_PROFILE_FILE="${profrawdir}/proxydetox-%p-%m.profraw"
