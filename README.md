@@ -4,18 +4,16 @@
 
 A small proxy to relive the pain of some corporate proxies.
 
-Proxydetox can act as an intermediate HTTP proxy for your local applications and
-actual HTTP proxy. Proxydtox will talk to the actual corporate HTTP proxies on
-behalf of the actual application. Proxydetox will select the correct upstream
-proxy based on the [Proxy Auto-Configuration (PAC) file][mdnpac] provided by the
-network administrator and will take care to correctly authenticate against the
-upstream proxy.
+Proxydetox can act as an intermediate HTTP proxy for your local applications
+and actual HTTP proxy. Proxydetox will select the correct upstream proxy based
+on the [Proxy Auto-Configuration (PAC) file][mdnpac] provided by the network
+administrator and will take care to correctly authenticate against the upstream
+proxy. The [Basic][basic] and [Negotiate][negotiate] authentication methods are
+supported.
 
 With Proxydetox in place, most local applications can be configured to use the
 proxy by setting the environment variables `http_proxy`, and `https_proxy`.
 
-Proxydetox support [Basic][basic] and [Negotiate][negotiate] as authentication
-methods.
 
 Proxydetox is compatible with POSIX-compliant systems (tested on Ubuntu and
 OpenBSD), macOS, and Windows.
