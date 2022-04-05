@@ -31,4 +31,3 @@ grcov "${profrawdir}" \
   --ignore '*-sys-*' \
   --ignore 'duktape-sys/*' \
   --ignore-not-existing
-

@@ -39,7 +39,7 @@ cargo install \
   ${features:+--features=${features}}
 
 sed -e "s|\${prefix}|${prefix}|" "${root}/debian/proxydetox.service" \
-	>"${workdir}/lib/systemd/user/proxydetox.service"
+  >"${workdir}/lib/systemd/user/proxydetox.service"
 
 version=$(sed -n 's/^version\s*=\s*"\([0-9.]*\)"/\1/p' "${root}/proxydetox/Cargo.toml")
 echo "::set-output name=version::${version}"
