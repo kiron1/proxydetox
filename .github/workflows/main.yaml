@@ -107,13 +107,13 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            ~/bazel_build_cache
-            ~/bazel_repo_cache
-          key: ${{ runner.os }}-bazel-${{ hashFiles('**/WORKSPACE', '**/BUILD', '**/*.bazel') }}
+            ~/.cache/bazel_build_cache
+            ~/.cache/bazel_repo_cache
+          key: ${{ runner.os }}-bazel-${{ hashFiles('**/Cargo.toml', '**/WORKSPACE', '**/BUILD', '**/*.bazel') }}
           restore-keys: |
             ${{ runner.os }}-bazel-
       - name: Bazel build
-        run: bazel build --disk_cache=~/bazel_build_cache --repository_cache=~/bazel_repo_cache -c opt //...
+        run: bazel build --disk_cache=~/.cache/bazel_build_cache --repository_cache=~/.cache/bazel_repo_cache //...
 
   format_check:
     name: Rust lint
