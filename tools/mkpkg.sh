@@ -7,7 +7,7 @@ prefix=/usr/local
 root=$( cd "$(dirname "$0")/.." ; pwd -P )
 workdir=$(mktemp -dt proxydetox-pkgbuild)
 
-trap 'rm -rf ${workdir}' EXIT ERR
+trap 'rm -rf ${workdir}' EXIT INT
 
 
 plutil -lint "${root}/pkg/macos/${pkgid}.plist"
