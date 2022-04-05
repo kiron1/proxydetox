@@ -1,0 +1,28 @@
+# GitHub Workflows file
+
+name: pages
+
+on:
+  push:
+    branches:
+      - 'main'
+    tags:
+      - 'v*'
+
+jobs:
+  buildpkg:
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Install cargo-raze
+        uses: baptiste0928/cargo-install@v1
+        with:
+          crate: mdbook
+      - name: Build pages
+        run: |
+          make pages
+      - name: Deploy pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
