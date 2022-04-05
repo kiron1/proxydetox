@@ -1,0 +1,47 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "lib": ["deno.window"],
+    "strict": true
+  },
+  "lint": {
+    "files": {
+      "include": ["."],
+      "exclude": [
+        "book/",
+        "coverage/",
+        "paclib/src/pac_utils.js",
+        "target/",
+        "www/bootstrap.min.js",
+        "www/jquery-slim.min.js",
+        "www/popper.min.js"
+      ]
+    },
+    "rules": {
+      "tags": ["recommended"],
+      "include": ["ban-untagged-todo"],
+      "exclude": []
+    }
+  },
+  "fmt": {
+    "files": {
+      "include": ["."],
+      "exclude": [
+        "book/",
+        "coverage/",
+        "paclib/src/pac_utils.js",
+        "target/",
+        "www/bootstrap.min.js",
+        "www/jquery-slim.min.js",
+        "www/popper.min.js"
+      ]
+    },
+    "options": {
+      "useTabs": false,
+      "lineWidth": 80,
+      "indentWidth": 2,
+      "singleQuote": false,
+      "proseWrap": "preserve"
+    }
+  }
+}

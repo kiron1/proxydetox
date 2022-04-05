@@ -14,4 +14,3 @@ Configuration for macOS `launchd(8)`.
 - Copy the file into the directroy `~/Library/LaunchAgents`.
 - `launchctl load -w -F ~/Library/LaunchAgents/cc.colorto.proxydetox.plist`
 - `launchctl start cc.colorto.proxydetox`
-

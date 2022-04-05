@@ -15,7 +15,7 @@ register it with `systemd(8)` on Linux or `launchd(8)` on macOS.
 
 Create a file `~/.config/systemd/user/proxydetox.service`, you can use
 [`debian/proxydetox.service`][service] as template, but make sure to update the
-[`ExecStart`][execstart] part with an *absolute* path.
+[`ExecStart`][execstart] part with an _absolute_ path.
 
 To finally enable the service, us the following commands:
 
@@ -28,8 +28,8 @@ systemctl --user start proxydetox.service
 ### macOS
 
 Create a file `~/Library/LaunchAgents/cc.colorto.proxydetox.plist`, you can use
-[`cc.colorto.proxydetox.plist`][plist] as template, but make sure to update the 
-`Program` value with an *absolute* path.
+[`cc.colorto.proxydetox.plist`][plist] as template, but make sure to update the
+`Program` value with an _absolute_ path.
 
 To finally enable the service, us the following commands:
 
