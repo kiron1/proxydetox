@@ -5,12 +5,13 @@
 - [Installation](installation.md)
 - [Configuration](configuration.md)
 - [Usage](usage.md)
-- [For developers](developers.md)
 
 ---
 
 - [Building Proxydetox](build.md)
-  - [Autostart](service.md)
+  - [Auto start](service.md)
+- [Cross compiling](cross_compile.md)
+- [For developers](developers.md)
 
 ---
 
