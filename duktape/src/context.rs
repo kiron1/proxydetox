@@ -39,7 +39,11 @@ impl Context {
 }
 
 impl Stack for Context {
-    unsafe fn ptr(&mut self) -> *mut duk_context {
+    unsafe fn ptr_mut(&mut self) -> *mut duk_context {
+        self.ptr
+    }
+
+    unsafe fn ptr(&self) -> *mut duk_context {
         self.ptr
     }
 }
@@ -59,7 +63,11 @@ pub struct ContextRef {
 }
 
 impl Stack for ContextRef {
-    unsafe fn ptr(&mut self) -> *mut duk_context {
+    unsafe fn ptr_mut(&mut self) -> *mut duk_context {
+        self.ptr
+    }
+
+    unsafe fn ptr(&self) -> *mut duk_context {
         self.ptr
     }
 }
