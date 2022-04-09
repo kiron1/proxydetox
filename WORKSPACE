@@ -52,7 +52,7 @@ load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 
 rust_repositories(
     edition = "2021",
-    version = "1.59.0",
+    version = "1.60.0",
 )
 
 load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
