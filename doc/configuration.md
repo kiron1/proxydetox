@@ -32,6 +32,7 @@ POSIX-compliant systems like **BSD**, **macOS**, and **Linux**:
 
 - `/usr/etc/proxydetox`
 - `/usr/local/etc/proxydetox/`
+- `/opt/proxydetox/etc/`
 
 Windows:
 

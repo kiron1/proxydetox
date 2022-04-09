@@ -35,6 +35,8 @@ async fn load_pac_file(opt: &Options) -> (Option<String>, std::io::Result<String
             std::path::PathBuf::from("/etc/proxydetox/proxy.pac"),
             #[cfg(target_family = "unix")]
             std::path::PathBuf::from("/usr/local/etc/proxydetox/proxy.pac"),
+            #[cfg(target_os = "macos")]
+            std::path::PathBuf::from("/opt/proxydetox/etc/proxy.pac"),
             #[cfg(target_family = "windows")]
             sys_pac,
         ];

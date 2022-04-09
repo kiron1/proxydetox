@@ -205,6 +205,8 @@ fn readrc() -> Vec<OsString> {
         PathBuf::from("/etc/proxydetox/proxydetoxrc"),
         #[cfg(target_family = "unix")]
         PathBuf::from("/usr/local/etc/proxydetox/proxydetoxrc"),
+        #[cfg(target_os = "macos")]
+        std::path::PathBuf::from("/opt/proxydetox/etc/proxydetoxrc"),
         #[cfg(target_family = "windows")]
         portable_dir("proxydetoxrc"),
         #[cfg(target_family = "windows")]
