@@ -29,13 +29,19 @@ systemctl --user start proxydetox.service
 
 Create a file `~/Library/LaunchAgents/cc.colorto.proxydetox.plist`, you can use
 [`cc.colorto.proxydetox.plist`][plist] as template, but make sure to update the
-`Program` value with an _absolute_ path.
+`ProgramArguments` value with an _absolute_ path.
 
-To finally enable the service, us the following commands:
+The following steps need to be executed as the user who wants to use proxydetox (i.e. *not* as
+_root_).
 
 ```sh
-launchctl load -w -F ~/Library/LaunchAgents/cc.colorto.proxydetox.plist
-launchctl start cc.colorto.proxydetox
+{{#include launchctl.sh:install}}
+```
+
+To revert the above changes (i.e. you want to uninstall proxydetox), run the following commands:
+
+```sh
+{{#include launchctl.sh:uninstall}}
 ```
 
 [service]: https://github.com/kiron1/proxydetox/blob/main/debian/proxydetox.service "proxydetox.service file"
