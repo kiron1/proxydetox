@@ -41,27 +41,18 @@ be used. On Windows the [Security Support Provider Interface][sspi] is used .
 
 ## Using Bazel
 
-The easiest way to optiain Bazel, is by using Bazelisk. The remaining document
-assumes that eiter Bazel is installed and available via the `PATH` variable or
+The easiest way to obtain Bazel, is by using Bazelisk. The remaining document
+assumes that either Bazel is installed and available via the `PATH` variable or
 Bazelisk is installed and the binary is named `bazel` and available via the
 `PATH` variable.
 
-Currently the Bazel setup has some quirks which requires some extra steps:
-
-1. Ensure the XCode command line tools are installed:
+For the Bazel setup to work, ensue the XCode command line tools are installed:
 
 ```sh
 xcode-select --install
 ```
 
-2. Ensure the `duktape-sys` can find `TargetConditionals.h`
-
-Currently we hardcode the necessary include path in
-[`duktape-sys/BUILD`](./duktape-sys/BUILD) this might need adjustment for your
-system. See
-[bazelbuild/rules_rust #899](https://github.com/bazelbuild/rules_rust/issues/899)
-
-### Buliding ProxydetoxApp (macOS UI)
+### Building ProxydetoxApp (macOS UI)
 
 ```sh
 bazel build //macos/app:ProxydetoxApp
@@ -71,7 +62,7 @@ bazel build //macos/app:ProxydetoxApp
 
 ### Enable build features
 
-Append `--features=negotiate` to bazel to enable the negotiate feature:
+Append `--features=negotiate` to `bazel build` to enable the negotiate feature:
 
 ```sh
 bazel build --features=negotiate //...
