@@ -8,7 +8,7 @@
     <true/>
     <key>ProgramArguments</key>
     <array>
-      <string>/usr/local/bin/proxydetox</string>
+      <string>/opt/proxydetox/bin/proxydetox</string>
     </array>
     <key>SoftResourceLimits</key>
     <dict>

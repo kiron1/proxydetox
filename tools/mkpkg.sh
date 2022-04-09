@@ -3,7 +3,7 @@
 set -eu
 
 pkgid=cc.colorto.proxydetox
-prefix=/usr/local
+prefix=/opt/proxydetox
 root=$(
   cd "$(dirname "$0")/.."
   pwd -P
