@@ -32,6 +32,7 @@ pkgbuild \
   --install-location "/" \
   --identifier "${pkgid}" \
   --version ${version} \
+  --scripts "${root}/pkg/macos/scripts" \
   --ownership recommended \
   "${pkgfile}"
 

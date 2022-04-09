@@ -1,0 +1,13 @@
+#!/bin/sh
+
+set -eu
+
+oldlabel=com.github.kiron1.proxydetox
+
+if /bin/launchctl list "${oldlabel}" 2>/dev/null 1>/dev/null; then
+  /bin/launchctl unload -F "${oldlabel}"
+fi
+
+if [ -f "/Library/LaunchAgents/${oldlabel}.plist" ]; then
+  rm -f "/Library/LaunchAgents/${oldlabel}.plist"
+fi
