@@ -62,8 +62,13 @@ impl Options {
     fn parse_args(args: &[OsString]) -> Self {
         let default_pool_max_idle_per_host = usize::MAX.to_string();
 
+        let version = if let Some(hash) = option_env!("PROXYDETOX_BUILD_GIT_HASH") {
+            format!("{} ({})", env!("CARGO_PKG_VERSION"), hash)
+        } else {
+            env!("CARGO_PKG_VERSION").to_owned()
+        };
         let app: _ = Command::new(env!("CARGO_PKG_NAME"))
-            .version(env!("CARGO_PKG_VERSION"))
+            .version(&*version)
             .about("A small proxy to relive the pain of some corporate proxies")
             .args_override_self(true);
 
