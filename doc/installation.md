@@ -25,6 +25,27 @@ Pre build binaries are available for the following platforms:
    sudo installer -package proxydetox-*-x86_64-apple-darwin.pkg -target /
    ```
 
+### Register proxydetox as LaunchAgent
+
+The above steps installed a LaunchAgent for proxydetox named
+`/Library/LaunchAgents/cc.colorto.proxydetox.plist`.
+
+**Info**: Since the `installer` command is run as the `root` user (to be able to write the files to
+the system directories) it cannot know for which user the launch agent needs to be enabled.
+
+The following steps need to be executed as the user who wants to use proxydetox (i.e. *not* as
+_root_).
+
+```sh
+{{#include launchctl.sh:install}}
+```
+
+To revert the above changes (i.e. you want to uninstall proxydetox), run the following commands:
+
+```sh
+{{#include launchctl.sh:uninstall}}
+```
+
 ## Windows
 
 1. Download the [`proxydetox-win64.zip`][releases] zip file.
