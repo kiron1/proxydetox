@@ -122,3 +122,86 @@ impl std::fmt::Display for Entry {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Entry;
+
+    #[test]
+    fn test_success_entry() {
+        let entry = Entry::begin(
+            "127.0.0.1:34524".parse().unwrap(),
+            paclib::ProxyDesc::Direct,
+            http::Method::GET,
+            "http://localhost:8080".parse().unwrap(),
+            http::Version::HTTP_11,
+            Some("curl/7.79.1".to_string()),
+        );
+        let entry = entry.success(http::StatusCode::OK, Some(4096));
+        let entry = entry.to_string();
+
+        assert!(entry.contains("127.0.0.1:34524"));
+        assert!(entry.contains("\"DIRECT\""));
+        assert!(entry.contains("GET"));
+        assert!(entry.contains("http://localhost:8080"));
+        assert!(entry.contains("HTTP/1.1"));
+        assert!(entry.contains("\"curl/7.79.1\""));
+        assert!(entry.contains("OK"));
+        assert!(entry.contains("4096b"));
+        assert!(!entry.contains(" - "));
+    }
+
+    #[test]
+    fn test_success_without_size_entry() {
+        let entry = Entry::begin(
+            "127.0.0.1:34524".parse().unwrap(),
+            paclib::ProxyDesc::Direct,
+            http::Method::GET,
+            "http://localhost:8080".parse().unwrap(),
+            http::Version::HTTP_11,
+            Some("curl/7.79.1".to_string()),
+        );
+        let entry = entry.success(http::StatusCode::OK, None);
+        let entry = entry.to_string();
+
+        assert!(entry.contains(" - "));
+    }
+
+    #[test]
+    fn test_success_without_agent_entry() {
+        let entry = Entry::begin(
+            "127.0.0.1:34524".parse().unwrap(),
+            paclib::ProxyDesc::Direct,
+            http::Method::GET,
+            "http://localhost:8080".parse().unwrap(),
+            http::Version::HTTP_11,
+            None,
+        );
+        let entry = entry.success(http::StatusCode::OK, Some(1024));
+        let entry = entry.to_string();
+
+        assert!(entry.contains(" -"));
+    }
+
+    #[test]
+    fn test_error_entry() {
+        let entry = Entry::begin(
+            "127.0.0.1:34524".parse().unwrap(),
+            paclib::ProxyDesc::Direct,
+            http::Method::GET,
+            "http://localhost:8080".parse().unwrap(),
+            http::Version::HTTP_11,
+            Some("curl/7.79.1".to_string()),
+        );
+        let entry = entry.error(&std::io::Error::new(std::io::ErrorKind::Other, "ERROR"));
+        let entry = entry.to_string();
+
+        assert!(entry.contains("127.0.0.1:34524"));
+        assert!(entry.contains("DIRECT"));
+        assert!(entry.contains("GET"));
+        assert!(entry.contains("http://localhost:8080"));
+        assert!(entry.contains("HTTP/1.1"));
+        assert!(entry.contains("ERROR"));
+        assert!(entry.contains("\"curl/7.79.1\""));
+    }
+}
