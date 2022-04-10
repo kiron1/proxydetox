@@ -32,27 +32,16 @@ use paclib::Evaluator;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("I/O error: {0}")]
-    Io(#[from] std::io::Error),
-    #[error("hyper error: {0}")]
-    Hyper(#[from] hyper::Error),
-    #[error("authentication mechanism error: {0}")]
-    Auth(#[from] crate::auth::Error),
     #[error("invalid URI")]
     InvalidUri,
+    #[error("upstream error: {0}")]
+    Upstream(
+        #[source]
+        #[from]
+        crate::client::Error,
+    ),
     #[error("upstream proxy ({0}) requires authentication")]
     ProxyAuthenticationRequired(ProxyDesc),
-}
-
-impl From<crate::client::Error> for Error {
-    fn from(cause: crate::client::Error) -> Error {
-        use crate::client;
-        match cause {
-            client::Error::Auth(cause) => Error::Auth(cause),
-            client::Error::Hyper(cause) => Error::Hyper(cause),
-            client::Error::InvalidUri => Error::InvalidUri,
-        }
-    }
 }
 
 type Result<T> = std::result::Result<T, Error>;

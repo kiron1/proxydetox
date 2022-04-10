@@ -17,6 +17,10 @@ use crate::auth::Authenticator;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+    #[error("HTTP connection upgrade with {1} failed: {0}")]
+    UpgradeFailed(#[source] hyper::Error, http::Uri),
+    #[error("HTTP CONNECT failed with {0}")]
+    ConnectFailed(http::Uri),
     #[error("hyper error: {0}")]
     Hyper(#[from] hyper::Error),
     #[error("authentication mechanism error: {0}")]
@@ -61,7 +65,7 @@ impl Client {
             match headers {
                 Ok(headers) => req.headers_mut().extend(headers),
                 Err(ref cause) => {
-                    tracing::error!("Proxy authentication error: {}", cause);
+                    tracing::error!(?cause, "proxy authentication error");
                     self.0.requires_auth.store(false, Ordering::Relaxed);
                 }
             }
@@ -73,7 +77,7 @@ impl Client {
                 .get::<HttpProxyInfo>()
                 .map(|i| i.remote_addr.to_string())
                 .unwrap_or_default();
-            tracing::error!("Proxy {} requires authentication", &remote_addr);
+            tracing::error!(?remote_addr, "proxy requires authentication");
             self.0.requires_auth.store(true, Ordering::Relaxed);
         }
         Ok(res)
@@ -130,7 +134,8 @@ impl ForwardClient for Client {
 
         let resp = async move {
             // Make a client CONNECT request to the parent proxy to upgrade the connection
-            let parent_req = Request::connect(authority_of(req.uri())?)
+            let parent_authority = authority_of(req.uri())?;
+            let parent_req = Request::connect(parent_authority.clone())
                 .version(http::version::Version::HTTP_11)
                 .body(Body::empty())
                 .unwrap();
@@ -156,19 +161,19 @@ impl ForwardClient for Client {
                                         tracing::error!(?cause, "tunnel error")
                                     }
                                 }
-                                Err(e) => tracing::error!("upgrade error: {}", e),
+                                Err(cause) => tracing::error!(?cause, "upgrade error"),
                             }
                         });
                         // Response with a OK to the client
                         Ok(Response::new(Body::empty()))
                     }
-                    Err(cause) => bad_request(&format!("upgrade failed: {}", cause)),
+                    Err(cause) => Err(Error::UpgradeFailed(cause, parent_authority)),
                 }
             } else {
                 let status = parent_res.status();
-                tracing::error!(?status, "CONNECT {}", req.uri(),);
+                tracing::error!(?status, "CONNECT {}", &parent_authority);
 
-                bad_request("CONNECT failed")
+                Err(Error::ConnectFailed(parent_authority))
             }
         };
         let resp = resp.instrument(tracing::trace_span!("ProxyClient::connect"));
@@ -207,15 +212,6 @@ fn authority_of(uri: &http::Uri) -> Result<http::Uri> {
         }
         (_, _, _) => Err(Error::InvalidUri),
     }
-}
-
-fn bad_request(slice: &str) -> Result<Response<Body>> {
-    let resp = Response::builder()
-        .status(http::StatusCode::BAD_REQUEST)
-        .header(http::header::CONNECTION, "close")
-        .body(Body::from(String::from(slice)))
-        .unwrap();
-    Ok(resp)
 }
 
 #[cfg(test)]
