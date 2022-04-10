@@ -42,6 +42,12 @@ pub enum Error {
     ),
     #[error("upstream proxy ({0}) requires authentication")]
     ProxyAuthenticationRequired(ProxyDesc),
+    #[error("http error: {0}")]
+    Http(
+        #[source]
+        #[from]
+        http::Error,
+    ),
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -205,12 +211,10 @@ impl PeerSession {
     pub async fn process(&mut self, req: hyper::Request<Body>) -> Result<Response<Body>> {
         let res = if req.uri().authority().is_some() {
             self.dispatch(req).await
-        } else if req.method() == hyper::Method::GET {
+        } else if req.method() != hyper::Method::CONNECT {
             self.management(req).await
         } else {
-            let mut res = Response::new(Body::from(String::from("Invalid Requst")));
-            *res.status_mut() = http::StatusCode::BAD_REQUEST;
-            Ok(res)
+            make_error_html(http::StatusCode::BAD_REQUEST, "Invalid request")
         };
 
         tracing::debug!("response: {:?}", res.as_ref().map(|r| r.status()));
@@ -297,79 +301,108 @@ impl PeerSession {
     }
 
     pub async fn management(&mut self, req: hyper::Request<Body>) -> Result<Response<Body>> {
-        let resp = if req.uri() == "/access.log" {
-            let accept_event_stream = req
-                .headers()
-                .get(ACCEPT)
-                .map(|v| v == "text/event-stream")
-                .unwrap_or(false);
+        const GET: http::Method = http::Method::GET;
+        let accept = req.headers().get(ACCEPT).and_then(|s| s.to_str().ok());
 
-            if accept_event_stream {
-                // the client accepts an SSE event stream
-                let stream = self.shared.accesslog_tx.subscribe();
-                let stream = BroadcastStream::new(stream);
-                let stream = stream.map(|entry| match entry {
-                    Ok(entry) => {
-                        let chunk = format!("data:{}\n\n", entry);
-                        std::result::Result::<_, std::io::Error>::Ok(chunk)
-                    }
-                    Err(tokio_stream::wrappers::errors::BroadcastStreamRecvError::Lagged(
-                        count,
-                    )) => {
-                        let chunk = format!("event:lagged\ndata:{}\n\n", count);
-                        Ok(chunk)
-                    }
-                });
-
-                let mut resp = Response::new(Body::wrap_stream(stream));
-                resp.headers_mut().insert(
-                    CACHE_CONTROL,
-                    http::header::HeaderValue::from_static("no-store"),
-                );
-                resp.headers_mut().insert(
-                    CONTENT_TYPE,
-                    http::header::HeaderValue::from_static("text/event-stream"),
-                );
-                resp
-            } else {
-                let body = include_str!("accesslog.html");
-                let mut resp = Response::new(Body::from(body));
-                resp.headers_mut().insert(
-                    CONTENT_TYPE,
-                    http::header::HeaderValue::from_static("text/html"),
-                );
-                resp
+        match (req.method(), accept, req.uri().path()) {
+            (&GET, _, "/") => self.index_html(),
+            (&GET, Some("text/event-stream"), "/access.log") => self.accesslog_stream(),
+            (&GET, _, "/access.log") => self.accesslog_html(),
+            (&GET, _, "/proxy.pac") => proxy_pac(req.headers().get(HOST)),
+            (&GET, _, _) => make_error_html(http::StatusCode::NOT_FOUND, "ressource not found"),
+            (_, _, _) => {
+                make_error_html(http::StatusCode::METHOD_NOT_ALLOWED, "method not allowed")
             }
-        } else if req.uri() == "/proxy.pac" {
-            let body = format!(
-                "function FindProxyForURL(url, host) {{ return \"PROXY {}\"; }}\n",
-                req.headers()
-                    .get(HOST)
-                    .and_then(|h| h.to_str().ok())
-                    .unwrap_or("127.0.0.1:3128")
-            );
-            let mut resp = Response::new(Body::from(body));
-            resp.headers_mut().insert(
-                CONTENT_TYPE,
-                http::header::HeaderValue::from_static("application/x-ns-proxy-autoconfig"),
-            );
-            resp
-        } else {
-            let body = format!(
-                "<!DOCTYPE html><html><h1>{}/{}</h1><h2>DNS Cache</h2><code>{:?}</code></html>",
-                env!("CARGO_PKG_NAME"),
-                env!("CARGO_PKG_VERSION"),
-                self.shared.eval.lock().cache()
-            );
-            let mut resp = Response::new(Body::from(body));
-            resp.headers_mut().insert(
+        }
+    }
+
+    fn index_html(&self) -> Result<Response<Body>> {
+        let body = format!(
+            "<!DOCTYPE html><html><h1>{}/{}</h1><h2>DNS Cache</h2><code>{:?}</code></html>",
+            env!("CARGO_PKG_NAME"),
+            env!("CARGO_PKG_VERSION"),
+            self.shared.eval.lock().cache()
+        );
+        let resp = Response::builder()
+            .header(
                 CONTENT_TYPE,
                 http::header::HeaderValue::from_static("text/html"),
-            );
-            resp
-        };
+            )
+            .body(Body::from(body))?;
         Ok(resp)
     }
+
+    fn accesslog_html(&self) -> Result<Response<Body>> {
+        let resp = Response::builder()
+            .header(
+                CONTENT_TYPE,
+                http::header::HeaderValue::from_static("text/html"),
+            )
+            .body(Body::from(include_str!("accesslog.html")))?;
+        Ok(resp)
+    }
+
+    fn accesslog_stream(&self) -> Result<Response<Body>> {
+        // the client accepts an SSE event stream
+        let stream = self.shared.accesslog_tx.subscribe();
+        let stream = BroadcastStream::new(stream);
+        let stream = stream.map(|entry| match entry {
+            Ok(entry) => {
+                let chunk = format!("data:{}\n\n", entry);
+                std::result::Result::<_, std::io::Error>::Ok(chunk)
+            }
+            Err(tokio_stream::wrappers::errors::BroadcastStreamRecvError::Lagged(count)) => {
+                let chunk = format!("event:lagged\ndata:{}\n\n", count);
+                Ok(chunk)
+            }
+        });
+
+        let resp = Response::builder()
+            .header(
+                CACHE_CONTROL,
+                http::header::HeaderValue::from_static("no-store"),
+            )
+            .header(
+                CONTENT_TYPE,
+                http::header::HeaderValue::from_static("text/event-stream"),
+            )
+            .body(Body::wrap_stream(stream))?;
+        Ok(resp)
+    }
+}
+
+fn proxy_pac(host: Option<&http::HeaderValue>) -> Result<Response<Body>> {
+    let body = format!(
+        "function FindProxyForURL(url, host) {{ return \"PROXY {}\"; }}\n",
+        host.and_then(|h| h.to_str().ok())
+            .unwrap_or("127.0.0.1:3128")
+    );
+    let resp = Response::builder()
+        .header(
+            CONTENT_TYPE,
+            http::header::HeaderValue::from_static("application/x-ns-proxy-autoconfig"),
+        )
+        .body(Body::from(body))?;
+    Ok(resp)
+}
+
+fn make_error_html(status: http::StatusCode, message: impl AsRef<str>) -> Result<Response<Body>> {
+    let body = format!(
+            "<!DOCTYPE html><html><head><title>Error: {}</title></heade><body><h1>Error: {}</h1><p>{}</p><hr><small>{}/{}</small></body></html>",
+            status.as_str(),
+            status.as_str(),
+            message.as_ref(),
+            env!("CARGO_PKG_NAME"),
+            env!("CARGO_PKG_VERSION"),
+        );
+    let resp = Response::builder()
+        .status(status)
+        .header(
+            CONTENT_TYPE,
+            http::header::HeaderValue::from_static("text/html"),
+        )
+        .body(Body::from(body))?;
+    Ok(resp)
 }
 
 fn make_error_response<E>(error: &E) -> Response<Body>
