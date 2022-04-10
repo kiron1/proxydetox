@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+use std::{fmt::Write, net::SocketAddr};
 
 use chrono::{DateTime, Duration, Local, SecondsFormat};
 use paclib::ProxyDesc;
@@ -90,11 +90,6 @@ impl Entry {
 
 impl std::fmt::Display for Entry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let user_agent = if let Some(ref ua) = self.user_agent {
-            ua
-        } else {
-            "-"
-        };
         write!(
             f,
             "{} {} \"{}\" \"{} {} {:?}\" {:.3}s",
@@ -112,11 +107,18 @@ impl std::fmt::Display for Entry {
                 if let Some(bytes) = bytes {
                     write!(f, " {}b", bytes)?;
                 } else {
-                    write!(f, " -")?;
+                    f.write_str(" -")?;
                 }
             }
             Response::Error(ref cause) => write!(f, " error: \"{}\"", cause)?,
         }
-        write!(f, " \"{}\"", user_agent)
+        if let Some(ref ua) = self.user_agent {
+            f.write_str(" \"")?;
+            f.write_str(ua)?;
+            f.write_char('"')?;
+        } else {
+            f.write_str(" -")?;
+        }
+        Ok(())
     }
 }
