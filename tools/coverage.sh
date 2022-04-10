@@ -29,6 +29,7 @@ grcov "${profrawdir}" \
   -t html \
   -o ./coverage/ \
   --ignore '*/build.rs' \
+  --ignore '*/src/main.rs' \
   --ignore '*/tests/*' \
   --ignore '*-sys-*' \
   --ignore 'duktape-sys/*' \
