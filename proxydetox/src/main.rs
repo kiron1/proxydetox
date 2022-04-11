@@ -85,16 +85,8 @@ async fn run() -> Result<(), proxydetox::Error> {
         .init();
 
     let (pac_path, pac_script) = load_pac_file(&config).await;
-    if let Some(path) = pac_path {
-        tracing::info!("PAC path: {}", &path);
-    } else {
-        tracing::info!(
-            "Using inline PAC config: {}",
-            pac_script.as_ref().expect("inline PAC config")
-        );
-    }
     if let Err(cause) = pac_script {
-        tracing::error!("PAC config error: {}", cause);
+        tracing::error!(%cause, "PAC config error");
         return Err(cause.into());
     }
 
@@ -126,11 +118,9 @@ async fn run() -> Result<(), proxydetox::Error> {
         }
     };
 
-    tracing::info!("Authenticator factory: {}", &auth);
-
     let session = proxydetox::Session::builder()
         .pac_script(pac_script.ok())
-        .authenticator_factory(Some(auth))
+        .authenticator_factory(Some(auth.clone()))
         .always_use_connect(config.always_use_connect)
         .pool_idle_timeout(config.pool_idle_timeout)
         .pool_max_idle_per_host(config.pool_max_idle_per_host)
@@ -155,7 +145,7 @@ async fn run() -> Result<(), proxydetox::Error> {
                 _ = sigint.recv() => {},
                 _ = sigterm.recv() => {},
             }
-            tracing::info!("Triggering graceful shutdown");
+            tracing::info!("triggering graceful shutdown");
             shutdown_tx.send(()).ok();
         });
     }
@@ -163,12 +153,12 @@ async fn run() -> Result<(), proxydetox::Error> {
     {
         tokio::spawn(async move {
             tokio::signal::ctrl_c().await.expect("ctrl_c event");
-            tracing::info!("Triggering graceful shutdown");
+            tracing::info!("triggering graceful shutdown");
             shutdown_tx.send(()).ok();
         });
     }
 
-    tracing::info!("Listening on http://{}", addr);
+    tracing::info!(listening=?addr, authenticator=%auth, pac_file=%pac_path.unwrap_or_default(), "starting");
     if let Err(cause) = server.await {
         tracing::error!("fatal error: {}", cause);
     }
@@ -181,7 +171,7 @@ async fn monitor_netrc(path: impl AsRef<std::path::Path>, store: netrc::Store) {
     use inotify::{Inotify, WatchMask};
 
     fn reload_netrc(path: impl AsRef<std::path::Path>, store: &netrc::Store) {
-        tracing::info!("{} changed, update", path.as_ref().display());
+        tracing::info!(path=%path.as_ref().display(), "change detected");
         if let Ok(file) = File::open(path.as_ref()) {
             if let Err(cause) = store.update(std::io::BufReader::new(file)) {
                 tracing::error!("failed to read {}: {}", path.as_ref().display(), cause);
@@ -189,7 +179,7 @@ async fn monitor_netrc(path: impl AsRef<std::path::Path>, store: netrc::Store) {
         }
     }
 
-    let parent = path.as_ref().parent().expect("filse must have a parent");
+    let parent = path.as_ref().parent().expect("file must have a parent");
     let file_name = path.as_ref().file_name().expect("file must have a name");
 
     let mut inotify = Inotify::init().expect("Inotify::init");
