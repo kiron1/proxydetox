@@ -75,7 +75,7 @@ jobs:
         id: buildpkg
         run: ${{ matrix.mkcmd }}
       - name: Upload package artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ steps.buildpkg.outputs.pkgfile }}
           path: ./${{ steps.buildpkg.outputs.pkgfile }}
