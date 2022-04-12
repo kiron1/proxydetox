@@ -12,8 +12,7 @@ use std::{
 };
 
 use futures_util::stream::StreamExt;
-use http::header::{ACCEPT, CACHE_CONTROL, CONTENT_LENGTH, CONTENT_TYPE, HOST, USER_AGENT, VIA};
-use http::HeaderValue;
+use http::header::{ACCEPT, CACHE_CONTROL, CONTENT_LENGTH, CONTENT_TYPE, HOST, USER_AGENT};
 use http::Uri;
 use http::{Request, Response};
 use hyper::service::Service;
@@ -282,15 +281,6 @@ impl PeerSession {
                     tracing::error!("407 proxy authentication required for {}", &proxy);
                     return Err(Error::ProxyAuthenticationRequired(proxy));
                 }
-
-                let via = HeaderValue::from_str(&format!(
-                    "{}; {}/{}",
-                    &proxy,
-                    env!("CARGO_PKG_NAME"),
-                    env!("CARGO_PKG_VERSION")
-                ))
-                .unwrap();
-                res.headers_mut().insert(VIA, via);
             }
             Err(ref cause) => {
                 let entry = access.error(&cause);
