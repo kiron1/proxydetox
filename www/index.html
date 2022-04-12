@@ -33,7 +33,8 @@
           Additionaly the Proxydetox will take care of the proxy authorization using Kerberos.
         </p>
         <p class="lead">
-          <a href="https://github.com/kiron1/proxydetox/releases/latest/" class="btn btn-lg btn-secondary">Download</a>
+          <a href="https://github.com/kiron1/proxydetox/releases/latest/" class="btn btn-lg btn-success">Download <span id="version"></span></a>
+          <a href="./book/index.html" class="btn btn-lg btn-primary">Documentation</a>
         </p>
       </main>
 
@@ -46,5 +47,11 @@
     <script src="jquery-slim.min.js"></script>
     <script src="popper.min.js"></script>
     <script src="bootstrap.min.js"></script>
+    <script>
+      fetch("https://api.github.com/repos/kiron1/proxydetox/releases")
+        .then(r => r.json())
+        .then(r => r[0]["tag_name"])
+        .then(t => document.getElementById("version").innerHTML = t);
+    </script>
   </body>
 </html>
