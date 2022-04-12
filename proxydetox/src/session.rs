@@ -34,12 +34,8 @@ use paclib::Evaluator;
 pub enum Error {
     #[error("invalid URI")]
     InvalidUri,
-    #[error("upstream error: {0}")]
-    Upstream(
-        #[source]
-        #[from]
-        crate::client::Error,
-    ),
+    #[error("upstream error reaching {2} via {1}: {0}")]
+    Upstream(#[source] crate::client::Error, ProxyDesc, Uri),
     #[error("upstream proxy ({0}) requires authentication")]
     ProxyAuthenticationRequired(ProxyDesc),
     #[error("http error: {0}")]
@@ -174,7 +170,7 @@ impl Shared {
     fn find_proxy(&self, uri: &Uri) -> paclib::Proxies {
         tokio::task::block_in_place(move || {
             self.eval.lock().find_proxy(uri).unwrap_or_else(|cause| {
-                tracing::error!("failed to find_proxy: {:?}", cause);
+                tracing::error!(%cause, "failed to find_proxy");
                 paclib::Proxies::direct()
             })
         })
@@ -186,12 +182,12 @@ impl Shared {
         match proxies.get(&uri) {
             Some(proxy) => Ok(proxy.clone()),
             None => {
-                tracing::debug!("new proxy client for {:?}", uri.host());
+                tracing::debug!(uri=?uri.host(), "new proxy client");
                 let auth = self.auth.make(&uri);
                 let auth = match auth {
                     Ok(auth) => auth,
                     Err(ref cause) => {
-                        tracing::warn!("error makeing authenticator: {}", cause);
+                        tracing::warn!(%cause, "error makeing authenticator");
                         Box::new(crate::auth::NoneAuthenticator)
                     }
                 };
@@ -217,7 +213,7 @@ impl PeerSession {
             make_error_html(http::StatusCode::BAD_REQUEST, "Invalid request")
         };
 
-        tracing::debug!("response: {:?}", res.as_ref().map(|r| r.status()));
+        tracing::debug!(status=?res.as_ref().map(|r| r.status()), "response");
         res
     }
 
@@ -233,7 +229,7 @@ impl PeerSession {
         self.dispatch_with_proxy(proxy, req).await
     }
 
-    #[instrument(level = "debug", skip(self, req))]
+    #[instrument(skip(self, req))]
     pub async fn dispatch_with_proxy(
         &mut self,
         proxy: ProxyDesc,
@@ -260,6 +256,7 @@ impl PeerSession {
                 .map(|s| s.to_owned()),
         );
 
+        let uri = req.uri().clone();
         let is_connect = req.method() == hyper::Method::CONNECT || self.shared.always_use_connect;
         let mut res = if is_connect {
             client.connect(req).await
@@ -293,11 +290,12 @@ impl PeerSession {
                 res.headers_mut().insert(VIA, via);
             }
             Err(ref cause) => {
+                tracing::error!(%cause, "request error");
                 let entry = access.error(&cause);
                 let _ = self.shared.accesslog_tx.send(entry);
             }
         }
-        Ok(res?)
+        res.map_err(|e| Error::Upstream(e, proxy, uri))
     }
 
     pub async fn management(&mut self, req: hyper::Request<Body>) -> Result<Response<Body>> {
@@ -456,8 +454,8 @@ impl Service<Request<Body>> for PeerSession {
             };
             Ok(out)
         };
-        let res = res
-            .instrument(tracing::debug_span!("call", method=%method, uri=%uri, version=?version));
+        let res =
+            res.instrument(tracing::info_span!("call", method=%method, uri=%uri, version=?version));
         Box::pin(res)
     }
 }
