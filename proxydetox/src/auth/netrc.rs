@@ -43,22 +43,33 @@ impl super::Authenticator for BasicAuthenticator {
     }
 }
 
+#[derive(Default)]
+struct Entries {
+    /// Maps host names to base64 encoded login strings.
+    hosts: HashMap<String, String>,
+    /// Default entry of .netrc file
+    default: Option<String>,
+}
+
 #[derive(Clone, Default)]
 pub struct Store {
-    /// Maps host names to base64 encoded login strings.
-    hosts: Arc<RwLock<HashMap<String, String>>>,
+    entries: Arc<RwLock<Entries>>,
 }
 
 impl Store {
     pub fn new(input: impl BufRead) -> Result<Self, Error> {
-        let hosts = Self::map_from_netrc(input)?;
-
-        Ok(Self {
-            hosts: Arc::new(RwLock::new(hosts)),
-        })
+        let entries = Self::map_from_netrc(input)?;
+        let entries = Arc::new(RwLock::new(entries));
+        Ok(Self { entries })
     }
 
-    fn map_from_netrc(input: impl BufRead) -> Result<HashMap<String, String>, Error> {
+    fn map_from_netrc(input: impl BufRead) -> Result<Entries, Error> {
+        // Generate the `Basic base64("login:password") token
+        fn make_token(login: &str, password: &str) -> String {
+            let t = format!("{}:{}", login, password);
+            format!("Basic {}", base64::encode(&t))
+        }
+
         let netrc = netrc::Netrc::parse(input).map_err(|_| Error::NetrcParserError)?;
 
         let hosts = netrc
@@ -67,37 +78,39 @@ impl Store {
             .map(|(host, machine)| {
                 (
                     host.to_owned(),
-                    format!(
-                        "{}:{}",
-                        machine.login,
-                        machine.password.to_owned().unwrap_or_default()
-                    ),
+                    make_token(&machine.login, machine.password.as_deref().unwrap_or("")),
                 )
             })
-            .map(|(host, login)| (host, base64::encode(&login)))
-            .map(|(host, login)| (host, format!("Basic {}", login)))
             .collect();
-        Ok(hosts)
+        let default = netrc
+            .default
+            .map(|m| make_token(&m.login, m.password.as_deref().unwrap_or("")));
+        Ok(Entries { hosts, default })
     }
 
     pub fn update(&self, input: impl BufRead) -> Result<(), Error> {
-        let mut hosts = self.hosts.write();
-        *hosts = Self::map_from_netrc(input)?;
+        let mut entries = self.entries.write();
+        *entries = Self::map_from_netrc(input)?;
         Ok(())
     }
 
     pub(crate) fn get(&self, k: &str) -> Result<String, Error> {
-        let hosts = self.hosts.read();
-        hosts
+        let entries = self.entries.read();
+        let default = &entries.default;
+        entries
+            .hosts
             .get(k)
             .map(|k| k.to_owned())
+            .or_else(|| default.clone())
             .ok_or_else(|| Error::NoEntryForHost(k.to_string()))
     }
 }
 
 impl std::fmt::Debug for Store {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_list().entries(self.hosts.read().keys()).finish()
+        f.debug_list()
+            .entries(self.entries.read().hosts.keys())
+            .finish()
     }
 }
 
