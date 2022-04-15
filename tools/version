@@ -1,0 +1,5 @@
+#!/bin/sh
+
+query=$(printf '.packages[] | {name, version} | select(.name == "%s") | .version' "${1:-proxydetox}")
+printf '::set-output name=version::'
+cargo metadata --format-version 1 --offline --quiet | jq -r "${query}"
