@@ -1,8 +1,7 @@
-use paclib::{Evaluator, ProxyDesc};
+use paclib::{Endpoint, Evaluator, ProxyDesc, Uri};
 
 fn find_proxy(cmd: &str, good: &str, bad: &str) {
-    use paclib::Uri;
-    let proxy = "http://example.org:3128";
+    let endpoint = "example.org:3128".parse::<Endpoint>().unwrap();
     let pac_script = format!(
         r#"
         function FindProxyForURL(url, host) {{
@@ -12,9 +11,8 @@ fn find_proxy(cmd: &str, good: &str, bad: &str) {
             return "PROXY {}";
         }}
     "#,
-        cmd, proxy
+        cmd, endpoint
     );
-    let proxy = proxy.parse::<Uri>().unwrap();
     let mut eval = Evaluator::new(&pac_script).unwrap();
 
     assert_eq!(
@@ -24,7 +22,7 @@ fn find_proxy(cmd: &str, good: &str, bad: &str) {
             .first()
     );
     assert_eq!(
-        ProxyDesc::Proxy(proxy),
+        ProxyDesc::Proxy(endpoint),
         eval.find_proxy(&bad.parse::<Uri>().unwrap())
             .unwrap()
             .first()

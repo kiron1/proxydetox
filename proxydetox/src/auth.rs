@@ -40,8 +40,7 @@ impl AuthenticatorFactory {
         AuthenticatorFactory::Negotiate
     }
 
-    pub fn make(&self, proxy_url: &http::Uri) -> Result<Box<dyn Authenticator>> {
-        let proxy_fqdn = proxy_url.host().unwrap_or_default();
+    pub fn make(&self, proxy_fqdn: &str) -> Result<Box<dyn Authenticator>> {
         match self {
             Self::None => Ok(Box::new(NoneAuthenticator)),
             Self::Basic(ref store) => {

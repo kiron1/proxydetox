@@ -4,6 +4,7 @@ pub mod proxy;
 
 pub use crate::dns::DnsCache;
 pub use crate::evaluator::Evaluator;
+pub use crate::proxy::Endpoint;
 pub use crate::proxy::Proxies;
 pub use crate::proxy::ProxyDesc;
 

@@ -20,18 +20,17 @@ pub enum Error {
 
 #[derive(Clone, Debug)]
 pub struct HttpProxyConnector {
-    proxy_uri: Uri,
+    host: String,
+    port: u16,
 }
 
 impl HttpProxyConnector {
-    pub fn new(proxy_uri: Uri) -> Self {
-        Self { proxy_uri }
+    pub fn new((host, port): (String, u16)) -> Self {
+        Self { host, port }
     }
 
     async fn call_async(&mut self, _dst: Uri) -> std::result::Result<HttpProxyStream, Error> {
-        let port = self.proxy_uri.port_u16().unwrap_or(3128);
-        let host = self.proxy_uri.host().ok_or(Error::LookupError)?;
-        let stream = TcpStream::connect((host, port))
+        let stream = TcpStream::connect((self.host.clone(), self.port))
             .await
             .map_err(Error::ConnectError)?;
 
