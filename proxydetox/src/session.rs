@@ -145,7 +145,7 @@ pub struct PeerSession {
 struct Shared {
     eval: Mutex<paclib::Evaluator>,
     direct_client: hyper::Client<hyper::client::HttpConnector>,
-    proxy_clients: Mutex<HashMap<Uri, ProxyClient>>,
+    proxy_clients: Mutex<HashMap<paclib::Endpoint, ProxyClient>>,
     auth: AuthenticatorFactory,
     pool_max_idle_per_host: usize,
     pool_idle_timeout: Option<Duration>,
@@ -176,13 +176,13 @@ impl Shared {
     }
 
     #[instrument(level = "trace", skip(self))]
-    fn proxy_client(&self, uri: http::Uri) -> Result<ProxyClient> {
+    fn proxy_client(&self, endpoint: paclib::Endpoint) -> Result<ProxyClient> {
         let mut proxies = self.proxy_clients.lock();
-        match proxies.get(&uri) {
+        match proxies.get(&endpoint) {
             Some(proxy) => Ok(proxy.clone()),
             None => {
-                tracing::debug!(uri=?uri.host(), "new proxy client");
-                let auth = self.auth.make(&uri);
+                tracing::debug!(endpoint=%endpoint, "new proxy client");
+                let auth = self.auth.make(endpoint.host());
                 let auth = match auth {
                     Ok(auth) => auth,
                     Err(ref cause) => {
@@ -193,9 +193,12 @@ impl Shared {
                 let client = hyper::Client::builder()
                     .pool_max_idle_per_host(self.pool_max_idle_per_host)
                     .pool_idle_timeout(self.pool_idle_timeout)
-                    .build(HttpProxyConnector::new(uri.clone()));
+                    .build(HttpProxyConnector::new((
+                        endpoint.host().to_owned(),
+                        endpoint.port(),
+                    )));
                 let client = ProxyClient::new(client, auth);
-                proxies.insert(uri, client.clone());
+                proxies.insert(endpoint, client.clone());
                 Ok(client)
             }
         }
@@ -237,8 +240,8 @@ impl PeerSession {
         let proxy_client;
         let client: &(dyn crate::client::ForwardClient + Send + Sync) = match proxy {
             ProxyDesc::Direct => &self.shared.direct_client,
-            ProxyDesc::Proxy(ref proxy) => {
-                proxy_client = self.shared.proxy_client(proxy.clone())?;
+            ProxyDesc::Proxy(ref endpoint) => {
+                proxy_client = self.shared.proxy_client(endpoint.clone())?;
                 &proxy_client
             }
         };

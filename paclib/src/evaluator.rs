@@ -64,9 +64,9 @@ impl Evaluator {
         };
 
         match &result {
-            Ok(duktape::Value::String(ref result)) => {
-                Ok(Proxies::parse(result).map_err(|_| FindProxyError::InvalidResult)?)
-            }
+            Ok(duktape::Value::String(ref result)) => Ok(result
+                .parse::<Proxies>()
+                .map_err(|_| FindProxyError::InvalidResult)?),
             _ => Err(FindProxyError::InvalidResult),
         }
     }
