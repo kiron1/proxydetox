@@ -26,12 +26,12 @@ pkgfile=proxydetox-${version}-x86_64-apple-darwin.pkg
 echo "::set-output name=version::${version}"
 echo "::set-output name=pkgfile::${pkgfile}"
 
-echo Building ${pkgfile}
+echo "Building ${pkgfile}"
 pkgbuild \
   --root "${workdir}" \
   --install-location "/" \
   --identifier "${pkgid}" \
-  --version ${version} \
+  --version "${version}" \
   --scripts "${root}/pkg/macos/scripts" \
   --ownership recommended \
   "${pkgfile}"
