@@ -49,17 +49,16 @@ async fn load_pac_file(opt: &Options) -> (Option<String>, std::io::Result<String
     }
 }
 
-#[tokio::main]
-async fn main() {
-    if let Err(cause) = run().await {
-        tracing::error!("fatal error: {}", cause);
+fn main() {
+    let config = Options::load();
+    if let Err(cause) = run(&config) {
+        tracing::error!(%cause, "fatal error");
         std::process::exit(1);
     }
 }
 
-async fn run() -> Result<(), proxydetox::Error> {
-    let config = Options::load();
-
+#[tokio::main]
+async fn run(config: &Options) -> Result<(), proxydetox::Error> {
     let env_name = format!("{}_LOG", env!("CARGO_PKG_NAME").to_uppercase());
 
     let filter = if let Ok(filter) = EnvFilter::try_from_env(&env_name) {
@@ -84,13 +83,13 @@ async fn run() -> Result<(), proxydetox::Error> {
         .with_env_filter(filter)
         .init();
 
-    let (pac_path, pac_script) = load_pac_file(&config).await;
+    let (pac_path, pac_script) = load_pac_file(config).await;
     if let Err(cause) = pac_script {
         tracing::error!(%cause, "PAC config error");
         return Err(cause.into());
     }
 
-    let auth = match config.authorization {
+    let auth = match &config.authorization {
         #[cfg(feature = "negotiate")]
         Authorization::Negotiate => AuthenticatorFactory::negotiate(),
         #[cfg(not(feature = "negotiate"))]
@@ -106,6 +105,7 @@ async fn run() -> Result<(), proxydetox::Error> {
                 #[cfg(target_os = "linux")]
                 {
                     let monitored_netrc_store = netrc_store.clone();
+                    let netrc_file = netrc_file.clone();
                     tokio::spawn(async move {
                         monitor_netrc(&netrc_file, monitored_netrc_store).await;
                     });
