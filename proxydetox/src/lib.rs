@@ -1,6 +1,7 @@
 pub mod accesslog;
 pub mod auth;
 pub mod client;
+pub mod connect;
 pub mod net;
 pub mod session;
 

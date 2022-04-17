@@ -15,18 +15,19 @@ use futures_util::stream::StreamExt;
 use http::header::{ACCEPT, CACHE_CONTROL, CONTENT_LENGTH, CONTENT_TYPE, HOST, USER_AGENT};
 use http::Uri;
 use http::{Request, Response};
-use hyper::service::Service;
-use hyper::Body;
+use hyper::{client, Body};
 use parking_lot::Mutex;
 use proxy_client::HttpProxyConnector;
 use tokio::sync::broadcast::{self, Sender};
 use tokio_stream::wrappers::BroadcastStream;
+use tower::{util::BoxService, Service, ServiceExt};
 use tracing_attributes::instrument;
 use tracing_futures::Instrument;
 
 use crate::accesslog;
 use crate::auth::AuthenticatorFactory;
 use crate::client::ProxyClient;
+use crate::connect::Connect;
 use paclib::proxy::ProxyDesc;
 use paclib::Evaluator;
 
@@ -35,7 +36,19 @@ pub enum Error {
     #[error("invalid URI")]
     InvalidUri,
     #[error("upstream error reaching {2} via {1}: {0}")]
-    Upstream(#[source] crate::client::Error, ProxyDesc, Uri),
+    Upstream(#[source] crate::client::Error, paclib::Endpoint, Uri),
+    #[error("error reaching {1}: {0}")]
+    MakeClient(#[source] hyper::Error, Uri),
+    #[error("client error: {0}")]
+    Client(
+        #[from]
+        #[source]
+        hyper::Error,
+    ),
+    #[error("connect error reaching {1}: {0}")]
+    Connect(#[source] tokio::io::Error, Uri),
+    #[error("proxy connect error reaching {2} via {1}: {0}")]
+    ProxyConnect(#[source] crate::client::ConnectError, paclib::Endpoint, Uri),
     #[error("upstream proxy ({0}) requires authentication")]
     ProxyAuthenticationRequired(ProxyDesc),
     #[error("http error: {0}")]
@@ -44,6 +57,10 @@ pub enum Error {
         #[from]
         http::Error,
     ),
+    #[error("unable to establish connection: {0}")]
+    UnableToEstablishConnection(Uri),
+    #[error("handshake error")]
+    Handshake,
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -101,13 +118,13 @@ impl Builder {
     pub fn build(self) -> Session {
         let pac_script = self
             .pac_script
-            .unwrap_or_else(|| "function FindProxyForURL(url, host) { return \"DIRECT\"; }".into());
+            .unwrap_or_else(|| crate::DEFAULT_PAC_SCRIPT.into());
         let eval = Mutex::new(Evaluator::new(&pac_script).unwrap());
         let auth = self.auth.unwrap_or(AuthenticatorFactory::None);
-        let direct_client = hyper::Client::builder()
-            .pool_max_idle_per_host(self.pool_max_idle_per_host)
-            .pool_idle_timeout(self.pool_idle_timeout)
-            .build_http();
+        let direct_client = client::service::Connect::new(
+            client::connect::HttpConnector::new(),
+            client::conn::Builder::new(),
+        );
         let (accesslog_tx, mut accesslog_rx) = broadcast::channel(16);
         tokio::spawn(async move {
             loop {
@@ -121,7 +138,7 @@ impl Builder {
         });
         Session(Arc::new(Shared {
             eval,
-            direct_client,
+            direct_client: Mutex::new(direct_client),
             proxy_clients: Default::default(),
             auth,
             pool_idle_timeout: self.pool_idle_timeout,
@@ -143,7 +160,7 @@ pub struct PeerSession {
 
 struct Shared {
     eval: Mutex<paclib::Evaluator>,
-    direct_client: hyper::Client<hyper::client::HttpConnector>,
+    direct_client: Mutex<client::service::Connect<client::connect::HttpConnector, Body, Uri>>,
     proxy_clients: Mutex<HashMap<paclib::Endpoint, ProxyClient>>,
     auth: AuthenticatorFactory,
     pool_max_idle_per_host: usize,
@@ -219,35 +236,8 @@ impl PeerSession {
     }
 
     pub async fn dispatch(&mut self, mut req: hyper::Request<Body>) -> Result<Response<Body>> {
-        // Remove hop-by-hop headers which are meant for the proxy.
-        // "proxy-connection" is not an official header, but used by many clients.
-        let _proxy_connection = req
-            .headers_mut()
-            .remove(http::header::HeaderName::from_static("proxy-connection"));
-        let _proxy_auth = req.headers_mut().remove(http::header::PROXY_AUTHORIZATION);
-
-        let proxy = self.shared.find_proxy(req.uri()).first();
-        self.dispatch_with_proxy(proxy, req).await
-    }
-
-    #[instrument(skip(self, req))]
-    pub async fn dispatch_with_proxy(
-        &mut self,
-        proxy: ProxyDesc,
-        req: hyper::Request<Body>,
-    ) -> Result<Response<Body>> {
-        let proxy_client;
-        let client: &(dyn crate::client::ForwardClient + Send + Sync) = match proxy {
-            ProxyDesc::Direct => &self.shared.direct_client,
-            ProxyDesc::Proxy(ref endpoint) => {
-                proxy_client = self.shared.proxy_client(endpoint.clone())?;
-                &proxy_client
-            }
-        };
-
         let access = accesslog::Entry::begin(
             *self.peer,
-            proxy.clone(),
             req.method().clone(),
             req.uri().clone(),
             req.version(),
@@ -256,38 +246,125 @@ impl PeerSession {
                 .and_then(|v| v.to_str().ok())
                 .map(|s| s.to_owned()),
         );
+        // Remove hop-by-hop headers which are meant for the proxy.
+        // "proxy-connection" is not an official header, but used by many clients.
+        let _proxy_connection = req
+            .headers_mut()
+            .remove(http::header::HeaderName::from_static("proxy-connection"));
+        let _proxy_auth = req.headers_mut().remove(http::header::PROXY_AUTHORIZATION);
 
+        let proxys = self.shared.find_proxy(req.uri());
         let uri = req.uri().clone();
-        let is_connect = req.method() == hyper::Method::CONNECT || self.shared.always_use_connect;
-        let mut res = if is_connect {
-            client.connect(req).await
-        } else {
-            client.http(req).await
-        };
+        let is_connect = req.method() == hyper::Method::CONNECT;
+        let use_connect = self.shared.always_use_connect;
 
-        match res {
-            Ok(ref mut res) => {
-                let entry = access.success(
-                    res.status(),
-                    res.headers()
-                        .get(CONTENT_LENGTH)
-                        .and_then(|v| v.to_str().ok())
-                        .and_then(|s| s.parse::<u64>().ok()),
-                );
-                let _ = self.shared.accesslog_tx.send(entry);
+        tracing::debug!(%proxys, "found proxys");
 
-                if res.status() == http::StatusCode::PROXY_AUTHENTICATION_REQUIRED {
-                    tracing::error!("407 proxy authentication required for {}", &proxy);
-                    return Err(Error::ProxyAuthenticationRequired(proxy));
+        let mut client: Result<BoxService<Request<Body>, Response<Body>, Error>> =
+            Err(Error::UnableToEstablishConnection(uri.clone()));
+        let mut upstream_proxy: Option<paclib::ProxyDesc> = None;
+
+        for proxy in proxys.iter() {
+            tracing::info!(%proxy, %is_connect, %use_connect, "connect");
+            let c = match (is_connect, use_connect, proxy) {
+                (false, true, ProxyDesc::Proxy(ref proxy))
+                | (true, _, ProxyDesc::Proxy(ref proxy)) => {
+                    let proxy_client = self.shared.proxy_client(proxy.clone())?;
+                    proxy_client
+                        .connect(uri.clone())
+                        .await
+                        .map_err({
+                            let proxy = proxy.clone();
+                            let uri = uri.clone();
+                            move |e| Error::ProxyConnect(e, proxy, uri)
+                        })
+                        .map({
+                            let proxy = proxy.clone();
+                            let uri = uri.clone();
+                            move |c| c.map_err(|e| Error::Upstream(e, proxy, uri)).boxed()
+                        })
                 }
-            }
-            Err(ref cause) => {
-                tracing::error!(%cause, "request error");
-                let entry = access.error(&cause);
-                let _ = self.shared.accesslog_tx.send(entry);
+                (false, false, ProxyDesc::Proxy(ref proxy)) => {
+                    self.shared.proxy_client(proxy.clone()).map(|s| {
+                        s.map_err({
+                            let proxy = proxy.clone();
+                            let uri = uri.clone();
+                            move |e| Error::Upstream(e, proxy, uri)
+                        })
+                        .boxed()
+                    })
+                }
+                (true, _, ProxyDesc::Direct) => {
+                    let mut conn = Connect::new();
+                    let handshake = conn.call(uri.clone()).await;
+                    handshake
+                        .map_err({
+                            let uri = uri.clone();
+                            move |e| Error::Connect(e, uri)
+                        })
+                        .map(|s| s.map_err(|_| Error::Handshake).boxed())
+                }
+                (false, _, ProxyDesc::Direct) => {
+                    let direct_client = {
+                        let mut guard = self.shared.direct_client.lock();
+                        guard.call(uri.clone())
+                    };
+                    // strip the authority, since direct clients to not expect this
+                    *req.uri_mut() = Uri::builder()
+                        .path_and_query(
+                            uri.path_and_query()
+                                .cloned()
+                                .unwrap_or_else(|| http::uri::PathAndQuery::from_static("/")),
+                        )
+                        .build()
+                        .unwrap();
+                    direct_client
+                        .await
+                        .map_err({
+                            let uri = uri.clone();
+                            move |e| Error::MakeClient(e, uri)
+                        })
+                        .map(|s| s.map_err(Error::Client).boxed())
+                }
+            };
+            match c {
+                Ok(c) => {
+                    client = Ok(c);
+                    upstream_proxy = Some(proxy.to_owned());
+                    break;
+                }
+                Err(cause) => tracing::error!(%cause, "connecting"),
             }
         }
-        res.map_err(|e| Error::Upstream(e, proxy, uri))
+
+        let proxy = upstream_proxy.unwrap_or(ProxyDesc::Direct);
+
+        let res = match client {
+            Ok(mut client) => client.call(req).await,
+            Err(e) => Err(e),
+        };
+
+        let entry = match &res {
+            Ok(res) => access.success(
+                proxy.clone(),
+                res.status(),
+                res.headers()
+                    .get(CONTENT_LENGTH)
+                    .and_then(|v| v.to_str().ok())
+                    .and_then(|s| s.parse::<u64>().ok()),
+            ),
+            Err(cause) => access.error(proxy.clone(), cause),
+        };
+        let _ = self.shared.accesslog_tx.send(entry);
+
+        res.and_then(|res| {
+            if res.status() == http::StatusCode::PROXY_AUTHENTICATION_REQUIRED {
+                tracing::error!(%proxy, "407 proxy authentication required");
+                Err(Error::ProxyAuthenticationRequired(proxy))
+            } else {
+                Ok(res)
+            }
+        })
     }
 
     pub async fn management(&mut self, req: hyper::Request<Body>) -> Result<Response<Body>> {

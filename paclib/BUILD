@@ -15,6 +15,7 @@ rust_library(
     deps = [
         "//duktape",
         "//duktape-sys",
+        "//detox_net",
         "//paclib/cargo:http",
         "//paclib/cargo:lazy_static",
         "//paclib/cargo:log",

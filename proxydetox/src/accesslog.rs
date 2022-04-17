@@ -1,10 +1,9 @@
 use std::{fmt::Write, net::SocketAddr};
 
 use chrono::{DateTime, Duration, Local, SecondsFormat};
-use paclib::ProxyDesc;
-// use std::net::SocketAddr;
 
 use http::StatusCode;
+use paclib::ProxyDesc;
 
 #[derive(Clone, Debug)]
 enum Response {
@@ -19,19 +18,18 @@ enum Response {
 pub struct Entry {
     timestamp: DateTime<Local>,
     peer_addr: SocketAddr,
-    proxy: ProxyDesc,
     method: http::Method,
     uri: http::Uri,
     version: http::Version,
     user_agent: Option<String>,
-    duration: Duration,
+    proxy: ProxyDesc,
     response: Response,
+    duration: Duration,
 }
 
 pub struct EntryBegin {
     timestamp: DateTime<Local>,
     peer_addr: SocketAddr,
-    proxy: ProxyDesc,
     method: http::Method,
     uri: http::Uri,
     version: http::Version,
@@ -39,30 +37,31 @@ pub struct EntryBegin {
 }
 
 impl EntryBegin {
-    pub fn success(self, status_code: StatusCode, bytes: Option<u64>) -> Entry {
+    pub fn success(self, proxy: ProxyDesc, status_code: StatusCode, bytes: Option<u64>) -> Entry {
         Entry {
             timestamp: self.timestamp,
             peer_addr: self.peer_addr,
-            proxy: self.proxy,
-            user_agent: self.user_agent,
             method: self.method,
             uri: self.uri,
             version: self.version,
-            duration: Local::now() - self.timestamp,
+            user_agent: self.user_agent,
+            proxy,
             response: Response::Success { status_code, bytes },
+            duration: Local::now() - self.timestamp,
         }
     }
-    pub fn error(self, error: &impl std::error::Error) -> Entry {
+
+    pub fn error(self, proxy: ProxyDesc, error: &impl std::error::Error) -> Entry {
         Entry {
             timestamp: self.timestamp,
             peer_addr: self.peer_addr,
-            proxy: self.proxy,
-            user_agent: self.user_agent,
             method: self.method,
             uri: self.uri,
             version: self.version,
-            duration: Local::now() - self.timestamp,
+            user_agent: self.user_agent,
+            proxy,
             response: Response::Error(error.to_string()),
+            duration: Local::now() - self.timestamp,
         }
     }
 }
@@ -70,7 +69,6 @@ impl EntryBegin {
 impl Entry {
     pub fn begin(
         peer_addr: SocketAddr,
-        proxy: ProxyDesc,
         method: http::Method,
         uri: http::Uri,
         version: http::Version,
@@ -79,7 +77,6 @@ impl Entry {
         EntryBegin {
             timestamp: Local::now(),
             peer_addr,
-            proxy,
             method,
             uri,
             version,
@@ -125,25 +122,30 @@ impl std::fmt::Display for Entry {
 
 #[cfg(test)]
 mod tests {
+    use paclib::ProxyDesc;
+
     use super::Entry;
 
     #[test]
     fn test_success_entry() {
         let entry = Entry::begin(
             "127.0.0.1:34524".parse().unwrap(),
-            paclib::ProxyDesc::Direct,
             http::Method::GET,
             "http://localhost:8080".parse().unwrap(),
             http::Version::HTTP_11,
             Some("curl/7.79.1".to_string()),
         );
-        let entry = entry.success(http::StatusCode::OK, Some(4096));
+        let entry = entry.success(
+            ProxyDesc::Proxy("127.0.0.1:8080".parse().unwrap()),
+            http::StatusCode::OK,
+            Some(4096),
+        );
         let entry = entry.to_string();
 
         assert!(entry.contains("127.0.0.1:34524"));
-        assert!(entry.contains("\"DIRECT\""));
+        assert!(entry.contains("127.0.0.1:8080"));
         assert!(entry.contains("GET"));
-        assert!(entry.contains("http://localhost:8080"));
+        assert!(entry.contains("localhost:8080"));
         assert!(entry.contains("HTTP/1.1"));
         assert!(entry.contains("\"curl/7.79.1\""));
         assert!(entry.contains("OK"));
@@ -155,13 +157,12 @@ mod tests {
     fn test_success_without_size_entry() {
         let entry = Entry::begin(
             "127.0.0.1:34524".parse().unwrap(),
-            paclib::ProxyDesc::Direct,
             http::Method::GET,
             "http://localhost:8080".parse().unwrap(),
             http::Version::HTTP_11,
             Some("curl/7.79.1".to_string()),
         );
-        let entry = entry.success(http::StatusCode::OK, None);
+        let entry = entry.success(ProxyDesc::Direct, http::StatusCode::OK, None);
         let entry = entry.to_string();
 
         assert!(entry.contains(" - "));
@@ -171,13 +172,12 @@ mod tests {
     fn test_success_without_agent_entry() {
         let entry = Entry::begin(
             "127.0.0.1:34524".parse().unwrap(),
-            paclib::ProxyDesc::Direct,
             http::Method::GET,
             "http://localhost:8080".parse().unwrap(),
             http::Version::HTTP_11,
             None,
         );
-        let entry = entry.success(http::StatusCode::OK, Some(1024));
+        let entry = entry.success(ProxyDesc::Direct, http::StatusCode::OK, Some(1024));
         let entry = entry.to_string();
 
         assert!(entry.contains(" -"));
@@ -187,13 +187,15 @@ mod tests {
     fn test_error_entry() {
         let entry = Entry::begin(
             "127.0.0.1:34524".parse().unwrap(),
-            paclib::ProxyDesc::Direct,
             http::Method::GET,
             "http://localhost:8080".parse().unwrap(),
             http::Version::HTTP_11,
             Some("curl/7.79.1".to_string()),
         );
-        let entry = entry.error(&std::io::Error::new(std::io::ErrorKind::Other, "ERROR"));
+        let entry = entry.error(
+            ProxyDesc::Direct,
+            &std::io::Error::new(std::io::ErrorKind::Other, "ERROR"),
+        );
         let entry = entry.to_string();
 
         assert!(entry.contains("127.0.0.1:34524"));
