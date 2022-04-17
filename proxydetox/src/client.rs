@@ -32,7 +32,7 @@ pub enum Error {
 type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Clone)]
-pub struct Client(Arc<Inner>);
+pub struct ProxyClient(Arc<Inner>);
 
 struct Inner {
     client: proxy_client::Client,
@@ -50,7 +50,7 @@ impl Inner {
     }
 }
 
-impl Client {
+impl ProxyClient {
     pub fn new(client: proxy_client::Client, auth: Box<dyn Authenticator>) -> Self {
         Self(Arc::new(Inner {
             client,
@@ -128,7 +128,7 @@ impl ForwardClient for hyper::Client<hyper::client::HttpConnector, Body> {
     }
 }
 
-impl ForwardClient for Client {
+impl ForwardClient for ProxyClient {
     fn connect(&self, mut req: http::Request<Body>) -> ResponseFuture {
         let this = self.clone();
 
