@@ -59,7 +59,7 @@ impl ProxyClient {
         }))
     }
 
-    pub async fn send(&self, mut req: hyper::Request<Body>) -> Result<Response<Body>> {
+    pub async fn request(&self, mut req: hyper::Request<Body>) -> Result<Response<Body>> {
         if self.0.requires_auth.load(Ordering::Relaxed) {
             let headers = self.0.auth_step(None).await;
             match headers {
@@ -141,7 +141,7 @@ impl ForwardClient for ProxyClient {
                 .unwrap();
 
             tracing::debug!("forward_connect req: {:?}", req);
-            let parent_res = this.send(parent_req).await?;
+            let parent_res = this.request(parent_req).await?;
 
             if parent_res.status() == StatusCode::OK {
                 // Upgrade connection to parent proxy
@@ -183,7 +183,7 @@ impl ForwardClient for ProxyClient {
     fn http(&self, req: hyper::Request<Body>) -> ResponseFuture {
         let this = self.clone();
         let resp = async move {
-            let res = this.send(req).await?;
+            let res = this.request(req).await?;
             Ok(res)
         };
         let resp = resp.instrument(tracing::trace_span!("ProxyClient::http"));
