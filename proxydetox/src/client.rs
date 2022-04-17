@@ -11,7 +11,6 @@ use std::{
     },
 };
 use tokio::io::copy_bidirectional;
-use tracing_futures::Instrument;
 
 use crate::auth::Authenticator;
 
@@ -19,14 +18,24 @@ use crate::auth::Authenticator;
 pub enum Error {
     #[error("HTTP connection upgrade with {1} failed: {0}")]
     UpgradeFailed(#[source] hyper::Error, http::Uri),
-    #[error("HTTP CONNECT failed with {0}")]
-    ConnectFailed(http::Uri),
     #[error("hyper error: {0}")]
     Hyper(#[from] hyper::Error),
     #[error("authentication mechanism error: {0}")]
     Auth(#[from] crate::auth::Error),
     #[error("invalid URI")]
     InvalidUri,
+    #[error("response already taken")]
+    ResponseAlreadyTaken,
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ConnectError {
+    #[error("invalid URI: {0}")]
+    InvalidUri(http::Uri),
+    #[error("request to {0} failed: {1}")]
+    RequestFailed(http::Uri, #[source] Error),
+    #[error("HTTP CONNECT to {1} failed, status {0}")]
+    ConnectFailed(http::StatusCode, http::Uri),
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -75,77 +84,98 @@ impl ProxyClient {
             let remote_addr = res
                 .extensions()
                 .get::<HttpProxyInfo>()
-                .map(|i| i.remote_addr.to_string())
-                .unwrap_or_default();
+                .map(|i| i.remote_addr);
             tracing::error!(?remote_addr, "proxy requires authentication");
             self.0.requires_auth.store(true, Ordering::Relaxed);
         }
         Ok(res)
     }
+
+    pub async fn connect(
+        &self,
+        uri: http::Uri,
+    ) -> std::result::Result<ConnectHandle, ConnectError> {
+        // Make a client CONNECT request to the parent proxy to upgrade the connection
+        let parent_authority = authority_of(&uri).map_err({
+            let uri = uri.clone();
+            move |_| ConnectError::InvalidUri(uri)
+        })?;
+        let parent_req = Request::connect(parent_authority.clone())
+            .version(http::version::Version::HTTP_11)
+            .body(Body::empty())
+            .unwrap();
+
+        let parent_res = self.request(parent_req).await.map_err({
+            let uri = uri.clone();
+            move |e| ConnectError::RequestFailed(uri, e)
+        })?;
+
+        if parent_res.status() == StatusCode::OK {
+            Ok(ConnectHandle::new(parent_authority, parent_res))
+        } else {
+            Err(ConnectError::ConnectFailed(parent_res.status(), uri))
+        }
+    }
 }
 
-type ResponseFuture = Pin<Box<dyn Future<Output = Result<Response<Body>>> + Send>>;
+impl tower::Service<Request<Body>> for ProxyClient {
+    type Response = Response<Body>;
+    type Error = Error;
+    type Future =
+        Pin<Box<dyn Future<Output = std::result::Result<Self::Response, Self::Error>> + Send>>;
 
-pub trait ForwardClient {
-    fn connect(&self, req: hyper::Request<Body>) -> ResponseFuture;
-    fn http(&self, req: hyper::Request<Body>) -> ResponseFuture;
+    fn poll_ready(
+        &mut self,
+        _: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<std::result::Result<(), Self::Error>> {
+        std::task::Poll::Ready(Ok(()))
+    }
+
+    fn call(&mut self, req: Request<Body>) -> Self::Future {
+        let this = self.clone();
+        let res = async move { this.request(req).await };
+        Box::pin(res)
+    }
 }
 
-impl ForwardClient for hyper::Client<hyper::client::HttpConnector, Body> {
-    fn connect(&self, req: http::Request<Body>) -> ResponseFuture {
-        let resp = async move {
-            if let Ok(mut stream) = crate::net::dial(req.uri()).await {
-                tracing::trace!("connected to: {:?}", stream.peer_addr().ok());
-                tokio::task::spawn(async move {
-                    match hyper::upgrade::on(req).await {
-                        Ok(mut upgraded) => {
-                            if let Err(e) = copy_bidirectional(&mut upgraded, &mut stream).await {
-                                tracing::error!("tunnel error: {}", e)
-                            }
-                        }
-                        Err(e) => tracing::error!("upgrade error: {}", e),
-                    }
-                });
+#[derive(Debug, Clone)]
+pub struct ConnectHandle {
+    uri: http::Uri,
+    response: Arc<Mutex<Option<Response<Body>>>>,
+}
 
-                Ok(Response::new(Body::empty()))
-            } else {
-                tracing::error!("CONNECT host is not socket addr: {:?}", req.uri());
-                let mut resp = Response::new(Body::from("CONNECT must be to a socket address"));
-                *resp.status_mut() = http::StatusCode::BAD_REQUEST;
+impl ConnectHandle {
+    pub fn new(uri: http::Uri, res: http::Response<Body>) -> Self {
+        Self {
+            uri,
+            response: Arc::new(Mutex::new(Some(res))),
+        }
+    }
+}
 
-                Ok(resp)
-            }
+impl tower::Service<Request<Body>> for ConnectHandle {
+    type Response = Response<Body>;
+    type Error = Error;
+    type Future =
+        Pin<Box<dyn Future<Output = std::result::Result<Self::Response, Self::Error>> + Send>>;
+
+    fn poll_ready(
+        &mut self,
+        _: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<std::result::Result<(), Self::Error>> {
+        std::task::Poll::Ready(Ok(()))
+    }
+
+    fn call(&mut self, mut req: Request<Body>) -> Self::Future {
+        let uri = self.uri.clone();
+        let response = {
+            let mut gurad = self.response.lock();
+            gurad.take()
         };
-        let resp = resp.instrument(tracing::trace_span!("HyperClient::connect"));
-        Box::pin(resp)
-    }
-
-    fn http(&self, req: http::Request<Body>) -> ResponseFuture {
-        let this = self.clone();
-        let resp = async move { this.request(req).await.map_err(Error::Hyper) };
-        let resp = resp.instrument(tracing::trace_span!("HyperClient::connect"));
-        Box::pin(resp)
-    }
-}
-
-impl ForwardClient for ProxyClient {
-    fn connect(&self, mut req: http::Request<Body>) -> ResponseFuture {
-        let this = self.clone();
-
-        let resp = async move {
-            // Make a client CONNECT request to the parent proxy to upgrade the connection
-            let parent_authority = authority_of(req.uri())?;
-            let parent_req = Request::connect(parent_authority.clone())
-                .version(http::version::Version::HTTP_11)
-                .body(Body::empty())
-                .unwrap();
-
-            tracing::debug!("forward_connect req: {:?}", req);
-            let parent_res = this.request(parent_req).await?;
-
-            if parent_res.status() == StatusCode::OK {
+        let res = async move {
+            if let Some(response) = response {
                 // Upgrade connection to parent proxy
-                match hyper::upgrade::on(parent_res).await {
+                match hyper::upgrade::on(response).await {
                     Ok(mut parent_upgraded) => {
                         // On a successful upgrade to the parent proxy, upgrade the
                         // request of the client (the original request maker)
@@ -158,40 +188,31 @@ impl ForwardClient for ProxyClient {
                                     )
                                     .await
                                     {
-                                        tracing::error!(?cause, "tunnel error")
+                                        tracing::error!(%cause, "tunnel error")
                                     }
                                 }
-                                Err(cause) => tracing::error!(?cause, "upgrade error"),
+                                Err(cause) => tracing::error!(%cause, "upgrade error"),
                             }
                         });
                         // Response with a OK to the client
                         Ok(Response::new(Body::empty()))
                     }
-                    Err(cause) => Err(Error::UpgradeFailed(cause, parent_authority)),
+                    Err(cause) => Err(Error::UpgradeFailed(cause, uri)),
                 }
             } else {
-                let status = parent_res.status();
-                tracing::error!(?status, "CONNECT {}", &parent_authority);
-
-                Err(Error::ConnectFailed(parent_authority))
+                tracing::error!("response already taken");
+                Err(Error::ResponseAlreadyTaken)
             }
         };
-        let resp = resp.instrument(tracing::trace_span!("ProxyClient::connect"));
-        Box::pin(resp)
-    }
-
-    fn http(&self, req: hyper::Request<Body>) -> ResponseFuture {
-        let this = self.clone();
-        let resp = async move {
-            let res = this.request(req).await?;
-            Ok(res)
-        };
-        let resp = resp.instrument(tracing::trace_span!("ProxyClient::http"));
-        Box::pin(resp)
+        Box::pin(res)
     }
 }
 
-fn authority_of(uri: &http::Uri) -> Result<http::Uri> {
+#[derive(thiserror::Error, Debug)]
+#[error("invalid URI")]
+struct InvalidUri;
+
+fn authority_of(uri: &http::Uri) -> std::result::Result<http::Uri, InvalidUri> {
     match (uri.scheme(), uri.host(), uri.port()) {
         (Some(scheme), Some(host), None) => {
             let port = if *scheme == http::uri::Scheme::HTTP {
@@ -199,18 +220,16 @@ fn authority_of(uri: &http::Uri) -> Result<http::Uri> {
             } else if *scheme == http::uri::Scheme::HTTPS {
                 "443"
             } else {
-                return Err(Error::InvalidUri);
+                return Err(InvalidUri);
             };
             let uri = format!("{}:{}", host, port);
-            let uri = uri.parse().map_err(|_| Error::InvalidUri)?;
-            Ok(uri)
+            uri.parse().map_err(|_| InvalidUri)
         }
         (_, Some(host), Some(port)) => {
             let uri = format!("{}:{}", host, port);
-            let uri = uri.parse().map_err(|_| Error::InvalidUri)?;
-            Ok(uri)
+            uri.parse().map_err(|_| InvalidUri)
         }
-        (_, _, _) => Err(Error::InvalidUri),
+        (_, _, _) => Err(InvalidUri),
     }
 }
 

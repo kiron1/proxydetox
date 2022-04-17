@@ -178,7 +178,6 @@ mod tests {
             .body(Body::empty())
             .unwrap();
         let progress = HttpGetProgress::from_response(res);
-        dbg!(&progress);
         assert!(progress.is_err());
     }
 
@@ -190,7 +189,6 @@ mod tests {
             .body(Body::empty())
             .unwrap();
         let progress = HttpGetProgress::from_response(res);
-        dbg!(&progress);
         assert!(progress.is_err());
     }
 
