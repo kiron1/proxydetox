@@ -1,7 +1,10 @@
 mod environment;
 
 use crate::environment::Environment;
-use http::{header::CONTENT_TYPE, Request};
+use http::{
+    header::{CONTENT_TYPE, HOST},
+    Request,
+};
 use hyper::Body;
 use proxydetox::net::read_to_string;
 
@@ -9,9 +12,7 @@ use proxydetox::net::read_to_string;
 async fn api_get_request() {
     let env = Environment::new();
 
-    let req = Request::get(env.proxy_uri().path_and_query("/").build().unwrap())
-        .body(Body::empty())
-        .unwrap();
+    let req = Request::get("/").body(Body::empty()).unwrap();
 
     let resp = env.send(req).await;
 
@@ -39,14 +40,10 @@ async fn api_invalid_request() {
 async fn api_get_proxy_pac() {
     let env = Environment::new();
 
-    let req = Request::get(
-        env.proxy_uri()
-            .path_and_query("/proxy.pac")
-            .build()
-            .unwrap(),
-    )
-    .body(Body::empty())
-    .unwrap();
+    let req = Request::get("/proxy.pac")
+        .header(HOST, env.proxy_addr().to_string())
+        .body(Body::empty())
+        .unwrap();
 
     let resp = env.send(req).await;
 
