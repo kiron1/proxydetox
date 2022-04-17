@@ -1,4 +1,5 @@
-use paclib::{Endpoint, Evaluator, ProxyDesc, Uri};
+use http::Uri;
+use paclib::{Endpoint, Evaluator, ProxyDesc};
 
 fn find_proxy(cmd: &str, good: &str, bad: &str) {
     let endpoint = "example.org:3128".parse::<Endpoint>().unwrap();

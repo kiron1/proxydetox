@@ -1,7 +1,8 @@
 use crate::DnsCache;
 use crate::Proxies;
-use crate::{Uri, DNS_CACHE_NAME, DNS_RESOLVE_NAME};
+use crate::{DNS_CACHE_NAME, DNS_RESOLVE_NAME};
 use duktape::{Context, Stack};
+use http::Uri;
 use std::result::Result;
 
 const PAC_UTILS: &str = include_str!("pac_utils.js");

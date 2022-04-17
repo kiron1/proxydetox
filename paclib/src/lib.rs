@@ -8,7 +8,5 @@ pub use crate::proxy::Endpoint;
 pub use crate::proxy::Proxies;
 pub use crate::proxy::ProxyDesc;
 
-pub use http::Uri;
-
 const DNS_RESOLVE_NAME: &str = "dnsResolve";
 const DNS_CACHE_NAME: &str = "_dnsResolveCache";
