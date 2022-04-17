@@ -34,6 +34,10 @@ impl Proxies {
     pub fn first(&self) -> ProxyDesc {
         self.0.get(0).unwrap().clone()
     }
+
+    pub fn iter(&self) -> std::slice::Iter<ProxyDesc> {
+        self.0.iter()
+    }
 }
 
 impl fmt::Display for Proxies {
