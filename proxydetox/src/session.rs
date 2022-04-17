@@ -26,6 +26,7 @@ use tracing_futures::Instrument;
 
 use crate::accesslog;
 use crate::auth::AuthenticatorFactory;
+use crate::client::ProxyClient;
 use paclib::proxy::ProxyDesc;
 use paclib::Evaluator;
 
@@ -46,8 +47,6 @@ pub enum Error {
 }
 
 type Result<T> = std::result::Result<T, Error>;
-
-type ProxyClient = crate::client::Client;
 
 #[derive(Debug)]
 pub struct Builder {
