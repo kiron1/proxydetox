@@ -4,19 +4,6 @@ use hyper::body::Buf;
 use hyper::Body;
 use std::io::prelude::*;
 use std::io::{Error, ErrorKind};
-use tokio::net::TcpStream;
-use tracing_attributes::instrument;
-
-#[instrument(level = "debug")]
-pub async fn dial(uri: &http::Uri) -> tokio::io::Result<TcpStream> {
-    match (uri.host(), uri.port_u16()) {
-        (Some(host), Some(port)) => TcpStream::connect((host, port)).await,
-        (_, _) => Err(tokio::io::Error::new(
-            tokio::io::ErrorKind::AddrNotAvailable,
-            "invalid URI",
-        )),
-    }
-}
 
 pub async fn read_to_string(res: Response<Body>) -> std::io::Result<String> {
     let body = hyper::body::aggregate(res)
@@ -190,14 +177,5 @@ mod tests {
             .unwrap();
         let progress = HttpGetProgress::from_response(res);
         assert!(progress.is_err());
-    }
-
-    #[tokio::test]
-    async fn dial_error() {
-        assert!(
-            super::dial(&http::Uri::builder().path_and_query("/").build().unwrap())
-                .await
-                .is_err()
-        );
     }
 }
