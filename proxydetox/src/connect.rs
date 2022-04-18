@@ -1,14 +1,14 @@
 use http::{Request, Response, Uri};
 use hyper::Body;
-use parking_lot::Mutex;
-use std::{future::Future, pin::Pin, sync::Arc};
+use std::{future::Future, pin::Pin};
 use tokio::{io::copy_bidirectional, net::TcpStream};
+use tracing_futures::Instrument;
 
 /// A `tower::Service` which establishes TCP connection.
 ///
 /// The Response from this service is a service which can be used to upgrade a http::Request to
 /// establish a connnected stream.
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default)]
 pub struct Connect;
 
 impl Connect {
@@ -46,15 +46,15 @@ impl tower::Service<Uri> for Connect {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Handshake {
-    stream: Arc<Mutex<Option<TcpStream>>>,
+    stream: Option<TcpStream>,
 }
 
 impl Handshake {
     pub fn new(stream: TcpStream) -> Self {
         Self {
-            stream: Arc::new(Mutex::new(Some(stream))),
+            stream: Some(stream),
         }
     }
 }
@@ -73,10 +73,7 @@ impl tower::Service<Request<Body>> for Handshake {
     }
 
     fn call(&mut self, req: Request<Body>) -> Self::Future {
-        let stream = {
-            let mut gurad = self.stream.lock();
-            gurad.take()
-        };
+        let stream = self.stream.take();
         let res = async move {
             tokio::task::spawn(async move {
                 match hyper::upgrade::on(req).await {
@@ -96,7 +93,7 @@ impl tower::Service<Request<Body>> for Handshake {
 
             Ok(Response::new(Body::empty()))
         };
-        // let res = res.instrument(tracing::trace_span!("Handshake::call"));
+        let res = res.instrument(tracing::trace_span!("Handshake::call"));
         Box::pin(res)
     }
 }
