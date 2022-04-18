@@ -3,7 +3,6 @@ use std::{
     fs::read_to_string,
     path::{Path, PathBuf},
     str::FromStr,
-    time::Duration,
 };
 
 use clap::{Arg, ArgMatches, Command};
@@ -23,8 +22,6 @@ pub struct Options {
     pub authorization: Authorization,
     pub always_use_connect: bool,
     pub port: u16,
-    pub pool_max_idle_per_host: usize,
-    pub pool_idle_timeout: Option<Duration>,
 }
 
 fn is_num<T: FromStr + PartialOrd>(v: &str) -> Result<(), String> {
@@ -60,8 +57,6 @@ impl Options {
     }
 
     fn parse_args(args: &[OsString]) -> Self {
-        let default_pool_max_idle_per_host = usize::MAX.to_string();
-
         let version = if let Some(hash) = option_env!("PROXYDETOX_BUILD_GIT_HASH") {
             format!("{} ({})", env!("CARGO_PKG_VERSION"), hash)
         } else {
@@ -127,20 +122,6 @@ impl Options {
                     .short('c')
                     .long("always-use-connect")
                     .help("Always use CONNECT method even for http:// resources"),
-            )
-            .arg(
-                Arg::new("pool_max_idle_per_host")
-                    .long("pool-max-idle-per-host")
-                    .help("Maximum idle connection per host allowed in the pool")
-                    .validator(is_num::<usize>)
-                    .default_value(&default_pool_max_idle_per_host),
-            )
-            .arg(
-                Arg::new("pool_idle_timeout")
-                    .long("pool-idle-timeout")
-                    .help("Optional timeout for idle sockets being kept-alive")
-                    .validator(is_num::<u64>)
-                    .takes_value(true),
             );
 
         let matches = app.get_matches_from(args);
@@ -188,13 +169,6 @@ impl From<ArgMatches> for Options {
                 .value_of("port")
                 .map(|s| s.parse::<u16>().unwrap())
                 .unwrap(),
-            pool_max_idle_per_host: m
-                .value_of("pool_max_idle_per_host")
-                .map(|s| s.parse::<usize>().unwrap())
-                .unwrap(),
-            pool_idle_timeout: m
-                .value_of("pool_idle_timeout")
-                .map(|s| std::time::Duration::from_secs(s.parse::<u64>().unwrap())),
         }
     }
 }
