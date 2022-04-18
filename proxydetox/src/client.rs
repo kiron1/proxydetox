@@ -175,12 +175,12 @@ impl tower::Service<Request<Body>> for ConnectHandle {
                         tokio::task::spawn(async move {
                             match hyper::upgrade::on(&mut req).await {
                                 Ok(mut client_upgraded) => {
-                                    if let Err(cause) = copy_bidirectional(
+                                    let cp = copy_bidirectional(
                                         &mut parent_upgraded,
                                         &mut client_upgraded,
                                     )
-                                    .await
-                                    {
+                                    .await;
+                                    if let Err(cause) = cp {
                                         tracing::error!(%cause, "tunnel error")
                                     }
                                 }
