@@ -27,6 +27,7 @@ use crate::accesslog;
 use crate::auth::AuthenticatorFactory;
 use crate::client::ProxyClient;
 use crate::connect::Connect;
+use crate::net::HostAndPort;
 use paclib::proxy::ProxyDesc;
 use paclib::Evaluator;
 
@@ -34,6 +35,13 @@ use paclib::Evaluator;
 pub enum Error {
     #[error("invalid URI")]
     InvalidUri,
+    #[error("invalid host: {0}")]
+    InvalidHost(
+        #[source]
+        #[from]
+        crate::net::HostAndPortError,
+    ),
+
     #[error("upstream error reaching {2} via {1}: {0}")]
     Upstream(#[source] crate::client::Error, paclib::Endpoint, Uri),
     #[error("error creating client for {1}: {0}")]
@@ -204,8 +212,9 @@ impl Shared {
         uri: http::Uri,
     ) -> Result<BoxService<Request<Body>, Response<Body>, Error>> {
         let proxy_client = self.proxy_for(proxy.clone())?;
+        let host = HostAndPort::try_from_uri(&uri)?;
         proxy_client
-            .connect(uri.clone())
+            .connect(host)
             .await
             .map_err({
                 let proxy = proxy.clone();
