@@ -1,4 +1,5 @@
-use http::{Request, Response, StatusCode};
+use http::{header::CONNECTION, Request, Response, StatusCode};
+use hyper::client::conn;
 use hyper::Body;
 use parking_lot::Mutex;
 use proxy_client::HttpProxyInfo;
@@ -149,6 +150,72 @@ impl ConnectHandle {
     }
 }
 
+/// Maps a CONNECT request to an upstream CONNECT reuqest.
+async fn upgrade_downstream_upstream(
+    host: HostAndPort,
+    upstream_response: Response<Body>,
+    mut req: Request<Body>,
+) -> Result<Response<Body>> {
+    // Upgrade connection to parent proxy
+    match hyper::upgrade::on(upstream_response).await {
+        Ok(mut parent_upgraded) => {
+            // On a successful upgrade to the parent proxy, upgrade the
+            // request of the client (the original request maker)
+            tokio::task::spawn(async move {
+                match hyper::upgrade::on(&mut req).await {
+                    Ok(mut client_upgraded) => {
+                        let cp =
+                            copy_bidirectional(&mut parent_upgraded, &mut client_upgraded).await;
+                        if let Err(cause) = cp {
+                            tracing::error!(%cause, "tunnel error")
+                        }
+                    }
+                    Err(cause) => tracing::error!(%cause, "upgrade error"),
+                }
+            });
+            // Response with a OK to the client
+            Ok(Response::new(Body::empty()))
+        }
+        Err(cause) => Err(Error::UpgradeFailed(cause, host.clone())),
+    }
+}
+
+/// Maps a HTTP proxy request to an upstream CONNECT request.
+async fn upgrade_upstream(
+    host: HostAndPort,
+    upstream_response: Response<Body>,
+    mut req: Request<Body>,
+) -> Result<Response<Body>> {
+    // Upgrade connection to parent proxy
+    match hyper::upgrade::on(upstream_response).await {
+        Ok(parent_upgraded) => {
+            let (mut request_sender, connection) = conn::handshake(parent_upgraded).await?;
+            // spawn a client which uses the established CONNECT stream
+            tokio::spawn(async move {
+                if let Err(cause) = connection.await {
+                    tracing::error!(%cause, %host, "error in upgraded upstream connection");
+                }
+            });
+
+            *req.uri_mut() = http::Uri::builder()
+                .path_and_query(
+                    req.uri()
+                        .path_and_query()
+                        .cloned()
+                        .unwrap_or_else(|| http::uri::PathAndQuery::from_static("/")),
+                )
+                .build()
+                .unwrap();
+            let mut res = request_sender.send_request(req).await?;
+            res.headers_mut()
+                .insert(CONNECTION, "close".parse().unwrap());
+
+            Ok(res)
+        }
+        Err(cause) => Err(Error::UpgradeFailed(cause, host.clone())),
+    }
+}
+
 impl tower::Service<Request<Body>> for ConnectHandle {
     type Response = Response<Body>;
     type Error = Error;
@@ -162,35 +229,15 @@ impl tower::Service<Request<Body>> for ConnectHandle {
         std::task::Poll::Ready(Ok(()))
     }
 
-    fn call(&mut self, mut req: Request<Body>) -> Self::Future {
+    fn call(&mut self, req: Request<Body>) -> Self::Future {
         let host = self.host.clone();
         let response = self.response.take();
         let res = async move {
             if let Some(response) = response {
-                // Upgrade connection to parent proxy
-                match hyper::upgrade::on(response).await {
-                    Ok(mut parent_upgraded) => {
-                        // On a successful upgrade to the parent proxy, upgrade the
-                        // request of the client (the original request maker)
-                        tokio::task::spawn(async move {
-                            match hyper::upgrade::on(&mut req).await {
-                                Ok(mut client_upgraded) => {
-                                    let cp = copy_bidirectional(
-                                        &mut parent_upgraded,
-                                        &mut client_upgraded,
-                                    )
-                                    .await;
-                                    if let Err(cause) = cp {
-                                        tracing::error!(%cause, "tunnel error")
-                                    }
-                                }
-                                Err(cause) => tracing::error!(%cause, "upgrade error"),
-                            }
-                        });
-                        // Response with a OK to the client
-                        Ok(Response::new(Body::empty()))
-                    }
-                    Err(cause) => Err(Error::UpgradeFailed(cause, host)),
+                if req.method() == http::method::Method::CONNECT {
+                    upgrade_downstream_upstream(host, response, req).await
+                } else {
+                    upgrade_upstream(host, response, req).await
                 }
             } else {
                 tracing::error!("response already taken");

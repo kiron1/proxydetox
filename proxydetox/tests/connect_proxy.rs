@@ -78,7 +78,7 @@ async fn connect_proxy_request() {
                         tracing::error!(?cause, "tunnel error")
                     }
                 }
-                Err(cause) => tracing::error!(cause, "upgrade error"),
+                Err(cause) => tracing::error!(%cause, "upgrade error"),
             }
         });
 

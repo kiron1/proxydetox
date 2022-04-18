@@ -245,6 +245,7 @@ impl Shared {
     /// send, but not the client request.
     /// For upstream servers which can be connected directly a TCP connection will be established.
     /// For a directly reachable server with a regular HTTP request, no action will be perforemd.
+    #[instrument(skip(self, method, uri))]
     async fn establish_connection<'a>(
         &self,
         proxy: paclib::ProxyDesc,
@@ -256,7 +257,11 @@ impl Shared {
 
         let next_uri: Uri;
         let conn = match (is_connect, use_connect, proxy) {
-            (false, true, ProxyDesc::Proxy(proxy)) | (true, _, ProxyDesc::Proxy(proxy)) => {
+            (true, _, ProxyDesc::Proxy(proxy)) => {
+                next_uri = uri.to_owned();
+                self.proxy_connect(proxy, uri.clone()).await
+            }
+            (false, true, ProxyDesc::Proxy(proxy)) => {
                 next_uri = uri.to_owned();
                 self.proxy_connect(proxy, uri.clone()).await
             }
@@ -289,6 +294,10 @@ impl Shared {
                 direct_client
             }
         };
+
+        if let Err(ref cause) = conn {
+            tracing::error!(%cause, "establish connection failed");
+        }
 
         conn.map(|c| (c, next_uri))
     }
