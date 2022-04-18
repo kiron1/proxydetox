@@ -5,7 +5,6 @@ use std::future::Future;
 use std::net::SocketAddr;
 use std::pin::Pin;
 use std::sync::Arc;
-use std::time::Duration;
 use std::{
     collections::HashMap,
     task::{self, Poll},
@@ -65,25 +64,11 @@ pub enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Builder {
     pac_script: Option<String>,
     auth: Option<AuthenticatorFactory>,
-    pool_max_idle_per_host: usize,
-    pool_idle_timeout: Option<Duration>,
     always_use_connect: bool,
-}
-
-impl std::default::Default for Builder {
-    fn default() -> Self {
-        Self {
-            pac_script: None,
-            auth: None,
-            pool_max_idle_per_host: usize::MAX,
-            pool_idle_timeout: None,
-            always_use_connect: false,
-        }
-    }
 }
 
 impl Builder {
@@ -97,16 +82,6 @@ impl Builder {
     /// If `None`, use no authentication toward the proxy.
     pub fn authenticator_factory(mut self, factory: Option<AuthenticatorFactory>) -> Self {
         self.auth = factory;
-        self
-    }
-    /// sets the maximum idle connection per host allowed in the pool
-    pub fn pool_max_idle_per_host(mut self, max: usize) -> Self {
-        self.pool_max_idle_per_host = max;
-        self
-    }
-    /// set an optional timeout for idle sockets being kept-aliv.
-    pub fn pool_idle_timeout(mut self, timeout: Option<Duration>) -> Self {
-        self.pool_idle_timeout = timeout;
         self
     }
     /// use the CONNECT method even for HTTP requests.
@@ -141,8 +116,6 @@ impl Builder {
             direct_client: Mutex::new(direct_client),
             proxy_clients: Default::default(),
             auth,
-            pool_idle_timeout: self.pool_idle_timeout,
-            pool_max_idle_per_host: self.pool_max_idle_per_host,
             always_use_connect: self.always_use_connect,
             accesslog_tx,
         }))
@@ -163,8 +136,6 @@ struct Shared {
     direct_client: Mutex<client::service::Connect<client::connect::HttpConnector, Body, Uri>>,
     proxy_clients: Mutex<HashMap<paclib::Endpoint, ProxyClient>>,
     auth: AuthenticatorFactory,
-    pool_max_idle_per_host: usize,
-    pool_idle_timeout: Option<Duration>,
     always_use_connect: bool,
     accesslog_tx: Sender<accesslog::Entry>,
 }
@@ -206,13 +177,10 @@ impl Shared {
                         Box::new(crate::auth::NoneAuthenticator)
                     }
                 };
-                let client = hyper::Client::builder()
-                    .pool_max_idle_per_host(self.pool_max_idle_per_host)
-                    .pool_idle_timeout(self.pool_idle_timeout)
-                    .build(HttpProxyConnector::new((
-                        endpoint.host().to_owned(),
-                        endpoint.port(),
-                    )));
+                let client = hyper::Client::builder().build(HttpProxyConnector::new((
+                    endpoint.host().to_owned(),
+                    endpoint.port(),
+                )));
                 let client = ProxyClient::new(client, auth);
                 proxies.insert(endpoint, client.clone());
                 Ok(client)

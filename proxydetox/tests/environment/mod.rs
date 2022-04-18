@@ -106,8 +106,6 @@ impl Builder {
         let session = proxydetox::Session::builder()
             .pac_script(self.pac_script)
             .authenticator_factory(auth)
-            .pool_max_idle_per_host(usize::MAX)
-            .pool_idle_timeout(None)
             .always_use_connect(self.always_use_connect)
             .build();
 
