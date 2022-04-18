@@ -12,12 +12,12 @@ use std::{
 };
 use tokio::io::copy_bidirectional;
 
-use crate::auth::Authenticator;
+use crate::{auth::Authenticator, net::HostAndPort};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("HTTP connection upgrade with {1} failed: {0}")]
-    UpgradeFailed(#[source] hyper::Error, http::Uri),
+    UpgradeFailed(#[source] hyper::Error, HostAndPort),
     #[error("hyper error: {0}")]
     Hyper(#[from] hyper::Error),
     #[error("authentication mechanism error: {0}")]
@@ -30,12 +30,12 @@ pub enum Error {
 
 #[derive(thiserror::Error, Debug)]
 pub enum ConnectError {
-    #[error("invalid URI: {0}")]
-    InvalidUri(http::Uri),
+    #[error("invalid URI `{0}`: {1}")]
+    InvalidUri(#[source] crate::net::HostAndPortError, http::Uri),
     #[error("request to {0} failed: {1}")]
-    RequestFailed(http::Uri, #[source] Error),
+    RequestFailed(HostAndPort, #[source] Error),
     #[error("HTTP CONNECT to {1} failed, status {0}")]
-    ConnectFailed(http::StatusCode, http::Uri),
+    ConnectFailed(http::StatusCode, HostAndPort),
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -93,27 +93,23 @@ impl ProxyClient {
 
     pub async fn connect(
         &self,
-        uri: http::Uri,
+        host: HostAndPort,
     ) -> std::result::Result<ConnectHandle, ConnectError> {
         // Make a client CONNECT request to the parent proxy to upgrade the connection
-        let parent_authority = authority_of(&uri).map_err({
-            let uri = uri.clone();
-            move |_| ConnectError::InvalidUri(uri)
-        })?;
-        let parent_req = Request::connect(parent_authority.clone())
+        let parent_req = Request::connect(host.clone())
             .version(http::version::Version::HTTP_11)
             .body(Body::empty())
             .unwrap();
 
         let parent_res = self.request(parent_req).await.map_err({
-            let uri = uri.clone();
-            move |e| ConnectError::RequestFailed(uri, e)
+            let host = host.clone();
+            move |e| ConnectError::RequestFailed(host, e)
         })?;
 
         if parent_res.status() == StatusCode::OK {
-            Ok(ConnectHandle::new(parent_authority, parent_res))
+            Ok(ConnectHandle::new(host, parent_res))
         } else {
-            Err(ConnectError::ConnectFailed(parent_res.status(), uri))
+            Err(ConnectError::ConnectFailed(parent_res.status(), host))
         }
     }
 }
@@ -138,17 +134,17 @@ impl tower::Service<Request<Body>> for ProxyClient {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ConnectHandle {
-    uri: http::Uri,
-    response: Arc<Mutex<Option<Response<Body>>>>,
+    host: HostAndPort,
+    response: Option<Response<Body>>,
 }
 
 impl ConnectHandle {
-    pub fn new(uri: http::Uri, res: http::Response<Body>) -> Self {
+    pub fn new(host: HostAndPort, res: http::Response<Body>) -> Self {
         Self {
-            uri,
-            response: Arc::new(Mutex::new(Some(res))),
+            host,
+            response: Some(res),
         }
     }
 }
@@ -167,11 +163,8 @@ impl tower::Service<Request<Body>> for ConnectHandle {
     }
 
     fn call(&mut self, mut req: Request<Body>) -> Self::Future {
-        let uri = self.uri.clone();
-        let response = {
-            let mut gurad = self.response.lock();
-            gurad.take()
-        };
+        let host = self.host.clone();
+        let response = self.response.take();
         let res = async move {
             if let Some(response) = response {
                 // Upgrade connection to parent proxy
@@ -197,7 +190,7 @@ impl tower::Service<Request<Body>> for ConnectHandle {
                         // Response with a OK to the client
                         Ok(Response::new(Body::empty()))
                     }
-                    Err(cause) => Err(Error::UpgradeFailed(cause, uri)),
+                    Err(cause) => Err(Error::UpgradeFailed(cause, host)),
                 }
             } else {
                 tracing::error!("response already taken");
@@ -205,61 +198,5 @@ impl tower::Service<Request<Body>> for ConnectHandle {
             }
         };
         Box::pin(res)
-    }
-}
-
-#[derive(thiserror::Error, Debug)]
-#[error("invalid URI")]
-struct InvalidUri;
-
-fn authority_of(uri: &http::Uri) -> std::result::Result<http::Uri, InvalidUri> {
-    match (uri.scheme(), uri.host(), uri.port()) {
-        (Some(scheme), Some(host), None) => {
-            let port = if *scheme == http::uri::Scheme::HTTP {
-                "80"
-            } else if *scheme == http::uri::Scheme::HTTPS {
-                "443"
-            } else {
-                return Err(InvalidUri);
-            };
-            let uri = format!("{}:{}", host, port);
-            uri.parse().map_err(|_| InvalidUri)
-        }
-        (_, Some(host), Some(port)) => {
-            let uri = format!("{}:{}", host, port);
-            uri.parse().map_err(|_| InvalidUri)
-        }
-        (_, _, _) => Err(InvalidUri),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn authority_of_test() -> Result<(), Box<dyn std::error::Error>> {
-        use super::authority_of;
-
-        // No scheme and no port is an error
-        assert!(authority_of(&("example.org".parse()?)).is_err());
-        assert_eq!(
-            authority_of(&("example.org:8080".parse()?))?
-                .port_u16()
-                .unwrap(),
-            8080
-        );
-        assert_eq!(
-            authority_of(&("http://example.org".parse()?))?
-                .port_u16()
-                .unwrap(),
-            80
-        );
-        assert_eq!(
-            authority_of(&("https://example.org".parse()?))?
-                .port_u16()
-                .unwrap(),
-            443
-        );
-
-        Ok(())
     }
 }

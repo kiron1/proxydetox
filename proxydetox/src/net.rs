@@ -2,8 +2,63 @@ use http::header::LOCATION;
 use http::{Response, StatusCode, Uri};
 use hyper::body::Buf;
 use hyper::Body;
+use std::fmt::Display;
 use std::io::prelude::*;
 use std::io::{Error, ErrorKind};
+
+#[derive(thiserror::Error, Debug)]
+pub enum HostAndPortError {
+    #[error("invalid URI without host and port")]
+    InvalidUri,
+    #[error("host missing")]
+    NoHost,
+    #[error("port missing")]
+    NoPort,
+}
+
+#[derive(Debug, Clone)]
+pub struct HostAndPort(String, u16);
+
+impl HostAndPort {
+    pub fn try_from_uri(uri: &Uri) -> std::result::Result<HostAndPort, HostAndPortError> {
+        match (uri.scheme(), uri.host(), uri.port_u16()) {
+            (Some(scheme), Some(host), None) => {
+                let port = if *scheme == http::uri::Scheme::HTTP {
+                    80u16
+                } else if *scheme == http::uri::Scheme::HTTPS {
+                    443u16
+                } else {
+                    return Err(HostAndPortError::NoPort);
+                };
+                Ok(HostAndPort(host.to_owned(), port))
+            }
+            (_, Some(host), Some(port)) => Ok(HostAndPort(host.to_owned(), port)),
+            (_, _, _) => Err(HostAndPortError::InvalidUri),
+        }
+    }
+}
+
+impl Display for HostAndPort {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{}", &self.0, self.1)
+    }
+}
+
+impl std::net::ToSocketAddrs for HostAndPort {
+    type Iter = std::vec::IntoIter<std::net::SocketAddr>;
+
+    fn to_socket_addrs(&self) -> std::io::Result<Self::Iter> {
+        (self.0.as_str(), self.1).to_socket_addrs()
+    }
+}
+
+impl TryFrom<HostAndPort> for Uri {
+    type Error = http::Error;
+
+    fn try_from(value: HostAndPort) -> Result<Self, Self::Error> {
+        Uri::builder().authority(value.to_string()).build()
+    }
+}
 
 pub async fn read_to_string(res: Response<Body>) -> std::io::Result<String> {
     let body = hyper::body::aggregate(res)
@@ -97,11 +152,41 @@ impl HttpGetProgress {
 
 #[cfg(test)]
 mod tests {
+    use super::HostAndPort;
     use super::HttpGetProgress;
     use http::header::LOCATION;
     use http::Response;
     use http::StatusCode;
     use hyper::Body;
+
+    #[test]
+    fn host_and_port_test() -> Result<(), Box<dyn std::error::Error>> {
+        let uri1: http::Uri = "example.org".parse()?;
+        let uri2: http::Uri = "example.org:8080".parse()?;
+        let uri3: http::Uri = "http://example.org:8080".parse()?;
+        let uri4: http::Uri = "http://example.org".parse()?;
+        let uri5: http::Uri = "https://example.org".parse()?;
+        // No scheme and no port is an error
+        assert!(HostAndPort::try_from_uri(&uri1).is_err());
+        assert_eq!(
+            HostAndPort::try_from_uri(&uri2)?.to_string(),
+            "example.org:8080"
+        );
+        assert_eq!(
+            HostAndPort::try_from_uri(&uri3)?.to_string(),
+            "example.org:8080"
+        );
+        assert_eq!(
+            HostAndPort::try_from_uri(&uri4)?.to_string(),
+            "example.org:80"
+        );
+        assert_eq!(
+            HostAndPort::try_from_uri(&uri5)?.to_string(),
+            "example.org:443"
+        );
+
+        Ok(())
+    }
 
     #[test]
     fn http_get_progress_ok() {
