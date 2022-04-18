@@ -36,8 +36,10 @@ pub enum Error {
     InvalidUri,
     #[error("upstream error reaching {2} via {1}: {0}")]
     Upstream(#[source] crate::client::Error, paclib::Endpoint, Uri),
-    #[error("error reaching {1}: {0}")]
+    #[error("error creating client for {1}: {0}")]
     MakeClient(#[source] hyper::Error, Uri),
+    #[error("error creating proxy for {1}: {0}")]
+    MakeProxyClient(#[source] crate::client::Error, paclib::Endpoint),
     #[error("client error: {0}")]
     Client(
         #[from]
@@ -156,14 +158,13 @@ impl Shared {
     fn find_proxy(&self, uri: &Uri) -> paclib::Proxies {
         tokio::task::block_in_place(move || {
             self.eval.lock().find_proxy(uri).unwrap_or_else(|cause| {
-                tracing::error!(%cause, "failed to find_proxy");
+                tracing::error!(%cause, %uri, "failed to find_proxy");
                 paclib::Proxies::direct()
             })
         })
     }
 
-    #[instrument(level = "trace", skip(self))]
-    fn proxy_client(&self, endpoint: paclib::Endpoint) -> Result<ProxyClient> {
+    fn proxy_for(&self, endpoint: paclib::Endpoint) -> Result<ProxyClient> {
         let mut proxies = self.proxy_clients.lock();
         match proxies.get(&endpoint) {
             Some(proxy) => Ok(proxy.clone()),
@@ -187,10 +188,105 @@ impl Shared {
             }
         }
     }
+
+    #[instrument(level = "trace", skip(self))]
+    fn proxy_client(
+        &self,
+        proxy: paclib::Endpoint,
+    ) -> Result<BoxService<Request<Body>, Response<Body>, Error>> {
+        let client = self.proxy_for(proxy.clone());
+        client.map(|s| s.map_err(move |e| Error::MakeProxyClient(e, proxy)).boxed())
+    }
+
+    async fn proxy_connect(
+        &self,
+        proxy: paclib::Endpoint,
+        uri: http::Uri,
+    ) -> Result<BoxService<Request<Body>, Response<Body>, Error>> {
+        let proxy_client = self.proxy_for(proxy.clone())?;
+        proxy_client
+            .connect(uri.clone())
+            .await
+            .map_err({
+                let proxy = proxy.clone();
+                let uri = uri.clone();
+                move |e| Error::ProxyConnect(e, proxy, uri)
+            })
+            .map(move |c| c.map_err(|e| Error::Upstream(e, proxy, uri)).boxed())
+    }
+
+    async fn direct_client(
+        &self,
+        uri: http::Uri,
+    ) -> Result<BoxService<Request<Body>, Response<Body>, Error>> {
+        let client = {
+            let uri = uri.clone();
+            let mut guard = self.direct_client.lock();
+            guard.call(uri)
+        };
+        client
+            .await
+            .map_err(move |e| Error::MakeClient(e, uri))
+            .map(|s| s.map_err(Error::Client).boxed())
+    }
+
+    /// Establish a connection to parent proxy.
+    ///
+    /// In case of `CONNECT` the connesction will be established so far that `CONNECT` request is
+    /// send, but not the client request.
+    /// For upstream servers which can be connected directly a TCP connection will be established.
+    /// For a directly reachable server with a regular HTTP request, no action will be perforemd.
+    async fn establish_connection<'a>(
+        &self,
+        proxy: paclib::ProxyDesc,
+        method: &http::Method,
+        uri: &http::Uri,
+    ) -> Result<(BoxService<Request<Body>, Response<Body>, Error>, Uri)> {
+        let is_connect = method == hyper::Method::CONNECT;
+        let use_connect = self.always_use_connect;
+
+        let next_uri: Uri;
+        let conn = match (is_connect, use_connect, proxy) {
+            (false, true, ProxyDesc::Proxy(proxy)) | (true, _, ProxyDesc::Proxy(proxy)) => {
+                next_uri = uri.to_owned();
+                self.proxy_connect(proxy, uri.clone()).await
+            }
+            (false, false, ProxyDesc::Proxy(proxy)) => {
+                next_uri = uri.to_owned();
+                self.proxy_client(proxy)
+            }
+            (true, _, ProxyDesc::Direct) => {
+                next_uri = uri.to_owned();
+                let mut conn = Connect::new();
+                let handshake = conn.call(uri.clone()).await;
+                handshake
+                    .map_err({
+                        let uri = uri.clone();
+                        move |e| Error::Connect(e, uri)
+                    })
+                    .map(|s| s.map_err(|_| Error::Handshake).boxed())
+            }
+            (false, _, ProxyDesc::Direct) => {
+                let direct_client = self.direct_client(uri.clone()).await;
+                // strip the authority, since direct clients to not expect this
+                next_uri = Uri::builder()
+                    .path_and_query(
+                        uri.path_and_query()
+                            .cloned()
+                            .unwrap_or_else(|| http::uri::PathAndQuery::from_static("/")),
+                    )
+                    .build()
+                    .map_err(|_| Error::InvalidUri)?;
+                direct_client
+            }
+        };
+
+        conn.map(|c| (c, next_uri))
+    }
 }
 
 impl PeerSession {
-    pub async fn process(&mut self, req: hyper::Request<Body>) -> Result<Response<Body>> {
+    async fn process(&mut self, req: hyper::Request<Body>) -> Result<Response<Body>> {
         let res = if req.uri().authority().is_some() {
             self.dispatch(req).await
         } else if req.method() != hyper::Method::CONNECT {
@@ -203,7 +299,7 @@ impl PeerSession {
         res
     }
 
-    pub async fn dispatch(&mut self, mut req: hyper::Request<Body>) -> Result<Response<Body>> {
+    async fn dispatch(&mut self, mut req: hyper::Request<Body>) -> Result<Response<Body>> {
         let access = accesslog::Entry::begin(
             *self.peer,
             req.method().clone(),
@@ -222,82 +318,20 @@ impl PeerSession {
         let _proxy_auth = req.headers_mut().remove(http::header::PROXY_AUTHORIZATION);
 
         let proxys = self.shared.find_proxy(req.uri());
-        let uri = req.uri().clone();
-        let is_connect = req.method() == hyper::Method::CONNECT;
-        let use_connect = self.shared.always_use_connect;
-
-        tracing::debug!(%proxys, "found proxys");
 
         let mut client: Result<BoxService<Request<Body>, Response<Body>, Error>> =
-            Err(Error::UnableToEstablishConnection(uri.clone()));
+            Err(Error::UnableToEstablishConnection(req.uri().clone()));
         let mut upstream_proxy: Option<paclib::ProxyDesc> = None;
 
         for proxy in proxys.iter() {
-            tracing::info!(%proxy, %is_connect, %use_connect, "connect");
-            let c = match (is_connect, use_connect, proxy) {
-                (false, true, ProxyDesc::Proxy(ref proxy))
-                | (true, _, ProxyDesc::Proxy(ref proxy)) => {
-                    let proxy_client = self.shared.proxy_client(proxy.clone())?;
-                    proxy_client
-                        .connect(uri.clone())
-                        .await
-                        .map_err({
-                            let proxy = proxy.clone();
-                            let uri = uri.clone();
-                            move |e| Error::ProxyConnect(e, proxy, uri)
-                        })
-                        .map({
-                            let proxy = proxy.clone();
-                            let uri = uri.clone();
-                            move |c| c.map_err(|e| Error::Upstream(e, proxy, uri)).boxed()
-                        })
-                }
-                (false, false, ProxyDesc::Proxy(ref proxy)) => {
-                    self.shared.proxy_client(proxy.clone()).map(|s| {
-                        s.map_err({
-                            let proxy = proxy.clone();
-                            let uri = uri.clone();
-                            move |e| Error::Upstream(e, proxy, uri)
-                        })
-                        .boxed()
-                    })
-                }
-                (true, _, ProxyDesc::Direct) => {
-                    let mut conn = Connect::new();
-                    let handshake = conn.call(uri.clone()).await;
-                    handshake
-                        .map_err({
-                            let uri = uri.clone();
-                            move |e| Error::Connect(e, uri)
-                        })
-                        .map(|s| s.map_err(|_| Error::Handshake).boxed())
-                }
-                (false, _, ProxyDesc::Direct) => {
-                    let direct_client = {
-                        let mut guard = self.shared.direct_client.lock();
-                        guard.call(uri.clone())
-                    };
-                    // strip the authority, since direct clients to not expect this
-                    *req.uri_mut() = Uri::builder()
-                        .path_and_query(
-                            uri.path_and_query()
-                                .cloned()
-                                .unwrap_or_else(|| http::uri::PathAndQuery::from_static("/")),
-                        )
-                        .build()
-                        .unwrap();
-                    direct_client
-                        .await
-                        .map_err({
-                            let uri = uri.clone();
-                            move |e| Error::MakeClient(e, uri)
-                        })
-                        .map(|s| s.map_err(Error::Client).boxed())
-                }
-            };
-            match c {
-                Ok(c) => {
-                    client = Ok(c);
+            let conn = self
+                .shared
+                .establish_connection(proxy.to_owned(), req.method(), req.uri())
+                .await;
+            match conn {
+                Ok((conn, uri)) => {
+                    client = Ok(conn);
+                    *req.uri_mut() = uri;
                     upstream_proxy = Some(proxy.to_owned());
                     break;
                 }
@@ -335,7 +369,7 @@ impl PeerSession {
         })
     }
 
-    pub async fn management(&mut self, req: hyper::Request<Body>) -> Result<Response<Body>> {
+    async fn management(&mut self, req: hyper::Request<Body>) -> Result<Response<Body>> {
         const GET: http::Method = http::Method::GET;
         let accept = req.headers().get(ACCEPT).and_then(|s| s.to_str().ok());
 
@@ -482,9 +516,9 @@ impl Service<Request<Body>> for PeerSession {
         let version = req.version();
 
         let res = async move {
-            tracing::trace!("request: {:?}", &req);
+            tracing::trace!(?req, "request");
             let res = this.process(req).await;
-            tracing::trace!("response: {:?}", &res);
+            tracing::trace!(?res, "response");
             let out = match res {
                 Err(ref error) => make_error_response(error),
                 Ok(res) => res,
