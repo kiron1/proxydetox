@@ -9,6 +9,8 @@ rust_library(
         "src/auth/kerberos.rs",
         "src/auth/netrc.rs",
         "src/client.rs",
+        "src/client/direct.rs",
+        "src/client/proxy.rs",
         "src/connect.rs",
         "src/lib.rs",
         "src/net.rs",

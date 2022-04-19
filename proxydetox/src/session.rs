@@ -14,7 +14,7 @@ use futures_util::stream::StreamExt;
 use http::header::{ACCEPT, CACHE_CONTROL, CONTENT_LENGTH, CONTENT_TYPE, HOST, USER_AGENT};
 use http::Uri;
 use http::{Request, Response};
-use hyper::{client, Body};
+use hyper::Body;
 use parking_lot::Mutex;
 use proxy_client::HttpProxyConnector;
 use tokio::sync::broadcast::{self, Sender};
@@ -106,10 +106,6 @@ impl Builder {
             .unwrap_or_else(|| crate::DEFAULT_PAC_SCRIPT.into());
         let eval = Mutex::new(Evaluator::new(&pac_script).unwrap());
         let auth = self.auth.unwrap_or(AuthenticatorFactory::None);
-        let direct_client = client::service::Connect::new(
-            client::connect::HttpConnector::new(),
-            client::conn::Builder::new(),
-        );
         let (accesslog_tx, mut accesslog_rx) = broadcast::channel(16);
         tokio::spawn(async move {
             loop {
@@ -123,7 +119,7 @@ impl Builder {
         });
         Session(Arc::new(Shared {
             eval,
-            direct_client: Mutex::new(direct_client),
+            direct_client: Mutex::new(Default::default()),
             proxy_clients: Default::default(),
             auth,
             always_use_connect: self.always_use_connect,
@@ -143,7 +139,7 @@ pub struct PeerSession {
 
 struct Shared {
     eval: Mutex<paclib::Evaluator>,
-    direct_client: Mutex<client::service::Connect<client::connect::HttpConnector, Body, Uri>>,
+    direct_client: Mutex<crate::client::Direct>,
     proxy_clients: Mutex<HashMap<HostAndPort, ProxyClient>>,
     auth: AuthenticatorFactory,
     always_use_connect: bool,
@@ -246,31 +242,20 @@ impl Shared {
     /// For upstream servers which can be connected directly a TCP connection will be established.
     /// For a directly reachable server with a regular HTTP request, no action will be perforemd.
     #[instrument(skip(self, method, uri))]
-    async fn establish_connection<'a>(
+    async fn establish_connection(
         &self,
         proxy: paclib::ProxyDesc,
         method: &http::Method,
         uri: &http::Uri,
-    ) -> Result<(BoxService<Request<Body>, Response<Body>, Error>, Uri)> {
+    ) -> Result<BoxService<Request<Body>, Response<Body>, Error>> {
         let is_connect = method == hyper::Method::CONNECT;
         let use_connect = self.always_use_connect;
 
-        let next_uri: Uri;
         let conn = match (is_connect, use_connect, proxy) {
-            (true, _, ProxyDesc::Proxy(proxy)) => {
-                next_uri = uri.to_owned();
-                self.proxy_connect(proxy, uri.clone()).await
-            }
-            (false, true, ProxyDesc::Proxy(proxy)) => {
-                next_uri = uri.to_owned();
-                self.proxy_connect(proxy, uri.clone()).await
-            }
-            (false, false, ProxyDesc::Proxy(proxy)) => {
-                next_uri = uri.to_owned();
-                self.proxy_client(proxy)
-            }
+            (true, _, ProxyDesc::Proxy(proxy)) => self.proxy_connect(proxy, uri.clone()).await,
+            (false, true, ProxyDesc::Proxy(proxy)) => self.proxy_connect(proxy, uri.clone()).await,
+            (false, false, ProxyDesc::Proxy(proxy)) => self.proxy_client(proxy),
             (true, _, ProxyDesc::Direct) => {
-                next_uri = uri.to_owned();
                 let mut conn = Connect::new();
                 let handshake = conn.call(uri.clone()).await;
                 handshake
@@ -280,26 +265,13 @@ impl Shared {
                     })
                     .map(|s| s.map_err(|_| Error::Handshake).boxed())
             }
-            (false, _, ProxyDesc::Direct) => {
-                let direct_client = self.direct_client(uri.clone()).await;
-                // strip the authority, since direct clients to not expect this
-                next_uri = Uri::builder()
-                    .path_and_query(
-                        uri.path_and_query()
-                            .cloned()
-                            .unwrap_or_else(|| http::uri::PathAndQuery::from_static("/")),
-                    )
-                    .build()
-                    .map_err(|_| Error::InvalidUri)?;
-                direct_client
-            }
+            (false, _, ProxyDesc::Direct) => self.direct_client(uri.clone()).await,
         };
 
         if let Err(ref cause) = conn {
             tracing::error!(%cause, "establish connection failed");
         }
-
-        conn.map(|c| (c, next_uri))
+        conn
     }
 }
 
@@ -347,9 +319,8 @@ impl PeerSession {
                 .establish_connection(proxy.to_owned(), req.method(), req.uri())
                 .await;
             match conn {
-                Ok((conn, uri)) => {
+                Ok(conn) => {
                     client = Ok(conn);
-                    *req.uri_mut() = uri;
                     upstream_proxy = Some(proxy.to_owned());
                     break;
                 }
