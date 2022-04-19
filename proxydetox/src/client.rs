@@ -1,3 +1,4 @@
+use detox_net::HostAndPort;
 use http::{header::CONNECTION, Request, Response, StatusCode};
 use hyper::client::conn;
 use hyper::Body;
@@ -13,7 +14,7 @@ use std::{
 };
 use tokio::io::copy_bidirectional;
 
-use crate::{auth::Authenticator, net::HostAndPort};
+use crate::auth::Authenticator;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -32,7 +33,7 @@ pub enum Error {
 #[derive(thiserror::Error, Debug)]
 pub enum ConnectError {
     #[error("invalid URI `{0}`: {1}")]
-    InvalidUri(#[source] crate::net::HostAndPortError, http::Uri),
+    InvalidUri(#[source] detox_net::host_and_port::Error, http::Uri),
     #[error("request to {0} failed: {1}")]
     RequestFailed(HostAndPort, #[source] Error),
     #[error("HTTP CONNECT to {1} failed, status {0}")]

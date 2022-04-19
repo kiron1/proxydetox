@@ -1,6 +1,8 @@
 use std::fmt;
 
-#[derive(thiserror::Error, Debug, PartialEq, Eq, Clone)]
+use detox_net::HostAndPort;
+
+#[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("unknown directive, expected DIRECT or PROXY")]
     UnknowDirective,
@@ -12,7 +14,7 @@ pub enum Error {
     InvalidEndpoint(
         #[from]
         #[source]
-        ParseEndpointError,
+        detox_net::host_and_port::Error,
     ),
 }
 
@@ -78,14 +80,17 @@ impl std::str::FromStr for Proxies {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum ProxyDesc {
     Direct,
-    Proxy(Endpoint),
+    Proxy(HostAndPort),
 }
 
 impl fmt::Display for ProxyDesc {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            ProxyDesc::Direct => write!(f, "DIRECT"),
-            ProxyDesc::Proxy(ref endpoint) => write!(f, "PROXY {}", endpoint),
+            ProxyDesc::Direct => f.write_str("DIRECT"),
+            ProxyDesc::Proxy(ref host) => {
+                f.write_str("PROXY ")?;
+                f.write_str(&host.to_string())
+            }
         }
     }
 }
@@ -101,54 +106,6 @@ impl std::str::FromStr for ProxyDesc {
             Ok(ProxyDesc::Direct)
         } else {
             Err(Error::UnknowDirective)
-        }
-    }
-}
-
-#[derive(thiserror::Error, Debug, PartialEq, Eq, Clone)]
-pub enum ParseEndpointError {
-    #[error("invalud host:port directive: {0}")]
-    InvlaidHostPort(String),
-    #[error("invalud port: {0}")]
-    InvalidPort(
-        #[from]
-        #[source]
-        std::num::ParseIntError,
-    ),
-}
-
-/// A TCP/IP endpoint in the `host:port` form.
-///
-/// ```
-/// let endpoint = "example.org:8080".parse::<Endpoint>()?;
-/// ```
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct Endpoint(String, u16);
-
-impl Endpoint {
-    pub fn host(&self) -> &str {
-        &self.0
-    }
-
-    pub fn port(&self) -> u16 {
-        self.1
-    }
-}
-
-impl fmt::Display for Endpoint {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}:{}", self.0, self.1)
-    }
-}
-
-impl std::str::FromStr for Endpoint {
-    type Err = ParseEndpointError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut host_port = s.split(':');
-        match (host_port.next(), host_port.next()) {
-            (Some(host), Some(port)) => Ok(Endpoint(host.trim().to_owned(), port.parse()?)),
-            _ => Err(Self::Err::InvlaidHostPort(s.to_string())),
         }
     }
 }

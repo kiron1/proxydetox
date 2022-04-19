@@ -27,7 +27,7 @@ use crate::accesslog;
 use crate::auth::AuthenticatorFactory;
 use crate::client::ProxyClient;
 use crate::connect::Connect;
-use crate::net::HostAndPort;
+use detox_net::HostAndPort;
 use paclib::proxy::ProxyDesc;
 use paclib::Evaluator;
 
@@ -39,15 +39,15 @@ pub enum Error {
     InvalidHost(
         #[source]
         #[from]
-        crate::net::HostAndPortError,
+        detox_net::host_and_port::Error,
     ),
 
     #[error("upstream error reaching {2} via {1}: {0}")]
-    Upstream(#[source] crate::client::Error, paclib::Endpoint, Uri),
+    Upstream(#[source] crate::client::Error, HostAndPort, Uri),
     #[error("error creating client for {1}: {0}")]
     MakeClient(#[source] hyper::Error, Uri),
     #[error("error creating proxy for {1}: {0}")]
-    MakeProxyClient(#[source] crate::client::Error, paclib::Endpoint),
+    MakeProxyClient(#[source] crate::client::Error, HostAndPort),
     #[error("client error: {0}")]
     Client(
         #[from]
@@ -57,7 +57,7 @@ pub enum Error {
     #[error("connect error reaching {1}: {0}")]
     Connect(#[source] tokio::io::Error, Uri),
     #[error("proxy connect error reaching {2} via {1}: {0}")]
-    ProxyConnect(#[source] crate::client::ConnectError, paclib::Endpoint, Uri),
+    ProxyConnect(#[source] crate::client::ConnectError, HostAndPort, Uri),
     #[error("upstream proxy ({0}) requires authentication")]
     ProxyAuthenticationRequired(ProxyDesc),
     #[error("http error: {0}")]
@@ -144,7 +144,7 @@ pub struct PeerSession {
 struct Shared {
     eval: Mutex<paclib::Evaluator>,
     direct_client: Mutex<client::service::Connect<client::connect::HttpConnector, Body, Uri>>,
-    proxy_clients: Mutex<HashMap<paclib::Endpoint, ProxyClient>>,
+    proxy_clients: Mutex<HashMap<HostAndPort, ProxyClient>>,
     auth: AuthenticatorFactory,
     always_use_connect: bool,
     accesslog_tx: Sender<accesslog::Entry>,
@@ -172,7 +172,7 @@ impl Shared {
         })
     }
 
-    fn proxy_for(&self, endpoint: paclib::Endpoint) -> Result<ProxyClient> {
+    fn proxy_for(&self, endpoint: HostAndPort) -> Result<ProxyClient> {
         let mut proxies = self.proxy_clients.lock();
         match proxies.get(&endpoint) {
             Some(proxy) => Ok(proxy.clone()),
@@ -200,7 +200,7 @@ impl Shared {
     #[instrument(level = "trace", skip(self))]
     fn proxy_client(
         &self,
-        proxy: paclib::Endpoint,
+        proxy: HostAndPort,
     ) -> Result<BoxService<Request<Body>, Response<Body>, Error>> {
         let client = self.proxy_for(proxy.clone());
         client.map(|s| s.map_err(move |e| Error::MakeProxyClient(e, proxy)).boxed())
@@ -208,7 +208,7 @@ impl Shared {
 
     async fn proxy_connect(
         &self,
-        proxy: paclib::Endpoint,
+        proxy: HostAndPort,
         uri: http::Uri,
     ) -> Result<BoxService<Request<Body>, Response<Body>, Error>> {
         let proxy_client = self.proxy_for(proxy.clone())?;

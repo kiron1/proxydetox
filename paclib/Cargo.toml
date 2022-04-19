@@ -11,6 +11,7 @@ log = "0.4"
 regex = "1.5"
 thiserror = "1.0"
 lazy_static = "1.4"
+detox_net = { path = "../detox_net" }
 duktape = { path = "../duktape" }
 duktape-sys = { path = "../duktape-sys" }
 
