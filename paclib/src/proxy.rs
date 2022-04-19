@@ -40,6 +40,10 @@ impl Proxies {
     pub fn iter(&self) -> std::slice::Iter<ProxyDesc> {
         self.0.iter()
     }
+
+    pub fn push(&mut self, p: ProxyDesc) {
+        self.0.push(p)
+    }
 }
 
 impl fmt::Display for Proxies {

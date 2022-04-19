@@ -307,32 +307,23 @@ impl PeerSession {
             .remove(http::header::HeaderName::from_static("proxy-connection"));
         let _proxy_auth = req.headers_mut().remove(http::header::PROXY_AUTHORIZATION);
 
-        let proxys = self.shared.find_proxy(req.uri());
-
-        let mut client: Result<BoxService<Request<Body>, Response<Body>, Error>> =
-            Err(Error::UnableToEstablishConnection(req.uri().clone()));
-        let mut upstream_proxy: Option<paclib::ProxyDesc> = None;
-
-        for proxy in proxys.iter() {
-            let conn = self
-                .shared
-                .establish_connection(proxy.to_owned(), req.method(), req.uri())
-                .await;
-            match conn {
-                Ok(conn) => {
-                    client = Ok(conn);
-                    upstream_proxy = Some(proxy.to_owned());
-                    break;
-                }
-                Err(cause) => tracing::error!(%cause, "connecting"),
+        let proxies = {
+            let mut proxies = self.shared.find_proxy(req.uri());
+            // If the returned list of proxies does not contain a `DIRECT`, add one as fall back optoin
+            // in case all connections attempts fail.
+            if !proxies.iter().any(|p| *p == ProxyDesc::Direct) {
+                proxies.push(ProxyDesc::Direct);
             }
-        }
+            proxies
+        };
 
-        let proxy = upstream_proxy.unwrap_or(ProxyDesc::Direct);
+        let conn = self
+            .establish_connection(proxies, req.method(), req.uri())
+            .await;
 
-        let res = match client {
-            Ok(mut client) => client.call(req).await,
-            Err(e) => Err(e),
+        let (res, proxy) = match conn {
+            Ok((mut client, proxy)) => (client.call(req).await, proxy),
+            Err(e) => return Err(e),
         };
 
         let entry = match &res {
@@ -356,6 +347,37 @@ impl PeerSession {
                 Ok(res)
             }
         })
+    }
+
+    #[instrument(skip(self, method, uri))]
+    async fn establish_connection(
+        &mut self,
+        proxies: paclib::Proxies,
+        method: &http::Method,
+        uri: &http::Uri,
+    ) -> Result<(BoxService<Request<Body>, Response<Body>, Error>, ProxyDesc)> {
+        let mut client: Result<BoxService<Request<Body>, Response<Body>, Error>> =
+            Err(Error::UnableToEstablishConnection(uri.clone()));
+        let mut upstream_proxy: Option<paclib::ProxyDesc> = None;
+
+        for proxy in proxies.iter() {
+            let conn = self
+                .shared
+                .establish_connection(proxy.to_owned(), method, uri)
+                .await;
+            match conn {
+                Ok(conn) => {
+                    tracing::debug!(%proxy, "connection established");
+                    client = Ok(conn);
+                    upstream_proxy = Some(proxy.to_owned());
+                    break;
+                }
+                Err(cause) => tracing::error!(%cause, "connecting"),
+            }
+        }
+
+        let proxy = upstream_proxy.unwrap_or(ProxyDesc::Direct);
+        client.map(move |c| (c, proxy))
     }
 
     async fn management(&mut self, req: hyper::Request<Body>) -> Result<Response<Body>> {
