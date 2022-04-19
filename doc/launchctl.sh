@@ -1,18 +1,5 @@
 #!/bin/sh
 
-case "${1:-x}" in
-install)
-  install_and_enable
-  ;;
-uninstall)
-  disable_and_uninstall
-  ;;
-*)
-  echo "usage: ${0} install|uninstall"
-  exit 1
-  ;;
-esac
-
 install_and_enable() {
   # ANCHOR: install
   launchctl bootstrap "gui/$(id -u)" "/Library/LaunchAgents/cc.colorto.proxydetox.plist"
@@ -29,3 +16,25 @@ disable_and_uninstall() {
   launchctl bootout "gui/$(id -u)/cc.colorto.proxydetox"
   # ANCHOR_END: uninstall
 }
+
+status() {
+  # ANCHOR: print
+  launchctl print "gui/$(id -u)/cc.colorto.proxydetox"
+  # ANCHOR_END: print
+}
+
+case "${1:-status}" in
+install)
+  install_and_enable
+  ;;
+uninstall)
+  disable_and_uninstall
+  ;;
+status)
+  status
+  ;;
+*)
+  echo "usage: ${0} install|uninstall"
+  exit 1
+  ;;
+esac
