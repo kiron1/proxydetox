@@ -244,6 +244,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "detox_net"
+version = "0.1.0"
+dependencies = [
+ "http",
+ "thiserror",
+]
+
+[[package]]
 name = "dirs"
 version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -821,6 +829,7 @@ dependencies = [
 name = "paclib"
 version = "0.3.0"
 dependencies = [
+ "detox_net",
  "duktape",
  "duktape-sys",
  "http",
@@ -926,6 +935,7 @@ dependencies = [
  "chrono",
  "clap 3.1.9",
  "cross-krb5",
+ "detox_net",
  "dirs",
  "env_logger",
  "futures-util",

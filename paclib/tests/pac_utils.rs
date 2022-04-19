@@ -1,8 +1,9 @@
+use detox_net::HostAndPort;
 use http::Uri;
-use paclib::{Endpoint, Evaluator, ProxyDesc};
+use paclib::{Evaluator, ProxyDesc};
 
 fn find_proxy(cmd: &str, good: &str, bad: &str) {
-    let endpoint = "example.org:3128".parse::<Endpoint>().unwrap();
+    let endpoint = "example.org:3128".parse::<HostAndPort>().unwrap();
     let pac_script = format!(
         r#"
         function FindProxyForURL(url, host) {{
