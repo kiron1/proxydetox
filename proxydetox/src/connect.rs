@@ -4,6 +4,12 @@ use std::{future::Future, pin::Pin};
 use tokio::{io::copy_bidirectional, net::TcpStream};
 use tracing_futures::Instrument;
 
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("stream already taken")]
+    StreamAlreadyTaken,
+}
+
 /// A `tower::Service` which establishes TCP connection.
 ///
 /// The Response from this service is a service which can be used to upgrade a http::Request to
@@ -61,7 +67,7 @@ impl Handshake {
 
 impl tower::Service<Request<Body>> for Handshake {
     type Response = Response<Body>;
-    type Error = std::convert::Infallible;
+    type Error = Error;
     type Future =
         Pin<Box<dyn Future<Output = std::result::Result<Self::Response, Self::Error>> + Send>>;
 
@@ -75,23 +81,27 @@ impl tower::Service<Request<Body>> for Handshake {
     fn call(&mut self, req: Request<Body>) -> Self::Future {
         let stream = self.stream.take();
         let res = async move {
-            tokio::task::spawn(async move {
-                match hyper::upgrade::on(req).await {
-                    Ok(mut upgraded) => {
-                        if let Some(mut stream) = stream {
+            if let Some(mut stream) = stream {
+                let remote_addr = stream.peer_addr().ok();
+                let upgrade_task = async move {
+                    match hyper::upgrade::on(req).await {
+                        Ok(mut upgraded) => {
                             let cp = copy_bidirectional(&mut upgraded, &mut stream).await;
                             if let Err(cause) = cp {
                                 tracing::error!(%cause, "tunnel error")
                             }
-                        } else {
-                            tracing::error!("stream already taken")
                         }
+                        Err(cause) => tracing::error!(%cause, "upgrade error"),
                     }
-                    Err(cause) => tracing::error!(%cause, "upgrade error"),
-                }
-            });
-
-            Ok(Response::new(Body::empty()))
+                };
+                tokio::task::spawn(
+                    upgrade_task.instrument(tracing::info_span!("upgrade connect", ?remote_addr)),
+                );
+                Ok(Response::new(Body::empty()))
+            } else {
+                tracing::error!("stream already taken");
+                Err(Error::StreamAlreadyTaken)
+            }
         };
         let res = res.instrument(tracing::trace_span!("Handshake::call"));
         Box::pin(res)
