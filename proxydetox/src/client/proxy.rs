@@ -13,6 +13,7 @@ use std::{
     },
 };
 use tokio::io::copy_bidirectional;
+use tracing::Instrument;
 
 use crate::auth::Authenticator;
 
@@ -162,7 +163,7 @@ async fn upgrade_downstream_upstream(
         Ok(mut parent_upgraded) => {
             // On a successful upgrade to the parent proxy, upgrade the
             // request of the client (the original request maker)
-            tokio::task::spawn(async move {
+            let upgrade_task = async move {
                 match hyper::upgrade::on(&mut req).await {
                     Ok(mut client_upgraded) => {
                         let cp =
@@ -173,7 +174,8 @@ async fn upgrade_downstream_upstream(
                     }
                     Err(cause) => tracing::error!(%cause, "upgrade error"),
                 }
-            });
+            };
+            tokio::task::spawn(upgrade_task.instrument(tracing::info_span!("proxy connect")));
             // Response with a OK to the client
             Ok(Response::new(Body::empty()))
         }
@@ -235,8 +237,17 @@ impl tower::Service<Request<Body>> for ConnectHandle {
         let response = self.response.take();
         let res = async move {
             if let Some(response) = response {
+                let proxy_addr = response
+                    .extensions()
+                    .get::<HttpProxyInfo>()
+                    .map(|i| i.remote_addr);
                 if req.method() == http::method::Method::CONNECT {
-                    upgrade_downstream_upstream(host, response, req).await
+                    upgrade_downstream_upstream(host, response, req)
+                        .instrument(tracing::info_span!(
+                            "upgrade_downstream_upstream",
+                            ?proxy_addr
+                        ))
+                        .await
                 } else {
                     upgrade_upstream(host, response, req).await
                 }
