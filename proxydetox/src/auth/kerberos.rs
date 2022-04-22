@@ -46,12 +46,6 @@ impl super::Authenticator for NegotiateAuthenticator {
                 );
             }
             Err(cause) => {
-                tracing::error!(
-                    "negotiate error for {}: {} ({:?})",
-                    &self.target_principal,
-                    &cause,
-                    &cause
-                );
                 return Err(cause.into());
             }
         }
