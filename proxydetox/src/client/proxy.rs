@@ -12,10 +12,10 @@ use std::{
         Arc,
     },
 };
-use tokio::io::copy_bidirectional;
 use tracing::Instrument;
 
 use crate::auth::Authenticator;
+use crate::net::copy_bidirectional;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {

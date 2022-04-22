@@ -1,7 +1,8 @@
+use crate::net::copy_bidirectional;
 use http::{Request, Response, Uri};
 use hyper::Body;
 use std::{future::Future, pin::Pin};
-use tokio::{io::copy_bidirectional, net::TcpStream};
+use tokio::net::TcpStream;
 use tracing_futures::Instrument;
 
 #[derive(thiserror::Error, Debug)]
