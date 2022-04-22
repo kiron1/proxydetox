@@ -72,23 +72,22 @@ impl ProxyClient {
     }
 
     pub async fn request(&self, mut req: hyper::Request<Body>) -> Result<Response<Body>> {
-        if self.0.requires_auth.load(Ordering::Relaxed) {
-            let headers = self.0.auth_step(None).await;
-            match headers {
-                Ok(headers) => req.headers_mut().extend(headers),
-                Err(ref cause) => {
-                    tracing::error!(?cause, "proxy authentication error");
-                    self.0.requires_auth.store(false, Ordering::Relaxed);
-                }
-            }
-        }
+        let auth_error = if self.0.requires_auth.load(Ordering::Relaxed) {
+            self.0
+                .auth_step(None)
+                .await
+                .map(|h| req.headers_mut().extend(h))
+                .err()
+        } else {
+            None
+        };
         let res = self.0.client.request(req).await?;
         if res.status() == http::StatusCode::PROXY_AUTHENTICATION_REQUIRED {
             let remote_addr = res
                 .extensions()
                 .get::<HttpProxyInfo>()
                 .map(|i| i.remote_addr);
-            tracing::error!(?remote_addr, "proxy requires authentication");
+            tracing::error!(?remote_addr, ?auth_error, "proxy requires authentication");
             self.0.requires_auth.store(true, Ordering::Relaxed);
         }
         Ok(res)
