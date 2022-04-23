@@ -15,7 +15,6 @@ async fn connect_proxy_request_failure() {
         assert!(r.uri().authority().is_some());
         assert!(r.uri().path_and_query().is_none());
         assert!(r.headers().get(PROXY_AUTHORIZATION).is_none());
-        assert_eq!(r.method(), http::method::Method::CONNECT);
         Response::builder()
             .status(StatusCode::INTERNAL_SERVER_ERROR)
             .body(Body::empty())
@@ -24,11 +23,11 @@ async fn connect_proxy_request_failure() {
     let env = Environment::builder()
         .pac_script(Some(format!(
             "function FindProxyForURL(url, host) {{ return \"PROXY {}\"; }}",
-            http1.uri().build().unwrap().authority().unwrap()
+            http1.host_and_port()
         )))
         .build();
 
-    let req = Request::connect(http1.uri().path_and_query("/").build().unwrap())
+    let req = Request::connect(http1.host_and_port())
         .body(Body::empty())
         .unwrap();
 
@@ -91,11 +90,11 @@ async fn connect_proxy_request() {
     let env = Environment::builder()
         .pac_script(Some(format!(
             "function FindProxyForURL(url, host) {{ return \"PROXY {}\"; }}",
-            http1.uri().build().unwrap().authority().unwrap()
+            http1.host_and_port()
         )))
         .build();
 
-    let req = Request::connect(http1.uri().path_and_query("/").build().unwrap())
+    let req = Request::connect(http1.host_and_port())
         .body(Body::empty())
         .unwrap();
 
