@@ -11,6 +11,7 @@ rust_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "//detox_net",
         "//proxy_client/cargo:http",
         "//proxy_client/cargo:hyper",
         "//proxy_client/cargo:thiserror",

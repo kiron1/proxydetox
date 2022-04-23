@@ -6,6 +6,7 @@ use std::future::Future;
 use std::net::SocketAddr;
 use std::pin::Pin;
 use std::sync::Arc;
+use std::time::Duration;
 use std::{
     collections::HashMap,
     task::{self, Poll},
@@ -19,6 +20,7 @@ use hyper::Body;
 use parking_lot::Mutex;
 use proxy_client::HttpProxyConnector;
 use tokio::sync::broadcast::{self, Sender};
+use tokio::time::timeout;
 use tokio_stream::wrappers::BroadcastStream;
 use tower::{util::BoxService, Service, ServiceExt};
 use tracing_attributes::instrument;
@@ -42,7 +44,8 @@ pub enum Error {
         #[from]
         detox_net::host_and_port::Error,
     ),
-
+    #[error("timeout when connecting to {0}")]
+    ConnectTimeout(HostAndPort),
     #[error("upstream error reaching {2} via {1}: {0}")]
     Upstream(#[source] crate::client::Error, HostAndPort, Uri),
     #[error("error creating client for {1}: {0}")]
@@ -80,6 +83,7 @@ pub struct Builder {
     pac_script: Option<String>,
     auth: Option<AuthenticatorFactory>,
     always_use_connect: bool,
+    connect_timeout: Option<Duration>,
 }
 
 impl Builder {
@@ -98,6 +102,11 @@ impl Builder {
     /// use the CONNECT method even for HTTP requests.
     pub fn always_use_connect(mut self, yesno: bool) -> Self {
         self.always_use_connect = yesno;
+        self
+    }
+    /// Timeout to use when trying to estabish a new connection.
+    pub fn connect_timeout(mut self, duration: Duration) -> Self {
+        self.connect_timeout = Some(duration);
         self
     }
 
@@ -124,6 +133,7 @@ impl Builder {
             proxy_clients: Default::default(),
             auth,
             always_use_connect: self.always_use_connect,
+            connect_timeout: self.connect_timeout.unwrap_or(Duration::new(30, 0)),
             accesslog_tx,
         }))
     }
@@ -144,6 +154,7 @@ struct Shared {
     proxy_clients: Mutex<HashMap<HostAndPort, ProxyClient>>,
     auth: AuthenticatorFactory,
     always_use_connect: bool,
+    connect_timeout: Duration,
     accesslog_tx: Sender<accesslog::Entry>,
 }
 
@@ -208,15 +219,18 @@ impl Shared {
     ) -> Result<BoxService<Request<Body>, Response<Body>, Error>> {
         let proxy_client = self.proxy_for(proxy.clone())?;
         let host = HostAndPort::try_from_uri(&uri)?;
-        proxy_client
-            .connect(host)
-            .await
-            .map_err({
-                let proxy = proxy.clone();
-                let uri = uri.clone();
-                move |e| Error::ProxyConnect(e, proxy, uri)
-            })
-            .map(move |c| c.map_err(|e| Error::Upstream(e, proxy, uri)).boxed())
+        let conn = timeout(self.connect_timeout, proxy_client.connect(host)).await;
+        let conn = match conn {
+            Ok(conn) => conn,
+            // Timeout condition
+            Err(_) => return Err(Error::ConnectTimeout(proxy)),
+        };
+        conn.map_err({
+            let proxy = proxy.clone();
+            let uri = uri.clone();
+            move |e| Error::ProxyConnect(e, proxy, uri)
+        })
+        .map(move |c| c.map_err(|e| Error::Upstream(e, proxy, uri)).boxed())
     }
 
     async fn direct_client(
@@ -556,7 +570,7 @@ impl Service<Request<Body>> for PeerSession {
             Ok(out)
         };
         let res =
-            res.instrument(tracing::info_span!("call", method=%method, uri=%uri, version=?version));
+            res.instrument(tracing::info_span!("call", method=%method, uri=%uri, version=?version, client_addr=%self.peer));
         Box::pin(res)
     }
 }
@@ -584,7 +598,7 @@ impl<'a> Service<&'a hyper::server::conn::AddrStream> for Session {
                 shared,
             })
         };
-        let res = res.instrument(tracing::debug_span!("call", addr=%addr));
+        let res = res.instrument(tracing::info_span!("call", client_addr=%addr));
         Box::pin(res)
     }
 }

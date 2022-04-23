@@ -122,6 +122,7 @@ async fn run(config: &Options) -> Result<(), proxydetox::Error> {
         .pac_script(pac_script.ok())
         .authenticator_factory(Some(auth.clone()))
         .always_use_connect(config.always_use_connect)
+        .connect_timeout(config.connect_timeout)
         .build();
 
     let addr = SocketAddr::from(([127, 0, 0, 1], config.port));
