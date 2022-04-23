@@ -21,10 +21,18 @@ use crate::net::copy_bidirectional;
 pub enum Error {
     #[error("HTTP connection upgrade with {1} failed: {0}")]
     UpgradeFailed(#[source] hyper::Error, HostAndPort),
-    #[error("hyper error: {0}")]
-    Hyper(#[from] hyper::Error),
+    #[error("HTTP error: {0}")]
+    Hyper(
+        #[from]
+        #[source]
+        hyper::Error,
+    ),
     #[error("authentication mechanism error: {0}")]
-    Auth(#[from] crate::auth::Error),
+    Auth(
+        #[from]
+        #[source]
+        crate::auth::Error,
+    ),
     #[error("invalid URI")]
     InvalidUri,
     #[error("response already taken")]

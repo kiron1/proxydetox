@@ -52,6 +52,10 @@ impl HostAndPort {
     pub fn port(&self) -> u16 {
         self.1
     }
+
+    pub fn to_pair(&self) -> (String, u16) {
+        (self.0.clone(), self.1)
+    }
 }
 
 impl Display for HostAndPort {

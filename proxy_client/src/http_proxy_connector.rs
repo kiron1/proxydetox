@@ -1,6 +1,7 @@
 #![allow(clippy::type_complexity)]
 
 use super::http_proxy_stream::HttpProxyStream;
+use detox_net::HostAndPort;
 use http::Uri;
 use hyper::service::Service;
 use std::{
@@ -12,27 +13,24 @@ use tokio::net::TcpStream;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("lookup error")]
-    LookupError,
-    #[error("connect error: {0}")]
-    ConnectError(#[from] std::io::Error),
+    #[error("error connecting to {0}")]
+    ConnectError(HostAndPort, #[source] std::io::Error),
 }
 
 #[derive(Clone, Debug)]
 pub struct HttpProxyConnector {
-    host: String,
-    port: u16,
+    endpoint: HostAndPort,
 }
 
 impl HttpProxyConnector {
-    pub fn new((host, port): (String, u16)) -> Self {
-        Self { host, port }
+    pub fn new(endpoint: HostAndPort) -> Self {
+        Self { endpoint }
     }
 
     async fn call_async(&mut self, _dst: Uri) -> std::result::Result<HttpProxyStream, Error> {
-        let stream = TcpStream::connect((self.host.clone(), self.port))
+        let stream = TcpStream::connect(self.endpoint.to_pair())
             .await
-            .map_err(Error::ConnectError)?;
+            .map_err(move |e| Error::ConnectError(self.endpoint.clone(), e))?;
 
         Ok(HttpProxyStream::new(stream))
     }
