@@ -25,6 +25,8 @@ pub struct Options {
     pub port: u16,
     pub pool_max_idle_per_host: usize,
     pub pool_idle_timeout: Option<Duration>,
+    pub exit_idle_time: Option<Duration>,
+    pub activate_socket: Option<String>,
 }
 
 fn is_num<T: FromStr + PartialOrd>(v: &str) -> Result<(), String> {
@@ -141,6 +143,19 @@ impl Options {
                     .help("Optional timeout for idle sockets being kept-alive")
                     .validator(is_num::<u64>)
                     .takes_value(true),
+            )
+            .arg(
+                Arg::new("activate_socket")
+                    .long("activate-socket")
+                    .help("Socket name create by the service manager which needs to be activated")
+                    .takes_value(true),
+            )
+            .arg(
+                Arg::new("exit_idle_time")
+                    .long("exit-idle-time")
+                    .help("Time before exiting when there are no connections in seconds")
+                    .validator(is_num::<u64>)
+                    .takes_value(true),
             );
 
         let matches = app.get_matches_from(args);
@@ -195,6 +210,10 @@ impl From<ArgMatches> for Options {
             pool_idle_timeout: m
                 .value_of("pool_idle_timeout")
                 .map(|s| std::time::Duration::from_secs(s.parse::<u64>().unwrap())),
+            exit_idle_time: m
+                .value_of("exit_idle_time")
+                .map(|s| std::time::Duration::from_secs(s.parse::<u64>().unwrap())),
+            activate_socket: m.value_of("activate_socket").map(String::from),
         }
     }
 }

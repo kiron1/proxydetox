@@ -26,6 +26,7 @@ use tracing_futures::Instrument;
 
 use crate::accesslog;
 use crate::auth::AuthenticatorFactory;
+use crate::idle_timeout::KeepAliveToken;
 use paclib::proxy::ProxyDesc;
 use paclib::Evaluator;
 
@@ -56,6 +57,7 @@ pub struct Builder {
     pool_max_idle_per_host: usize,
     pool_idle_timeout: Option<Duration>,
     always_use_connect: bool,
+    keep_alive_token: Option<KeepAliveToken>,
 }
 
 impl std::default::Default for Builder {
@@ -66,6 +68,7 @@ impl std::default::Default for Builder {
             pool_max_idle_per_host: usize::MAX,
             pool_idle_timeout: None,
             always_use_connect: false,
+            keep_alive_token: None,
         }
     }
 }
@@ -96,6 +99,11 @@ impl Builder {
     /// use the CONNECT method even for HTTP requests.
     pub fn always_use_connect(mut self, yesno: bool) -> Self {
         self.always_use_connect = yesno;
+        self
+    }
+    /// use keep alive tokens to signal an idle state
+    pub fn keep_alive_token(mut self, token: Option<KeepAliveToken>) -> Self {
+        self.keep_alive_token = token;
         self
     }
 
@@ -129,6 +137,7 @@ impl Builder {
             pool_max_idle_per_host: self.pool_max_idle_per_host,
             always_use_connect: self.always_use_connect,
             accesslog_tx,
+            keep_alive_token: self.keep_alive_token,
         }))
     }
 }
@@ -138,7 +147,7 @@ pub struct Session(Arc<Shared>);
 
 #[derive(Clone)]
 pub struct PeerSession {
-    peer: Arc<SocketAddr>,
+    peer: Arc<Peer>,
     shared: Arc<Shared>,
 }
 
@@ -151,6 +160,12 @@ struct Shared {
     pool_idle_timeout: Option<Duration>,
     always_use_connect: bool,
     accesslog_tx: Sender<accesslog::Entry>,
+    keep_alive_token: Option<KeepAliveToken>,
+}
+
+struct Peer {
+    remote_addr: SocketAddr,
+    _keep_alive_token: Option<KeepAliveToken>,
 }
 
 impl std::fmt::Debug for Session {
@@ -247,7 +262,7 @@ impl PeerSession {
         };
 
         let access = accesslog::Entry::begin(
-            *self.peer,
+            self.peer.remote_addr,
             proxy.clone(),
             req.method().clone(),
             req.uri().clone(),
@@ -467,16 +482,17 @@ impl<'a> Service<&'a hyper::server::conn::AddrStream> for Session {
     }
 
     fn call(&mut self, socket: &hyper::server::conn::AddrStream) -> Self::Future {
+        let remote_addr = socket.remote_addr();
         let shared = self.0.clone();
-        let addr = socket.remote_addr();
+        let peer = Arc::new(Peer {
+            remote_addr,
+            _keep_alive_token: shared.keep_alive_token.clone(),
+        });
         let res = async move {
             tracing::debug!("new connection");
-            Ok(PeerSession {
-                peer: Arc::new(addr),
-                shared,
-            })
+            Ok(PeerSession { peer, shared })
         };
-        let res = res.instrument(tracing::debug_span!("call", addr=%addr));
+        let res = res.instrument(tracing::debug_span!("call", remote_addr=%remote_addr));
         Box::pin(res)
     }
 }

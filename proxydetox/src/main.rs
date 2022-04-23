@@ -5,8 +5,10 @@
 
 mod options;
 
+use futures_util::future::FutureExt;
 use options::{Authorization, Options};
 use proxydetox::auth::netrc;
+use proxydetox::socket;
 use proxydetox::{auth::AuthenticatorFactory, http_file};
 use std::fs::{read_to_string, File};
 use std::net::SocketAddr;
@@ -118,20 +120,50 @@ async fn run(config: &Options) -> Result<(), proxydetox::Error> {
         }
     };
 
+    let (keep_alive_token, idle_signal) = if let Some(exit_idle_time) = config.exit_idle_time {
+        let (token, signal) = proxydetox::idle_timeout::idle_timeout(exit_idle_time);
+        (Some(token), signal.boxed())
+    } else {
+        (None, futures_util::future::pending().boxed())
+    };
+
     let session = proxydetox::Session::builder()
         .pac_script(pac_script.ok())
         .authenticator_factory(Some(auth.clone()))
         .always_use_connect(config.always_use_connect)
         .pool_idle_timeout(config.pool_idle_timeout)
         .pool_max_idle_per_host(config.pool_max_idle_per_host)
+        .keep_alive_token(keep_alive_token)
         .build();
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], config.port));
-    let server = hyper::Server::bind(&addr).serve(session);
+    let server = if let Some(name) = &config.activate_socket {
+        let sockets = socket::activate_socket(name)?;
+        let rawfd = sockets
+            .first()
+            .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "no socket found"))?;
+        #[cfg(unix)]
+        let listener = unsafe {
+            use std::os::unix::io::FromRawFd;
+            std::net::TcpListener::from_raw_fd(*rawfd)
+        };
+        #[cfg(windows)]
+        let listener = unsafe {
+            use std::os::windows::io::FromRawSocket;
+            std::net::TcpListener::from_raw_socket(*rawfd)
+        };
+        hyper::Server::from_tcp(listener)?
+    } else {
+        let addr = SocketAddr::from(([127, 0, 0, 1], config.port));
+        hyper::Server::try_bind(&addr)?
+    };
+    let server = server.serve(session);
     let addr = server.local_addr();
     let (shutdown_tx, shutdown_rx) = oneshot::channel();
     let server = server.with_graceful_shutdown(async {
-        shutdown_rx.await.ok();
+        tokio::select! {
+            rx = shutdown_rx => { rx.ok(); },
+            _ = idle_signal => {},
+        }
     });
 
     #[cfg(unix)]

@@ -1,8 +1,10 @@
 pub mod accesslog;
 pub mod auth;
 pub mod client;
+pub mod idle_timeout;
 pub mod net;
 pub mod session;
+pub mod socket;
 
 pub use crate::net::http_file;
 pub use crate::session::Session;
