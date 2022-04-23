@@ -123,6 +123,7 @@ async fn run(config: &Options) -> Result<(), proxydetox::Error> {
         .authenticator_factory(Some(auth.clone()))
         .always_use_connect(config.always_use_connect)
         .connect_timeout(config.connect_timeout)
+        .direct_fallback(config.direct_fallback)
         .build();
 
     let addr = SocketAddr::from(([127, 0, 0, 1], config.port));

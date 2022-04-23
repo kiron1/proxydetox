@@ -83,6 +83,7 @@ pub struct Builder {
     pac_script: Option<String>,
     auth: Option<AuthenticatorFactory>,
     always_use_connect: bool,
+    direct_fallback: bool,
     connect_timeout: Option<Duration>,
 }
 
@@ -102,6 +103,11 @@ impl Builder {
     /// use the CONNECT method even for HTTP requests.
     pub fn always_use_connect(mut self, yesno: bool) -> Self {
         self.always_use_connect = yesno;
+        self
+    }
+    /// use DIRECT when connecting the proxies failed
+    pub fn direct_fallback(mut self, yesno: bool) -> Self {
+        self.direct_fallback = yesno;
         self
     }
     /// Timeout to use when trying to estabish a new connection.
@@ -133,6 +139,7 @@ impl Builder {
             proxy_clients: Default::default(),
             auth,
             always_use_connect: self.always_use_connect,
+            direct_fallback: self.direct_fallback,
             connect_timeout: self.connect_timeout.unwrap_or(Duration::new(30, 0)),
             accesslog_tx,
         }))
@@ -154,6 +161,7 @@ struct Shared {
     proxy_clients: Mutex<HashMap<HostAndPort, ProxyClient>>,
     auth: AuthenticatorFactory,
     always_use_connect: bool,
+    direct_fallback: bool,
     connect_timeout: Duration,
     accesslog_tx: Sender<accesslog::Entry>,
 }
@@ -317,10 +325,12 @@ impl PeerSession {
 
         let proxies = {
             let mut proxies = self.shared.find_proxy(req.uri());
-            // If the returned list of proxies does not contain a `DIRECT`, add one as fall back optoin
-            // in case all connections attempts fail.
-            if !proxies.iter().any(|p| *p == ProxyDesc::Direct) {
-                proxies.push(ProxyDesc::Direct);
+            if self.shared.direct_fallback {
+                // If the returned list of proxies does not contain a `DIRECT`, add one as fall back
+                // option in case all connections attempts fail.
+                if !proxies.iter().any(|p| *p == ProxyDesc::Direct) {
+                    proxies.push(ProxyDesc::Direct);
+                }
             }
             proxies
         };
