@@ -919,6 +919,7 @@ dependencies = [
 name = "proxy_client"
 version = "0.1.0"
 dependencies = [
+ "detox_net",
  "http",
  "hyper",
  "thiserror",

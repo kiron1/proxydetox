@@ -183,10 +183,8 @@ impl Shared {
                         Box::new(crate::auth::NoneAuthenticator)
                     }
                 };
-                let client = hyper::Client::builder().build(HttpProxyConnector::new((
-                    endpoint.host().to_owned(),
-                    endpoint.port(),
-                )));
+                let client =
+                    hyper::Client::builder().build(HttpProxyConnector::new(endpoint.clone()));
                 let client = ProxyClient::new(client, auth);
                 proxies.insert(endpoint, client.clone());
                 Ok(client)

@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+detox_net = { path = "../detox_net" }
 http = "0.2"
 hyper = { version = "0.14", features = ["http1", "http2", "client", "server", "tcp"] }
 tokio = { version = "1", features = ["rt-multi-thread", "net", "macros", "sync"] }

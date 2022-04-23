@@ -19,7 +19,7 @@ pub enum Error {
         #[source]
         std::io::Error,
     ),
-    #[error("hyper error: {0}")]
+    #[error("HTTP error: {0}")]
     Hyper(
         #[from]
         #[source]
