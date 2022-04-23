@@ -21,6 +21,7 @@ pub struct Options {
     pub pac_file: Option<String>,
     pub authorization: Authorization,
     pub connect_timeout: std::time::Duration,
+    pub direct_fallback: bool,
     pub always_use_connect: bool,
     pub port: u16,
 }
@@ -125,6 +126,11 @@ impl Options {
                     .help("Always use CONNECT method even for http:// resources"),
             )
             .arg(
+                Arg::new("direct_fallback")
+                    .long("direct-fallback")
+                    .help("Try a direct connection when connecting proxies fails"),
+            )
+            .arg(
                 Arg::new("connect_timeout")
                     .short('c')
                     .long("connect-timeout")
@@ -175,6 +181,7 @@ impl From<ArgMatches> for Options {
             pac_file: m.value_of("pac_file").map(String::from),
             authorization,
             always_use_connect: m.is_present("always_use_connect"),
+            direct_fallback: m.is_present("direct_fallback"),
             connect_timeout: m
                 .value_of("connect_timeout")
                 .map(|s| std::time::Duration::from_secs(s.parse::<u64>().unwrap()))
