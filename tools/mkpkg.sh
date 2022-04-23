@@ -20,6 +20,8 @@ cargo install \
   --no-track
 install -d "${workdir}/Library/LaunchAgents/"
 install -v -m 0644 "${root}/pkg/macos/${pkgid}.plist" "${workdir}/Library/LaunchAgents/"
+install -d "${workdir}/etc/paths.d/"
+install -v -m 0644 "${root}/pkg/macos/40-proxydetox" "${workdir}/etc/paths.d/"
 
 version=$(sed -n 's/^version[ \t]*=[ \t]*"\([0-9.]*\)"/\1/p' "${root}/proxydetox/Cargo.toml")
 pkgfile=proxydetox-${version}-x86_64-apple-darwin.pkg
