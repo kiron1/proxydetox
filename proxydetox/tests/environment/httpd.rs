@@ -47,6 +47,10 @@ impl Server {
         }
     }
 
+    pub(crate) fn host_and_port(&self) -> String {
+        self.local_addr.to_string()
+    }
+
     pub(crate) fn uri(&self) -> http::uri::Builder {
         Uri::builder()
             .scheme("http")
