@@ -329,7 +329,10 @@ impl PeerSession {
                     .and_then(|v| v.to_str().ok())
                     .and_then(|s| s.parse::<u64>().ok()),
             ),
-            Err(cause) => access.error(proxy.clone(), cause),
+            Err(cause) => {
+                tracing::error!(%cause, "HTTP upstream error");
+                access.error(proxy.clone(), cause)
+            }
         };
         let _ = self.shared.accesslog_tx.send(entry);
 
