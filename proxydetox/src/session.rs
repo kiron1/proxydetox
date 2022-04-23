@@ -1,6 +1,7 @@
 #![allow(clippy::type_complexity)]
 
 use std::convert::Infallible;
+use std::fmt::Write;
 use std::future::Future;
 use std::net::SocketAddr;
 use std::pin::Pin;
@@ -494,9 +495,21 @@ fn make_error_response<E>(error: &E) -> Response<Body>
 where
     E: std::error::Error + Send + Sync,
 {
+    let mut description = String::new();
+    write!(&mut description, "<p><strong>Error:</strong> {}</p>", error).ok();
+    if let Some(cause) = error.source() {
+        description
+            .write_str("<p><strong>Caused by:</strong></p><ol reversed>")
+            .ok();
+        for msg in std::iter::successors(Some(cause), |e| e.source()) {
+            write!(&mut description, "<li>{}</li>", msg).ok();
+        }
+        description.write_str("</ol>").ok();
+    }
+
     let body = format!(
         include_str!("502.html"),
-        error,
+        description,
         env!("CARGO_PKG_NAME"),
         env!("CARGO_PKG_VERSION")
     );
