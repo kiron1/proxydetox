@@ -20,6 +20,7 @@ pub struct Options {
     pub log_level: LevelFilter,
     pub pac_file: Option<String>,
     pub authorization: Authorization,
+    pub connect_timeout: std::time::Duration,
     pub always_use_connect: bool,
     pub port: u16,
 }
@@ -119,9 +120,18 @@ impl Options {
             .arg(netrc_arg)
             .arg(
                 Arg::new("always_use_connect")
-                    .short('c')
+                    .short('C')
                     .long("always-use-connect")
                     .help("Always use CONNECT method even for http:// resources"),
+            )
+            .arg(
+                Arg::new("connect_timeout")
+                    .short('c')
+                    .long("connect-timeout")
+                    .help("Timeout to establish a connection in faction sections")
+                    .validator(is_num::<f32>)
+                    .takes_value(true)
+                    .default_value("10"),
             );
 
         let matches = app.get_matches_from(args);
@@ -165,10 +175,14 @@ impl From<ArgMatches> for Options {
             pac_file: m.value_of("pac_file").map(String::from),
             authorization,
             always_use_connect: m.is_present("always_use_connect"),
+            connect_timeout: m
+                .value_of("connect_timeout")
+                .map(|s| std::time::Duration::from_secs(s.parse::<u64>().unwrap()))
+                .expect("default value for connect_timeout"),
             port: m
                 .value_of("port")
                 .map(|s| s.parse::<u16>().unwrap())
-                .unwrap(),
+                .expect("default value for port"),
         }
     }
 }
