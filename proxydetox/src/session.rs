@@ -251,7 +251,7 @@ impl Shared {
         let is_connect = method == hyper::Method::CONNECT;
         let use_connect = self.always_use_connect;
 
-        let conn = match (is_connect, use_connect, proxy) {
+        match (is_connect, use_connect, proxy) {
             (true, _, ProxyDesc::Proxy(proxy)) => self.proxy_connect(proxy, uri.clone()).await,
             (false, true, ProxyDesc::Proxy(proxy)) => self.proxy_connect(proxy, uri.clone()).await,
             (false, false, ProxyDesc::Proxy(proxy)) => self.proxy_client(proxy),
@@ -266,12 +266,7 @@ impl Shared {
                     .map(|s| s.map_err(|_| Error::Handshake).boxed())
             }
             (false, _, ProxyDesc::Direct) => self.direct_client(uri.clone()).await,
-        };
-
-        if let Err(ref cause) = conn {
-            tracing::error!(%cause, "establish connection failed");
         }
-        conn
     }
 }
 
@@ -361,6 +356,7 @@ impl PeerSession {
         let mut upstream_proxy: Option<paclib::ProxyDesc> = None;
 
         for proxy in proxies.iter() {
+            tracing::debug!(%proxy, "try connect");
             let conn = self
                 .shared
                 .establish_connection(proxy.to_owned(), method, uri)
@@ -372,8 +368,12 @@ impl PeerSession {
                     upstream_proxy = Some(proxy.to_owned());
                     break;
                 }
-                Err(cause) => tracing::error!(%cause, "connecting"),
+                Err(cause) => tracing::warn!(%cause, "connecting failed"),
             }
+        }
+
+        if client.is_err() {
+            tracing::error!("unable to establish connection");
         }
 
         let proxy = upstream_proxy.unwrap_or(ProxyDesc::Direct);
