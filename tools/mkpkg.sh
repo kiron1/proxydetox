@@ -9,8 +9,9 @@ root=$(
   pwd -P
 )
 workdir=$(mktemp -dt proxydetox-pkgbuild)
+setproxy_helper=$(mktemp)
 
-trap 'rm -rf ${workdir}' EXIT INT
+trap 'rm -rf "${workdir}" "${setproxy_helper}"' EXIT INT
 
 plutil -lint "${root}/pkg/macos/${pkgid}.plist"
 cargo install \
@@ -18,10 +19,13 @@ cargo install \
   --root "${workdir}/${prefix}" \
   --features negotiate \
   --no-track
+swiftc -o "${setproxy_helper}" "${root}/pkg/macos/setproxy.swift"
 install -d "${workdir}/Library/LaunchAgents/"
 install -v -m 0644 "${root}/pkg/macos/${pkgid}.plist" "${workdir}/Library/LaunchAgents/"
 install -d "${workdir}/etc/paths.d/"
 install -v -m 0644 "${root}/pkg/macos/40-proxydetox" "${workdir}/etc/paths.d/"
+install -d "${workdir}/${prefix}/libexec/"
+install -v "${setproxy_helper}" "${workdir}/${prefix}/libexec/setproxy_helper"
 
 version=$(sed -n 's/^version[ \t]*=[ \t]*"\([0-9.]*\)"/\1/p' "${root}/proxydetox/Cargo.toml")
 pkgfile=proxydetox-${version}-x86_64-apple-darwin.pkg
