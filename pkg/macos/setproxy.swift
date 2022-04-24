@@ -160,9 +160,7 @@ func main(_ args: [String]) throws {
   for key in netServices.allKeys {
     let dict = netServices.object(forKey: key) as? NSDictionary
     let hardware = ((dict?["Interface"]) as? NSDictionary)?["Hardware"] as? String
-    dump(hardware)
     if hardware == "AirPort" || hardware == "Ethernet" {
-      // dump(dict)
       let path = "/\(kSCPrefNetworkServices)/\(key)/\(kSCEntNetProxies)"
       let proxySettings = createProxySettingsDictionary(port: arguments.port)
       let ok = scPrefs.setValue(key: path as CFString, value: proxySettings as CFDictionary)
