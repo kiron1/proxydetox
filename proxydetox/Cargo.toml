@@ -1,6 +1,6 @@
 [package]
 name = "proxydetox"
-version = "0.4.9"
+version = "0.5.0"
 edition = "2021"
 homepage = "https://proxydetox.colorto.cc/"
 
