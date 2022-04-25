@@ -123,22 +123,28 @@ class SysConPrefs {
 }
 
 /// Port of 0 means to disable
-func createProxySettingsDictionary(port: UInt16) -> [String: AnyObject] {
-  let ip = port != 0 ? "127.0.0.1" : ""
+func createProxySettingsDictionary(port: UInt16) -> NSDictionary {
+  let ip = "127.0.0.1"
   let enable = port != 0 ? 1 : 0
 
   var proxySettings: [String: AnyObject] = [:]
-  proxySettings[kCFNetworkProxiesHTTPProxy as String] = ip as AnyObject
   proxySettings[kCFNetworkProxiesHTTPEnable as String] = enable as AnyObject
-  proxySettings[kCFNetworkProxiesHTTPSProxy as String] = ip as AnyObject
   proxySettings[kCFNetworkProxiesHTTPSEnable as String] = enable as AnyObject
   if enable != 0 {
+    proxySettings[kCFNetworkProxiesHTTPProxy as String] = ip as AnyObject
     proxySettings[kCFNetworkProxiesHTTPPort as String] = port as AnyObject
+    proxySettings[kCFNetworkProxiesHTTPSProxy as String] = ip as AnyObject
     proxySettings[kCFNetworkProxiesHTTPSPort as String] = port as AnyObject
   } else {
+    proxySettings[kCFNetworkProxiesHTTPProxy as String] = nil
     proxySettings[kCFNetworkProxiesHTTPPort as String] = nil
+    proxySettings[kCFNetworkProxiesHTTPSProxy as String] = nil
     proxySettings[kCFNetworkProxiesHTTPSPort as String] = nil
   }
+  proxySettings[kCFNetworkProxiesProxyAutoDiscoveryEnable as String] = false as AnyObject
+  proxySettings[kCFNetworkProxiesProxyAutoConfigEnable as String] = false as AnyObject
+  proxySettings[kCFNetworkProxiesSOCKSEnable as String] = false as AnyObject
+  proxySettings[kCFNetworkProxiesGopherEnable as String] = false as AnyObject
   proxySettings[kCFNetworkProxiesExceptionsList as String] =
     [
       "::1",
@@ -147,7 +153,7 @@ func createProxySettingsDictionary(port: UInt16) -> [String: AnyObject] {
       "*.local",
     ] as AnyObject
 
-  return proxySettings
+  return proxySettings as NSDictionary
 }
 
 func main(_ args: [String]) throws {
@@ -157,27 +163,34 @@ func main(_ args: [String]) throws {
   let scPrefs = try SysConPrefs.createWithAuthorization(name: "Proxydetox", token: authToken).get()
   let netServices = scPrefs.getValue(key: kSCPrefNetworkServices)!
 
+  var dirty = false
   for key in netServices.allKeys {
     let dict = netServices.object(forKey: key) as? NSDictionary
-    let hardware = ((dict?["Interface"]) as? NSDictionary)?["Hardware"] as? String
+    let hardware = ((dict?[kSCEntNetInterface]) as? NSDictionary)?["Hardware"] as? String
     if hardware == "AirPort" || hardware == "Ethernet" {
       let path = "/\(kSCPrefNetworkServices)/\(key)/\(kSCEntNetProxies)"
       let proxySettings = createProxySettingsDictionary(port: arguments.port)
-      let ok = scPrefs.setValue(key: path as CFString, value: proxySettings as CFDictionary)
-      if !ok {
-        print("failed to set System Configuration Preferences")
+      let changed = (dict?[kSCEntNetProxies] as AnyObject).isNotEqual(to: proxySettings)
+      if changed {
+        dirty = true
+        let ok = scPrefs.setValue(key: path as CFString, value: proxySettings as CFDictionary)
+        if !ok {
+          print("failed to set System Configuration Preferences for \(key)")
+        }
       }
     }
   }
-  let commitOk = scPrefs.commitChanges()
-  if !commitOk {
-    print("failed to commit System Configuration Preferences")
+  if dirty {
+    let commitOk = scPrefs.commitChanges()
+    if !commitOk {
+      print("failed to commit System Configuration Preferences")
+    }
+    let applyOk = scPrefs.applyChanges()
+    if !applyOk {
+      print("failed to apply System Configuration Preferences")
+    }
+    scPrefs.synchronize()
   }
-  let applyOk = scPrefs.applyChanges()
-  if !applyOk {
-    print("failed to apply System Configuration Preferences")
-  }
-  scPrefs.synchronize()
 }
 
 do {
