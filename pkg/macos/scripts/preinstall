@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -eu
+set -u
 
 oldlabel=com.github.kiron1.proxydetox
 agentplist=/Library/LaunchAgents/${oldlabel}.plist
@@ -9,6 +9,7 @@ agentplist=/Library/LaunchAgents/${oldlabel}.plist
 if [ -e "${agentplist}" ]; then
   loggedInUser=$(echo "show State: /Users/ConsoleUser" | scutil | awk '/Name : / && ! / loginwindow/ { print $3 }')
   loggedInUID=$(id -u "${loggedInUser}")
+  launchctl kill TERM "gui/${loggedInUID}/${oldlabel}"
   launchctl bootout "gui/${loggedInUID}" "${agentplist}"
   rm -f "${agentplist}"
 fi
