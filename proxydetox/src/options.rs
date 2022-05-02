@@ -66,7 +66,7 @@ impl Options {
         };
         let app: _ = Command::new(env!("CARGO_PKG_NAME"))
             .version(&*version)
-            .about("A small proxy to relive the pain of some corporate proxies")
+            .about("A small proxy to relieve the pain of some corporate proxies")
             .args_override_self(true);
 
         #[cfg(feature = "negotiate")]

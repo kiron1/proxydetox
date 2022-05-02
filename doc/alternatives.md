@@ -1,11 +1,11 @@
 # Alternative solutions
 
-- [Squid][squid]: using the[cache_peer][cache_peer] directive and translating
+- [Squid][squid]: using the [cache_peer][cache_peer] directive and translating
   the given PAC file into Squid ACLs.
 - [SpechtLite][specht]: and translating the PAC file into the SpechtLite YAML
   configuration format (**unmaintained**).
 - [Px][px]: A HTTP proxy server to automatically authenticate through an NTLM
-  proxy (can handle PAC files).
+  proxy (can handle PAC files). Written in Python and focus more on Windows machines.
 - [Cntlm][cntlm]: a NTLM / NTLMv2 authenticating HTTP/1.1 proxy. Cannot handle
   PAC files (**unmaintained**).
 

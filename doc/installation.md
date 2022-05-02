@@ -17,6 +17,25 @@ Pre build binaries are available for the following platforms:
    sudo dpkg --install proxydetox-*-x86_64-linux.deb
    ```
 
+### Register Proxydetox as systemd user daemon
+
+The Debian package comes with systemd service file.
+
+Enabling Proxydetox and starting it, can be done with the following commands:
+
+```sh
+systemctl --user daemon-reload
+systemctl --user enable proxydetox
+systemctl --user start proxydetox
+```
+
+To disable and stop it please use:
+
+```sh
+systemctl --user stop proxydetox
+systemctl --user disable proxydetox
+```
+
 ## macOS
 
 1. Download the [`proxydetox-*-x86_64-apple-darwin.pkg`][releases] package.
@@ -33,7 +52,7 @@ The above steps installed a LaunchAgent for proxydetox named
 **Info**: Since the `installer` command is run as the `root` user (to be able to write the files to
 the system directories) it cannot know for which user the launch agent needs to be enabled.
 
-The following steps need to be executed as the user who wants to use proxydetox (i.e. *not* as
+The following steps need to be executed as the user who wants to use proxydetox (i.e. _not_ as
 _root_).
 
 ```sh

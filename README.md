@@ -2,7 +2,7 @@
 
 ![Proxydetox build status of main branch](https://github.com/kiron1/proxydetox/actions/workflows/main.yaml/badge.svg)
 
-A small proxy to relive the pain of some corporate proxies.
+A small proxy to relieve the pain of some corporate proxies.
 
 Proxydetox can act as an intermediate HTTP proxy for your local applications
 and actual HTTP proxy. Proxydetox will select the correct upstream proxy based
@@ -13,7 +13,6 @@ supported.
 
 With Proxydetox in place, most local applications can be configured to use the
 proxy by setting the environment variables `http_proxy`, and `https_proxy`.
-
 
 Proxydetox is compatible with POSIX-compliant systems (tested on Ubuntu and
 OpenBSD), macOS, and Windows.
