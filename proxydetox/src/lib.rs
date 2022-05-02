@@ -4,6 +4,7 @@ pub mod client;
 pub mod connect;
 pub mod net;
 pub mod session;
+pub mod socket;
 
 pub use crate::net::http_file;
 pub use crate::session::Session;
