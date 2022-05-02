@@ -52,10 +52,26 @@ async fn load_pac_file(opt: &Options) -> (Option<String>, std::io::Result<String
 
 fn main() {
     let config = Options::load();
-    if let Err(cause) = run(&config) {
-        tracing::error!(%cause, "fatal error");
+    if let Err(error) = run(&config) {
+        tracing::error!(%error, "fatal error");
+        write_error(&mut std::io::stderr(), error).ok();
         std::process::exit(1);
     }
+}
+
+fn write_error<W, E: 'static>(writer: &mut W, error: E) -> std::io::Result<()>
+where
+    E: std::error::Error + Send + Sync,
+    W: std::io::Write,
+{
+    writeln!(writer, "fatal error: {}", error)?;
+    if let Some(cause) = error.source() {
+        writeln!(writer, "Caused by:")?;
+        for (i, e) in std::iter::successors(Some(cause), |e| e.source()).enumerate() {
+            writeln!(writer, "{}: {}", i, e)?;
+        }
+    }
+    Ok(())
 }
 
 #[tokio::main]
