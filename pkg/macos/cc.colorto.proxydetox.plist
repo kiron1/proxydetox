@@ -4,12 +4,32 @@
   <dict>
     <key>Label</key>
     <string>cc.colorto.proxydetox</string>
-    <key>RunAtLoad</key>
-    <true/>
     <key>ProgramArguments</key>
     <array>
       <string>/opt/proxydetox/bin/proxydetox</string>
+      <string>--activate-socket</string>
+      <string>Listeners</string>
     </array>
+    <!--
+    <key>StandardOutPath</key>
+    <string>/tmp/proxydetox.log</string>
+    -->
+    <key>Sockets</key>
+    <dict>
+      <key>Listeners</key>
+      <dict>
+        <key>SockNodeName</key>
+        <string>127.0.0.1</string>
+        <key>SockServiceName</key>
+        <string>3128</string>
+        <key>SockType</key>
+        <string>stream</string>
+        <key>SockProtocol</key>
+        <string>TCP</string>
+        <key>SockFamily</key>
+        <string>IPv4</string>
+      </dict>
+    </dict>
     <key>SoftResourceLimits</key>
     <dict>
       <key>NumberOfFiles</key>

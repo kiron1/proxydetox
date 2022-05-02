@@ -7,6 +7,7 @@ mod options;
 
 use options::{Authorization, Options};
 use proxydetox::auth::netrc;
+use proxydetox::socket;
 use proxydetox::{auth::AuthenticatorFactory, http_file};
 use std::fs::{read_to_string, File};
 use std::net::SocketAddr;
@@ -126,8 +127,21 @@ async fn run(config: &Options) -> Result<(), proxydetox::Error> {
         .direct_fallback(config.direct_fallback)
         .build();
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], config.port));
-    let server = hyper::Server::bind(&addr).serve(session);
+    let server = if let Some(name) = &config.activate_socket {
+        let sockets = socket::activate_socket(name)?;
+        let listener: Vec<std::net::TcpListener> = sockets.take();
+        // TODO: currently we only support one listener socket
+        let listener = listener
+            .into_iter()
+            .next()
+            .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "no socket found"))?;
+        hyper::Server::from_tcp(listener)?
+    } else {
+        let addr = SocketAddr::from(([127, 0, 0, 1], config.port));
+        hyper::Server::try_bind(&addr)?
+    };
+    let server = server.serve(session);
+
     let addr = server.local_addr();
     let (shutdown_tx, shutdown_rx) = oneshot::channel();
     let server = server.with_graceful_shutdown(async {

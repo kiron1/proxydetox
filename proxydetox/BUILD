@@ -18,6 +18,7 @@ rust_library(
         "src/session/builder.rs",
         "src/session/peer.rs",
         "src/session/shared.rs",
+        "src/socket.rs",
     ],
     compile_data = [
         "src/502.html",
@@ -43,6 +44,7 @@ rust_library(
         "//proxydetox/cargo:futures_util",
         "//proxydetox/cargo:http",
         "//proxydetox/cargo:hyper",
+        "//proxydetox/cargo:libc",
         "//proxydetox/cargo:netrc",
         "//proxydetox/cargo:parking_lot",
         "//proxydetox/cargo:thiserror",

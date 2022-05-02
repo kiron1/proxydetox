@@ -23,6 +23,7 @@ pub struct Options {
     pub connect_timeout: std::time::Duration,
     pub direct_fallback: bool,
     pub always_use_connect: bool,
+    pub activate_socket: Option<String>,
     pub port: u16,
 }
 
@@ -100,6 +101,12 @@ impl Options {
                     .multiple_occurrences(true)
                     .help("Decreases verbosity level"),
             )
+            .arg(
+                 Arg::new("activate_socket")
+                     .long("activate-socket")
+                     .help("Socket name create by the service manager which needs to be activated")
+                     .takes_value(true),
+             )
             .arg(
                 Arg::new("port")
                     .short('P')
@@ -186,6 +193,7 @@ impl From<ArgMatches> for Options {
                 .value_of("connect_timeout")
                 .map(|s| std::time::Duration::from_secs(s.parse::<u64>().unwrap()))
                 .expect("default value for connect_timeout"),
+            activate_socket: m.value_of("activate_socket").map(String::from),
             port: m
                 .value_of("port")
                 .map(|s| s.parse::<u16>().unwrap())
