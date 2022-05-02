@@ -31,7 +31,7 @@ Create a file `~/Library/LaunchAgents/cc.colorto.proxydetox.plist`, you can use
 [`cc.colorto.proxydetox.plist`][plist] as template, but make sure to update the
 `ProgramArguments` value with an _absolute_ path.
 
-The following steps need to be executed as the user who wants to use proxydetox (i.e. *not* as
+The following steps need to be executed as the user who wants to use proxydetox (i.e. _not_ as
 _root_).
 
 ```sh

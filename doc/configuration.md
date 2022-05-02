@@ -17,8 +17,8 @@ The `.netrc` file is expected to be located in the `HOME` directory on all
 platforms. If needed, the location can be specified via the `--netrc-file` flag
 when invoking Proxydetox.
 
-For `proxydetoxrc` and `proxy.pac` at a user configurable location and system
-wide location is searched.
+The configuration files `proxydetoxrc` and `proxy.pac` are searched at user
+configurable location and system wide locations.
 
 For the different platforms, the user configurable location is as follows:
 
@@ -36,7 +36,27 @@ POSIX-compliant systems like **BSD**, **macOS**, and **Linux**:
 
 Windows:
 
-- `.` (the directory of the the executable)
+- `.` (the directory of the executable)
+
+## `proxydetoxrc` file format
+
+The `proxydetoxrc` file lists all options which are usually provided via the
+command line to `proxydetox`.
+
+### Example
+
+```sh
+proxydeox --negotiate --port 8080 --pac-file http://example.org/proxy.pac
+```
+
+Is equivalent with a `proxydetoxrc` file at one of the well known locations
+listed above with the following content:
+
+```
+--negotiate
+--port 8080
+--pac-file http://example.org/proxy.pac
+```
 
 ## Negotiate authentication
 
@@ -60,7 +80,29 @@ clear text on disk and the password is transferred unencrypted.
 ## Proxy Auto-Configuration (PAC) file
 
 A copy of the PAC file `proxy.pac` must be places in on of directories searched
-by Proxydetox or specified via the `--pac-file` option. The PAC file is usually
+by Proxydetox or specified via the `--pac-file` option. The PAC file can be also
+a HTTP URL. The content will then be downloaded from the given location.
+
+The PAC file is usually
 maintained by the network administrators. The path (usually some http location
 in the intranet) can be retrieved from the settings of the pre-configured
 internet browser.
+
+### Examples
+
+```
+proxydetox --pac-file http://example.org/proxy.pac
+```
+
+```
+proxydetox --pac-file /tmp/test.pac
+```
+
+## Configuration options
+
+The full list of configuration options can be retrieved with:
+
+```sh
+proxydetox --help
+```
+

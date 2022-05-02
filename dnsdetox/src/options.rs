@@ -22,7 +22,7 @@ impl Options {
     pub fn load() -> Self {
         let app: _ = Command::new(env!("CARGO_PKG_NAME"))
             .version(env!("CARGO_PKG_VERSION"))
-            .about("A small DNS proxy to relive the pain of some corporate networks")
+            .about("A small DNS proxy to relieve the pain of some corporate networks")
             .args_override_self(true);
 
         let app = app

@@ -1,6 +1,6 @@
 # Introduction to Proxydetox
 
-A small proxy to relive the pain of some corporate proxies.
+A small proxy to relieve the pain of some corporate proxies.
 
 Proxydetox can act as an intermediate HTTP proxy for your local applications and
 actual HTTP proxy. Proxydtox will talk to the actual corporate HTTP proxies on
@@ -24,7 +24,7 @@ Proxydetox supports the following systems:
 - macOS
 - Windows
 
-Prebuild versions of Proxydetox can be found on [the releaes page][releases].
+Pre build versions of Proxydetox can be found on [the releases page][releases].
 Installation instructions are provided in the
 [installation section](installation.md).
 
