@@ -1,7 +1,8 @@
 use crate::net::copy_bidirectional;
+use detox_net::Metered;
 use http::{Request, Response, Uri};
 use hyper::Body;
-use std::{future::Future, pin::Pin};
+use std::{future::Future, pin::Pin, time::Instant};
 use tokio::net::TcpStream;
 use tracing_futures::Instrument;
 
@@ -82,12 +83,27 @@ impl tower::Service<Request<Body>> for Handshake {
     fn call(&mut self, req: Request<Body>) -> Self::Future {
         let stream = self.stream.take();
         let res = async move {
-            if let Some(mut stream) = stream {
+            if let Some(stream) = stream {
                 let remote_addr = stream.peer_addr().ok();
                 let upgrade_task = async move {
                     match hyper::upgrade::on(req).await {
-                        Ok(mut upgraded) => {
+                        Ok(upgraded) => {
+                            let begin = Instant::now();
+                            let mut upgraded = Metered::new(upgraded);
+                            let mut stream = Metered::new(stream);
                             let cp = copy_bidirectional(&mut upgraded, &mut stream).await;
+                            if let Err(cause) = cp.as_ref() {
+                                let dt = Instant::now() - begin;
+                                tracing::error!(
+                                    %cause,
+                                    ?dt,
+                                    upstream_in = %stream.bytes_read(),
+                                    upstream_out = %stream.bytes_written(),
+                                    downstream_in = %upgraded.bytes_read(),
+                                    downstream_out = %upgraded.bytes_written(),
+                                    "tunnel error"
+                                );
+                            }
                             if let Err(cause) = cp {
                                 tracing::error!(%cause, "tunnel error")
                             }

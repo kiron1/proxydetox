@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 http = "0.2"
 thiserror = "1.0"
+tokio = "1"

@@ -5,10 +5,12 @@ rust_library(
     srcs = [
         "src/host_and_port.rs",
         "src/lib.rs",
+        "src/metered.rs",
     ],
     visibility = ["//visibility:public"],
     deps = [
         "//proxy_client/cargo:http",
         "//proxy_client/cargo:thiserror",
+        "//proxy_client/cargo:tokio",
     ],
 )
