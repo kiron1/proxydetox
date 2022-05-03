@@ -131,7 +131,7 @@ impl PeerSession {
                     upstream_proxy = Some(proxy.to_owned());
                     break;
                 }
-                Err(cause) => tracing::warn!(%cause, "connecting failed"),
+                Err(cause) => tracing::warn!(%cause, %proxy, "connecting failed"),
             }
         }
 
