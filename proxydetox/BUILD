@@ -43,6 +43,7 @@ rust_library(
         "//proxydetox/cargo:futures_util",
         "//proxydetox/cargo:http",
         "//proxydetox/cargo:hyper",
+        "//proxydetox/cargo:lazy_static",
         "//proxydetox/cargo:libc",
         "//proxydetox/cargo:netrc",
         "//proxydetox/cargo:thiserror",

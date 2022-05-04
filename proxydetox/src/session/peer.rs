@@ -8,9 +8,13 @@ use std::sync::Arc;
 use std::task::{self, Poll};
 
 use futures_util::stream::StreamExt;
-use http::header::{ACCEPT, CACHE_CONTROL, CONTENT_LENGTH, CONTENT_TYPE, HOST, USER_AGENT};
-use http::{Request, Response};
+use http::header::{
+    HeaderName, HeaderValue, ACCEPT, CACHE_CONTROL, CONNECTION, CONTENT_LENGTH, CONTENT_TYPE, HOST,
+    PROXY_AUTHENTICATE, PROXY_AUTHORIZATION, TE, TRAILER, TRANSFER_ENCODING, UPGRADE, USER_AGENT,
+};
+use http::{HeaderMap, Request, Response};
 use hyper::Body;
+use lazy_static::lazy_static;
 use tokio_stream::wrappers::BroadcastStream;
 use tower::{util::BoxService, Service};
 use tracing_attributes::instrument;
@@ -23,6 +27,35 @@ use super::Result;
 use super::Shared;
 use crate::accesslog;
 use paclib::proxy::ProxyDesc;
+
+lazy_static! {
+    // "proxy-connection" is not an official header, but used by many clients.
+    // https://stackoverflow.com/a/62722840
+    static ref PROXY_CONNECTION: HeaderName = HeaderName::from_static("proxy-connection");
+    static ref HOP_BY_HOP_HEADERS: [&'static HeaderName; 7] = [
+        // &CONNECTION is already handled
+        &PROXY_AUTHENTICATE,
+        &PROXY_AUTHORIZATION,
+        &PROXY_CONNECTION,
+        &TE,
+        &TRAILER,
+        &TRANSFER_ENCODING,
+        // A server MAY ignore a received Upgrade header field if it wishes to
+        // continue using the current protocol on that connection. Upgrade
+        // cannot be used to insist on a protocol change. [...] A server MUST
+        // NOT switch to a protocol that was not indicated by the client in the
+        // corresponding request's Upgrade header field.
+        // https://datatracker.ietf.org/doc/html/rfc7230#section-6.7
+
+        // _Proxy Usage_: If the client is configured to use a proxy when
+        // using the WebSocket Protocol to connect to host /host/ and port
+        // /port/, then the client SHOULD connect to that proxy and ask it
+        // to open a TCP connection to the host given by /host/ and the port
+        // given by /port/.
+        // https://datatracker.ietf.org/doc/html/rfc6455#section-4.1
+        &UPGRADE,
+    ];
+}
 
 #[derive(Clone)]
 pub struct PeerSession {
@@ -55,12 +88,7 @@ impl PeerSession {
                 .and_then(|v| v.to_str().ok())
                 .map(|s| s.to_owned()),
         );
-        // Remove hop-by-hop headers which are meant for the proxy.
-        // "proxy-connection" is not an official header, but used by many clients.
-        let _proxy_connection = req
-            .headers_mut()
-            .remove(http::header::HeaderName::from_static("proxy-connection"));
-        let _proxy_auth = req.headers_mut().remove(http::header::PROXY_AUTHORIZATION);
+        remove_hop_by_hop_headers(req.headers_mut());
 
         let proxies = {
             let mut proxies = self.shared.find_proxy(req.uri());
@@ -78,10 +106,14 @@ impl PeerSession {
             .establish_connection(proxies, req.method(), req.uri())
             .await;
 
-        let (res, proxy) = match conn {
+        let (mut res, proxy) = match conn {
             Ok((mut client, proxy)) => (client.call(req).await, proxy),
             Err(e) => return Err(e),
         };
+
+        if let Ok(ref mut res) = res {
+            remove_hop_by_hop_headers(res.headers_mut());
+        }
 
         let entry = match &res {
             Ok(res) => access.success(
@@ -174,20 +206,14 @@ impl PeerSession {
             self.shared.eval.lock().unwrap().cache()
         );
         let resp = Response::builder()
-            .header(
-                CONTENT_TYPE,
-                http::header::HeaderValue::from_static("text/html"),
-            )
+            .header(CONTENT_TYPE, HeaderValue::from_static("text/html"))
             .body(Body::from(body))?;
         Ok(resp)
     }
 
     fn accesslog_html(&self) -> Result<Response<Body>> {
         let resp = Response::builder()
-            .header(
-                CONTENT_TYPE,
-                http::header::HeaderValue::from_static("text/html"),
-            )
+            .header(CONTENT_TYPE, HeaderValue::from_static("text/html"))
             .body(Body::from(include_str!("../accesslog.html")))?;
         Ok(resp)
     }
@@ -208,14 +234,8 @@ impl PeerSession {
         });
 
         let resp = Response::builder()
-            .header(
-                CACHE_CONTROL,
-                http::header::HeaderValue::from_static("no-store"),
-            )
-            .header(
-                CONTENT_TYPE,
-                http::header::HeaderValue::from_static("text/event-stream"),
-            )
+            .header(CACHE_CONTROL, HeaderValue::from_static("no-store"))
+            .header(CONTENT_TYPE, HeaderValue::from_static("text/event-stream"))
             .body(Body::wrap_stream(stream))?;
         Ok(resp)
     }
@@ -256,7 +276,7 @@ impl Service<Request<Body>> for PeerSession {
     }
 }
 
-fn proxy_pac(host: Option<&http::HeaderValue>) -> Result<Response<Body>> {
+fn proxy_pac(host: Option<&HeaderValue>) -> Result<Response<Body>> {
     let body = format!(
         "function FindProxyForURL(url, host) {{ return \"PROXY {}\"; }}\n",
         host.and_then(|h| h.to_str().ok())
@@ -265,8 +285,45 @@ fn proxy_pac(host: Option<&http::HeaderValue>) -> Result<Response<Body>> {
     let resp = Response::builder()
         .header(
             CONTENT_TYPE,
-            http::header::HeaderValue::from_static("application/x-ns-proxy-autoconfig"),
+            HeaderValue::from_static("application/x-ns-proxy-autoconfig"),
         )
         .body(Body::from(body))?;
     Ok(resp)
+}
+
+fn remove_hop_by_hop_headers(headers: &mut HeaderMap) {
+    // Remove hop-by-hop headers which must not be forwarded.
+    if let Some(connection) = headers.remove(CONNECTION) {
+        if let Ok(connection) = connection.to_str() {
+            let iter = connection
+                .split(',')
+                .map(|h| h.trim())
+                .filter(|h| !h.is_empty());
+            for name in iter {
+                headers.remove(name.trim());
+            }
+        }
+    }
+    for header in HOP_BY_HOP_HEADERS.iter() {
+        headers.remove(*header);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn remove_hop_by_hop_headers_1() {
+        let keep_alive: HeaderName = HeaderName::from_static("keep-alive");
+        let mut headers = HeaderMap::new();
+        headers.insert(&HOST, HeaderValue::from_static("example.org"));
+        headers.insert(&*PROXY_CONNECTION, HeaderValue::from_static("Close"));
+        headers.insert(&CONNECTION, HeaderValue::from_static("Keep-Alive"));
+        headers.insert(&keep_alive, HeaderValue::from_static("max=1"));
+        remove_hop_by_hop_headers(&mut headers);
+        assert!(headers.contains_key(&HOST));
+        assert!(!headers.contains_key(&*PROXY_CONNECTION));
+        assert!(!headers.contains_key(&CONNECTION));
+        assert!(!headers.contains_key(&keep_alive));
+    }
 }
