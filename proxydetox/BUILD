@@ -15,6 +15,9 @@ rust_library(
         "src/lib.rs",
         "src/net.rs",
         "src/session.rs",
+        "src/session/builder.rs",
+        "src/session/peer.rs",
+        "src/session/shared.rs",
     ],
     compile_data = [
         "src/502.html",
