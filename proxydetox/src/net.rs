@@ -1,25 +1,53 @@
+use detox_net::Metered;
 use http::header::LOCATION;
 use http::{Response, StatusCode, Uri};
 use hyper::body::Buf;
 use hyper::Body;
 use std::io::prelude::*;
 use std::io::{Error, ErrorKind};
+use std::time::Instant;
 use tokio::io::{AsyncRead, AsyncWrite};
 
 /// Calls tokio::io::copy_bidirectional but ignores some of the common errors.
-pub(crate) async fn copy_bidirectional<A, B>(a: &mut A, b: &mut B) -> Result<(), std::io::Error>
+pub(crate) async fn copy_bidirectional<A, B>(
+    upstream: &mut A,
+    downstream: &mut B,
+) -> Result<(), std::io::Error>
 where
     A: AsyncRead + AsyncWrite + Unpin + ?Sized,
     B: AsyncRead + AsyncWrite + Unpin + ?Sized,
 {
-    let cp = tokio::io::copy_bidirectional(a, b).await;
-    match cp {
+    let mut upstream = Metered::new(upstream);
+    let mut downstream = Metered::new(downstream);
+    let begin = Instant::now();
+    let cp = tokio::io::copy_bidirectional(&mut upstream, &mut downstream)
+        .await
+        .map(|_| ());
+
+    // Ignore errors which we cannot influence (e.g. peer is terminating the
+    // connection without a clean shutdown/close)
+    #[cfg(not(debug_assertions))]
+    let cp = match cp {
         Ok(_) => Ok(()),
         Err(e) => match e.kind() {
             ErrorKind::ConnectionReset | ErrorKind::BrokenPipe => Ok(()),
             _ => Err(e),
         },
+    };
+
+    if let Err(ref cause) = cp {
+        let dt = Instant::now() - begin;
+        tracing::error!(
+            %cause,
+            ?dt,
+            upstream_in = %upstream.bytes_read(),
+            upstream_out = %upstream.bytes_written(),
+            downstream_in = %downstream.bytes_read(),
+            downstream_out = %downstream.bytes_written(),
+            "tunnel error"
+        );
     }
+    cp
 }
 
 pub async fn read_to_string(res: Response<Body>) -> std::io::Result<String> {

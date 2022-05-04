@@ -1,4 +1,4 @@
-use detox_net::{HostAndPort, Metered};
+use detox_net::HostAndPort;
 use http::{header::CONNECTION, Request, Response, StatusCode};
 use hyper::client::conn;
 use hyper::Body;
@@ -11,7 +11,6 @@ use std::{
         atomic::{AtomicBool, Ordering},
         Arc,
     },
-    time::Instant,
 };
 use tracing::Instrument;
 
@@ -168,28 +167,15 @@ async fn upgrade_downstream_upstream(
 ) -> Result<Response<Body>> {
     // Upgrade connection to parent proxy
     match hyper::upgrade::on(upstream_response).await {
-        Ok(parent_upgraded) => {
+        Ok(mut parent_upgraded) => {
             // On a successful upgrade to the parent proxy, upgrade the
             // request of the client (the original request maker)
             let upgrade_task = async move {
                 match hyper::upgrade::on(&mut req).await {
-                    Ok(client_upgraded) => {
-                        let begin = Instant::now();
-                        let mut pu = Metered::new(parent_upgraded);
-                        let mut cu = Metered::new(client_upgraded);
-                        let cp = copy_bidirectional(&mut pu, &mut cu).await;
-                        if let Err(cause) = cp {
-                            let dt = Instant::now() - begin;
-                            tracing::error!(
-                                %cause,
-                                ?dt,
-                                upstream_in = %pu.bytes_read(),
-                                upstream_out = %pu.bytes_written(),
-                                downstream_in = %cu.bytes_read(),
-                                downstream_out = %cu.bytes_written(),
-                                "tunnel error"
-                            );
-                        }
+                    Ok(mut client_upgraded) => {
+                        copy_bidirectional(&mut parent_upgraded, &mut client_upgraded)
+                            .await
+                            .ok();
                     }
                     Err(cause) => tracing::error!(%cause, "upgrade error"),
                 }
