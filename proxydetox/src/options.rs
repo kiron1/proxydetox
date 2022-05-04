@@ -3,6 +3,7 @@ use std::{
     fs::read_to_string,
     path::{Path, PathBuf},
     str::FromStr,
+    time::Duration,
 };
 
 use clap::{Arg, ArgMatches, Command};
@@ -20,11 +21,12 @@ pub struct Options {
     pub log_level: LevelFilter,
     pub pac_file: Option<String>,
     pub authorization: Authorization,
-    pub connect_timeout: std::time::Duration,
+    pub connect_timeout: Duration,
     pub direct_fallback: bool,
     pub always_use_connect: bool,
     pub activate_socket: Option<String>,
     pub port: u16,
+    pub graceful_shutdown_timeout: Duration,
 }
 
 fn is_num<T: FromStr + PartialOrd>(v: &str) -> Result<(), String> {
@@ -145,6 +147,14 @@ impl Options {
                     .validator(is_num::<f32>)
                     .takes_value(true)
                     .default_value("10"),
+            )
+            .arg(
+                Arg::new("graceful_shutdown_timeout")
+                    .long("graceful-shutdown-timeout")
+                    .help("Timeout to wait for a graceful shutdown")
+                    .validator(is_num::<f32>)
+                    .takes_value(true)
+                    .default_value("30"),
             );
 
         let matches = app.get_matches_from(args);
@@ -191,13 +201,17 @@ impl From<ArgMatches> for Options {
             direct_fallback: m.is_present("direct_fallback"),
             connect_timeout: m
                 .value_of("connect_timeout")
-                .map(|s| std::time::Duration::from_secs(s.parse::<u64>().unwrap()))
+                .map(|s| Duration::from_secs(s.parse::<u64>().unwrap()))
                 .expect("default value for connect_timeout"),
             activate_socket: m.value_of("activate_socket").map(String::from),
             port: m
                 .value_of("port")
                 .map(|s| s.parse::<u16>().unwrap())
                 .expect("default value for port"),
+            graceful_shutdown_timeout: m
+                .value_of("graceful_shutdown_timeout")
+                .map(|s| Duration::from_secs(s.parse().unwrap()))
+                .expect("default value for graceful_shutdown_timeout"),
         }
     }
 }

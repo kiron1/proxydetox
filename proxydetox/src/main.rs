@@ -164,10 +164,12 @@ async fn run(config: &Options) -> Result<(), proxydetox::Error> {
         shutdown_rx.await.ok();
     });
 
+    let (timeout_tx, timeout_rx) = oneshot::channel();
     #[cfg(unix)]
     {
         use tokio::signal::unix::signal;
         use tokio::signal::unix::SignalKind;
+        let timeout = config.graceful_shutdown_timeout;
         let mut sigint = signal(SignalKind::interrupt())?;
         let mut sigterm = signal(SignalKind::terminate())?;
         tokio::spawn(async move {
@@ -177,6 +179,9 @@ async fn run(config: &Options) -> Result<(), proxydetox::Error> {
             }
             tracing::info!("triggering graceful shutdown");
             shutdown_tx.send(()).ok();
+            tokio::time::sleep(timeout).await;
+            tracing::info!("graceful shutdown timeout");
+            timeout_tx.send(()).ok();
         });
     }
     #[cfg(not(unix))]
@@ -185,12 +190,19 @@ async fn run(config: &Options) -> Result<(), proxydetox::Error> {
             tokio::signal::ctrl_c().await.expect("ctrl_c event");
             tracing::info!("triggering graceful shutdown");
             shutdown_tx.send(()).ok();
+            tracing::info!("graceful shutdown timeout");
+            timeout_tx.send(()).ok();
         });
     }
 
     tracing::info!(listening=?addr, authenticator=%auth, pac_file=%pac_path.unwrap_or_default(), "starting");
-    if let Err(cause) = server.await {
-        tracing::error!("fatal error: {}", cause);
+    tokio::select! {
+        s = server => {
+            if let Err(cause) = s {
+                tracing::error!(%cause, "fatal server error");
+            }
+        },
+        _ = timeout_rx => {},
     }
     Ok(())
 }
