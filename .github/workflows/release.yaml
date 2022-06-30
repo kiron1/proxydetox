@@ -34,12 +34,15 @@ jobs:
 
     strategy:
       matrix:
-        build: [linux, macos, windows]
+        build: [linux, macos-aarch64, macos-x86_64, windows]
         include:
           - build: linux
             os: ubuntu-latest
             mkcmd: ./tools/mkdeb.sh
-          - build: macos
+          - build: macos-aarch64
+            os: macos-latest
+            mkcmd: ./tools/mkpkg.sh -a aarch64 -t aarch64-apple-darwin
+          - build: macos-x86_64
             os: macos-latest
             mkcmd: ./tools/mkpkg.sh
           - build: windows
@@ -55,6 +58,13 @@ jobs:
           toolchain: stable
           profile: minimal
           override: true
+      - name: Install Rust (macos-aarach64)
+        if: ${{ matrix.build == 'macos-aarch64' }}
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: aarch64-apple-darwin
+          profile: minimal
       - uses: Swatinem/rust-cache@v1
       - name: Install Linux dependency
         run: sudo apt-get install libkrb5-dev
