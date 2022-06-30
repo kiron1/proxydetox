@@ -2,6 +2,24 @@
 
 set -eu
 
+while getopts ":a:t:" o; do
+  case "${o}" in
+  a)
+    arch=${OPTARG}
+    ;;
+  t)
+    target=${OPTARG}
+    ;;
+  *)
+    echo "fatal error: invalid arguments"
+    exit 1
+    ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+: "${arch:=$(uname -m)}"
+
 pkgid=cc.colorto.proxydetox
 prefix=/opt/proxydetox
 root=$(
@@ -18,6 +36,7 @@ cargo install \
   --path "${root}/proxydetox" \
   --root "${workdir}/${prefix}" \
   --features negotiate \
+  ${target:+--target ${target}} \
   --no-track
 swiftc -o "${setproxy_helper}" "${root}/pkg/macos/setproxy.swift"
 install -d "${workdir}/Library/LaunchAgents/"
@@ -28,7 +47,7 @@ install -d "${workdir}/${prefix}/libexec/"
 install -v "${setproxy_helper}" "${workdir}/${prefix}/libexec/setproxy_helper"
 
 version=$(sed -n 's/^version[ \t]*=[ \t]*"\([0-9.]*\)"/\1/p' "${root}/proxydetox/Cargo.toml")
-pkgfile=proxydetox-${version}-x86_64-apple-darwin.pkg
+pkgfile=proxydetox-${version}-${arch}-apple-darwin.pkg
 echo "::set-output name=version::${version}"
 echo "::set-output name=pkgfile::${pkgfile}"
 
