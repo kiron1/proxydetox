@@ -7,6 +7,7 @@ use std::{
 };
 
 use clap::{Arg, ArgMatches, Command};
+use http::Uri;
 use tracing_subscriber::filter::LevelFilter;
 
 #[derive(Debug, PartialEq)]
@@ -16,10 +17,49 @@ pub enum Authorization {
     Negotiate,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PathOrUri {
+    Path(PathBuf),
+    Uri(Uri),
+}
+
+impl PathOrUri {
+    pub async fn contents(&self) -> std::io::Result<String> {
+        match *self {
+            PathOrUri::Path(ref p) => read_to_string(p),
+            PathOrUri::Uri(ref u) => proxydetox::http_file(u.clone()).await,
+        }
+    }
+}
+
+impl FromStr for PathOrUri {
+    type Err = http::uri::InvalidUri;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.starts_with("http://") {
+            Ok(Self::from(s.parse::<Uri>()?))
+        } else {
+            Ok(Self::from(PathBuf::from(s)))
+        }
+    }
+}
+
+impl From<PathBuf> for PathOrUri {
+    fn from(path: PathBuf) -> Self {
+        Self::Path(path)
+    }
+}
+
+impl From<Uri> for PathOrUri {
+    fn from(uri: Uri) -> Self {
+        Self::Uri(uri)
+    }
+}
+
 #[derive(Debug)]
 pub struct Options {
     pub log_level: LevelFilter,
-    pub pac_file: Option<String>,
+    pub pac_file: Option<PathOrUri>,
     pub authorization: Authorization,
     pub connect_timeout: Duration,
     pub direct_fallback: bool,
@@ -45,11 +85,38 @@ fn is_file(v: &str) -> Result<(), String> {
 }
 
 fn is_file_or_http_uri(v: &str) -> Result<(), String> {
-    if v.starts_with("http://") | Path::new(&v).is_file() {
+    if (v.starts_with("http://") & v.parse::<Uri>().is_ok()) | Path::new(&v).is_file() {
         Ok(())
     } else {
         Err(format!("path '{}' is not a file nor a http URI", &v))
     }
+}
+
+fn which_pac_file() -> Option<PathBuf> {
+    // For Windows, accept a proxy.pac file located next to the binary.
+    #[cfg(target_family = "windows")]
+    let sys_pac = portable_dir("proxy.pac");
+
+    let user_pac = dirs::config_dir()
+        .unwrap_or_else(|| "".into())
+        .join("proxydetox/proxy.pac");
+    let config_locations = vec![
+        user_pac,
+        #[cfg(target_family = "unix")]
+        std::path::PathBuf::from("/etc/proxydetox/proxy.pac"),
+        #[cfg(target_family = "unix")]
+        std::path::PathBuf::from("/usr/local/etc/proxydetox/proxy.pac"),
+        #[cfg(target_os = "macos")]
+        std::path::PathBuf::from("/opt/proxydetox/etc/proxy.pac"),
+        #[cfg(target_family = "windows")]
+        sys_pac,
+    ];
+    for path in config_locations {
+        if Path::new(&path).is_file() {
+            return Some(path);
+        }
+    }
+    None
 }
 
 impl Options {
@@ -195,7 +262,10 @@ impl From<ArgMatches> for Options {
 
         Self {
             log_level,
-            pac_file: m.value_of("pac_file").map(String::from),
+            pac_file: m
+                .value_of("pac_file")
+                .map(|s| s.parse::<PathOrUri>().unwrap())
+                .or_else(|| which_pac_file().map(PathOrUri::from)),
             authorization,
             always_use_connect: m.is_present("always_use_connect"),
             direct_fallback: m.is_present("direct_fallback"),
@@ -312,7 +382,7 @@ mod tests {
             "--pac-file".into(),
             example_pac.clone().into(),
         ]);
-        assert_eq!(args.pac_file, Some(example_pac));
+        assert_eq!(args.pac_file, example_pac.parse().ok());
     }
 
     #[test]
@@ -323,7 +393,7 @@ mod tests {
             "--pac-file".into(),
             proxy_pac.clone().into(),
         ]);
-        assert_eq!(args.pac_file, Some(proxy_pac));
+        assert_eq!(args.pac_file, proxy_pac.parse().ok());
     }
 
     #[test]

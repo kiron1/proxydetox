@@ -7,48 +7,13 @@ mod options;
 
 use options::{Authorization, Options};
 use proxydetox::auth::netrc;
+use proxydetox::auth::AuthenticatorFactory;
 use proxydetox::socket;
-use proxydetox::{auth::AuthenticatorFactory, http_file};
-use std::fs::{read_to_string, File};
+use std::fs::File;
 use std::net::SocketAddr;
 use std::result::Result;
 use tokio::sync::oneshot;
 use tracing_subscriber::filter::EnvFilter;
-
-async fn load_pac_file(opt: &Options) -> (Option<String>, std::io::Result<String>) {
-    // For Windows, accept a proxy.pac file located next to the binary.
-    #[cfg(target_family = "windows")]
-    let sys_pac = options::portable_dir("proxy.pac");
-
-    if let Some(pac_path) = &opt.pac_file {
-        if pac_path.starts_with("http://") {
-            let pac = http_file(pac_path.parse().expect("URI")).await;
-            return (Some(pac_path.to_string()), pac);
-        }
-        (Some(pac_path.to_string()), read_to_string(pac_path))
-    } else {
-        let user_pac = dirs::config_dir()
-            .unwrap_or_else(|| "".into())
-            .join("proxydetox/proxy.pac");
-        let config_locations = vec![
-            user_pac,
-            #[cfg(target_family = "unix")]
-            std::path::PathBuf::from("/etc/proxydetox/proxy.pac"),
-            #[cfg(target_family = "unix")]
-            std::path::PathBuf::from("/usr/local/etc/proxydetox/proxy.pac"),
-            #[cfg(target_os = "macos")]
-            std::path::PathBuf::from("/opt/proxydetox/etc/proxy.pac"),
-            #[cfg(target_family = "windows")]
-            sys_pac,
-        ];
-        for path in config_locations {
-            if let Ok(content) = read_to_string(&path) {
-                return (Some(path.to_string_lossy().to_string()), Ok(content));
-            }
-        }
-        (None, Ok(proxydetox::DEFAULT_PAC_SCRIPT.into()))
-    }
-}
 
 fn main() {
     let config = Options::load();
@@ -100,11 +65,15 @@ async fn run(config: &Options) -> Result<(), proxydetox::Error> {
         .with_env_filter(filter)
         .init();
 
-    let (pac_path, pac_script) = load_pac_file(config).await;
-    if let Err(cause) = pac_script {
-        tracing::error!(%cause, "PAC config error");
-        return Err(cause.into());
-    }
+    let pac_script = if let Some(ref pac_file) = config.pac_file {
+        let pac_script = pac_file.contents().await;
+        if let Err(ref cause) = pac_script {
+            tracing::error!(%cause, "PAC file error, will use default PAC script");
+        }
+        pac_script.ok()
+    } else {
+        None
+    };
 
     let auth = match &config.authorization {
         #[cfg(feature = "negotiate")]
@@ -136,7 +105,7 @@ async fn run(config: &Options) -> Result<(), proxydetox::Error> {
     };
 
     let session = proxydetox::Session::builder()
-        .pac_script(pac_script.ok())
+        .pac_script(pac_script)
         .authenticator_factory(Some(auth.clone()))
         .always_use_connect(config.always_use_connect)
         .connect_timeout(config.connect_timeout)
@@ -156,7 +125,7 @@ async fn run(config: &Options) -> Result<(), proxydetox::Error> {
         let addr = SocketAddr::from(([127, 0, 0, 1], config.port));
         hyper::Server::try_bind(&addr)?
     };
-    let server = server.serve(session);
+    let server = server.serve(session.clone());
 
     let addr = server.local_addr();
     let (shutdown_tx, shutdown_rx) = oneshot::channel();
@@ -167,8 +136,7 @@ async fn run(config: &Options) -> Result<(), proxydetox::Error> {
     let (timeout_tx, timeout_rx) = oneshot::channel();
     #[cfg(unix)]
     {
-        use tokio::signal::unix::signal;
-        use tokio::signal::unix::SignalKind;
+        use tokio::signal::unix::{signal, SignalKind};
         let timeout = config.graceful_shutdown_timeout;
         let mut sigint = signal(SignalKind::interrupt())?;
         let mut sigterm = signal(SignalKind::terminate())?;
@@ -195,7 +163,34 @@ async fn run(config: &Options) -> Result<(), proxydetox::Error> {
         });
     }
 
-    tracing::info!(listening=?addr, authenticator=%auth, pac_file=%pac_path.unwrap_or_default(), "starting");
+    #[cfg(unix)]
+    {
+        use tokio::signal::unix::{signal, SignalKind};
+        let mut sighup = signal(SignalKind::hangup())?;
+        let mut sigusr1 = signal(SignalKind::user_defined1())?;
+        let pac_file = config.pac_file.clone();
+        tokio::spawn(async move {
+            loop {
+                tokio::select! {
+                    _ = sighup.recv() => {
+                        let pac_script = if let Some(ref pac_file) = pac_file {
+                            let pac_script = pac_file.contents().await;
+                            if let Err(ref cause) = pac_script {
+                                tracing::error!(%cause, "PAC file error, will use default PAC script");
+                            }
+                            pac_script.ok()
+                        } else {
+                            None
+                        };
+                        session.set_pac_script(pac_script.as_deref()).ok();
+                    },
+                    _ = sigusr1.recv() => { session.set_pac_script(None).ok();},
+                }
+            }
+        });
+    }
+
+    tracing::info!(listening=?addr, authenticator=%auth, pac_file=?config.pac_file, "starting");
     tokio::select! {
         s = server => {
             if let Err(cause) = s {

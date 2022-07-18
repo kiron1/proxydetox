@@ -30,7 +30,7 @@ fn load_netrc_store() -> netrc::Store {
         .unwrap_or_default()
 }
 
-fn load_pac_file(path: &str) -> String {
+fn load_pac_file(path: &str) -> Option<String> {
     use tokio::runtime::Runtime;
 
     let content = if path.starts_with("http://") {
@@ -45,9 +45,9 @@ fn load_pac_file(path: &str) -> String {
     };
 
     if content.trim().is_empty() {
-        proxydetox::DEFAULT_PAC_SCRIPT.into()
+        None
     } else {
-        content
+        Some(content)
     }
 }
 
@@ -75,7 +75,7 @@ pub unsafe extern "C" fn proxydetox_new(
     let auth = AuthenticatorFactory::basic(load_netrc_store());
 
     let session = proxydetox::Session::builder()
-        .pac_script(Some(pac_script))
+        .pac_script(pac_script)
         .authenticator_factory(Some(auth))
         .build();
 

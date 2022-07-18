@@ -72,6 +72,7 @@ rust_binary(
         "//proxydetox/cargo:clap",
         "//proxydetox/cargo:dirs",
         "//proxydetox/cargo:futures_util",
+        "//proxydetox/cargo:http",
         "//proxydetox/cargo:hyper",
         "//proxydetox/cargo:inotify",
         "//proxydetox/cargo:libc",

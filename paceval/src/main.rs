@@ -27,7 +27,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         contents
     };
 
-    let mut pac = Evaluator::new(&pac_content)?;
+    let mut pac = Evaluator::with_pac_script(&pac_content)?;
 
     for url in opt.urls {
         let uri = url.parse::<Uri>()?;
