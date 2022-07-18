@@ -15,7 +15,7 @@ fn find_proxy(cmd: &str, good: &str, bad: &str) {
     "#,
         cmd, endpoint
     );
-    let mut eval = Evaluator::new(&pac_script).unwrap();
+    let mut eval = Evaluator::with_pac_script(&pac_script).unwrap();
 
     assert_eq!(
         ProxyDesc::Direct,

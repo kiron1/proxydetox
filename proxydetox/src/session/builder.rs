@@ -51,7 +51,7 @@ impl Builder {
         let pac_script = self
             .pac_script
             .unwrap_or_else(|| crate::DEFAULT_PAC_SCRIPT.into());
-        let eval = Mutex::new(Evaluator::new(&pac_script).unwrap());
+        let eval = Mutex::new(Evaluator::with_pac_script(&pac_script).unwrap());
         let auth = self.auth.unwrap_or(AuthenticatorFactory::None);
         let (accesslog_tx, mut accesslog_rx) = broadcast::channel(16);
         tokio::spawn(async move {

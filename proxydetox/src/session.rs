@@ -72,6 +72,15 @@ impl Session {
     pub fn builder() -> Builder {
         Default::default()
     }
+
+    pub fn set_pac_script(
+        &self,
+        pac_script: Option<&str>,
+    ) -> std::result::Result<(), paclib::evaluator::PacScriptError> {
+        tracing::info!("update PAC script");
+        let mut eval = self.0.eval.lock();
+        eval.set_pac_script(pac_script)
+    }
 }
 
 impl std::fmt::Debug for Session {
