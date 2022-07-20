@@ -110,7 +110,7 @@ dependencies = [
  "bitflags",
  "cexpr",
  "clang-sys",
- "clap 3.2.12",
+ "clap 3.2.13",
  "env_logger",
  "lazy_static",
  "lazycell",
@@ -138,9 +138,9 @@ checksum = "14c189c53d098945499cdfa7ecc63567cf3886b3332b312a5b4585d8d3a6a610"
 
 [[package]]
 name = "bytes"
-version = "1.1.0"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c4872d67bab6358e59559027aa3b9157c53d9358c51423c17554809a8858e0f8"
+checksum = "f0b3de4a0c5e67e16066a0715723abd91edc2f9001d09c46e1dca929351e130e"
 
 [[package]]
 name = "cc"
@@ -204,9 +204,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.2.12"
+version = "3.2.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab8b79fe3946ceb4a0b1c080b4018992b8d27e9ff363644c1c9b6387c854614d"
+checksum = "ac2bd7a1eb07da9ac757c923f69373deb7bc2ba5efc951b873bcb5e693992dca"
 dependencies = [
  "atty",
  "bitflags",
@@ -309,7 +309,7 @@ dependencies = [
 name = "dnsdetox"
 version = "0.1.0"
 dependencies = [
- "clap 3.2.12",
+ "clap 3.2.13",
  "dirs",
  "dns-parser",
  "env_logger",
@@ -662,16 +662,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "lock_api"
-version = "0.4.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "327fa5b6a6940e4699ec49a9beae1ea4845c6bab9314e4f84ac68742139d8c53"
-dependencies = [
- "autocfg",
- "scopeguard",
-]
-
-[[package]]
 name = "log"
 version = "0.4.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -856,29 +846,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "parking_lot"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3742b2c103b9f06bc9fff0a37ff4912935851bee6d36f3c02bcc755bcfec228f"
-dependencies = [
- "lock_api",
- "parking_lot_core",
-]
-
-[[package]]
-name = "parking_lot_core"
-version = "0.9.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09a279cbf25cb0757810394fbc1e359949b59e348145c643a939a525692e6929"
-dependencies = [
- "cfg-if",
- "libc",
- "redox_syscall",
- "smallvec",
- "windows-sys",
-]
-
-[[package]]
 name = "peeking_take_while"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -945,12 +912,12 @@ dependencies = [
 
 [[package]]
 name = "proxydetox"
-version = "0.5.2"
+version = "0.5.3"
 dependencies = [
  "base64",
  "bytes",
  "chrono",
- "clap 3.2.12",
+ "clap 3.2.13",
  "cross-krb5",
  "detox_net",
  "dirs",
@@ -962,7 +929,6 @@ dependencies = [
  "libc",
  "netrc",
  "paclib",
- "parking_lot",
  "proxy_client",
  "thiserror",
  "tokio",
@@ -1061,12 +1027,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "scopeguard"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
-
-[[package]]
 name = "security-framework"
 version = "2.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1115,9 +1075,12 @@ dependencies = [
 
 [[package]]
 name = "slab"
-version = "0.4.6"
+version = "0.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eb703cfe953bccee95685111adeedb76fabe4e97549a58d16f03ea7b9367bb32"
+checksum = "4614a76b2a8be0058caa9dbbaf66d988527d86d003c11a94fbd335d7661edcef"
+dependencies = [
+ "autocfg",
+]
 
 [[package]]
 name = "smallvec"
@@ -1394,7 +1357,6 @@ dependencies = [
  "ansi_term",
  "matchers",
  "once_cell",
- "parking_lot",
  "regex",
  "sharded-slab",
  "smallvec",

@@ -1,11 +1,11 @@
 use std::collections::HashMap;
+use std::sync::Mutex;
 use std::time::Duration;
 
 use detox_net::HostAndPort;
 use http::Uri;
 use http::{Request, Response};
 use hyper::Body;
-use parking_lot::Mutex;
 use proxy_client::HttpProxyConnector;
 use tokio::sync::broadcast::Sender;
 use tokio::time::timeout;
@@ -34,15 +34,19 @@ pub(crate) struct Shared {
 impl Shared {
     pub(super) fn find_proxy(&self, uri: &Uri) -> paclib::Proxies {
         tokio::task::block_in_place(move || {
-            self.eval.lock().find_proxy(uri).unwrap_or_else(|cause| {
-                tracing::error!(%cause, %uri, "failed to find_proxy");
-                paclib::Proxies::direct()
-            })
+            self.eval
+                .lock()
+                .unwrap()
+                .find_proxy(uri)
+                .unwrap_or_else(|cause| {
+                    tracing::error!(%cause, %uri, "failed to find_proxy");
+                    paclib::Proxies::direct()
+                })
         })
     }
 
     pub(super) fn proxy_for(&self, endpoint: HostAndPort) -> Result<ProxyClient> {
-        let mut proxies = self.proxy_clients.lock();
+        let mut proxies = self.proxy_clients.lock().unwrap();
         match proxies.get(&endpoint) {
             Some(proxy) => Ok(proxy.clone()),
             None => {
@@ -100,7 +104,7 @@ impl Shared {
     ) -> Result<BoxService<Request<Body>, Response<Body>, Error>> {
         let client = {
             let uri = uri.clone();
-            let mut guard = self.direct_client.lock();
+            let mut guard = self.direct_client.lock().unwrap();
             guard.call(uri)
         };
         client

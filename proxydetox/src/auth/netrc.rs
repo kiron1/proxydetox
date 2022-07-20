@@ -1,8 +1,8 @@
 use http::{header::PROXY_AUTHORIZATION, HeaderValue};
-use parking_lot::RwLock;
 use std::collections::HashMap;
 use std::io::BufRead;
 use std::sync::Arc;
+use std::sync::RwLock;
 use Result;
 
 #[derive(thiserror::Error, Debug)]
@@ -89,13 +89,13 @@ impl Store {
     }
 
     pub fn update(&self, input: impl BufRead) -> Result<(), Error> {
-        let mut entries = self.entries.write();
+        let mut entries = self.entries.write().unwrap();
         *entries = Self::map_from_netrc(input)?;
         Ok(())
     }
 
     pub(crate) fn get(&self, k: &str) -> Result<String, Error> {
-        let entries = self.entries.read();
+        let entries = self.entries.read().unwrap();
         let default = &entries.default;
         entries
             .hosts
@@ -109,7 +109,7 @@ impl Store {
 impl std::fmt::Debug for Store {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_list()
-            .entries(self.entries.read().hosts.keys())
+            .entries(self.entries.read().unwrap().hosts.keys())
             .finish()
     }
 }
