@@ -169,7 +169,7 @@ impl PeerSession {
             "<!DOCTYPE html><html><h1>{}/{}</h1><h2>DNS Cache</h2><code>{:?}</code></html>",
             env!("CARGO_PKG_NAME"),
             version,
-            self.shared.eval.lock().cache()
+            self.shared.eval.lock().unwrap().cache()
         );
         let resp = Response::builder()
             .header(

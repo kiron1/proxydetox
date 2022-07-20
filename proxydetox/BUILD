@@ -46,7 +46,6 @@ rust_library(
         "//proxydetox/cargo:hyper",
         "//proxydetox/cargo:libc",
         "//proxydetox/cargo:netrc",
-        "//proxydetox/cargo:parking_lot",
         "//proxydetox/cargo:thiserror",
         "//proxydetox/cargo:tokio",
         "//proxydetox/cargo:tokio_stream",

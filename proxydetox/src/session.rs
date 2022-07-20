@@ -78,7 +78,7 @@ impl Session {
         pac_script: Option<&str>,
     ) -> std::result::Result<(), paclib::evaluator::PacScriptError> {
         tracing::info!("update PAC script");
-        let mut eval = self.0.eval.lock();
+        let mut eval = self.0.eval.lock().unwrap();
         eval.set_pac_script(pac_script)
     }
 }

@@ -2,11 +2,11 @@ use detox_net::HostAndPort;
 use http::{header::CONNECTION, Request, Response, StatusCode};
 use hyper::client::conn;
 use hyper::Body;
-use parking_lot::Mutex;
 use proxy_client::HttpProxyInfo;
 use std::{
     future::Future,
     pin::Pin,
+    sync::Mutex,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc,
@@ -65,7 +65,7 @@ impl Inner {
         &self,
         last_headers: Option<hyper::HeaderMap>,
     ) -> crate::auth::Result<hyper::HeaderMap> {
-        let auth = self.auth.lock();
+        let auth = self.auth.lock().unwrap();
         auth.step(last_headers)
     }
 }
