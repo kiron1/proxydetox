@@ -10,7 +10,7 @@ use clap::{Arg, ArgMatches, Command};
 use http::Uri;
 use tracing_subscriber::filter::LevelFilter;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Authorization {
     Basic(PathBuf),
     #[allow(dead_code)]

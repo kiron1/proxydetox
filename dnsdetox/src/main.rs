@@ -26,8 +26,8 @@ impl Upstream {
         let resp = match (pkt.questions.is_empty(), pkt.answers.is_empty()) {
             (false, true) => {
                 log::info!("ask secondary DNS server");
-                let resp = self.secondary.request(data).await?;
-                resp
+
+                self.secondary.request(data).await?
             }
             _ => resp,
         };
