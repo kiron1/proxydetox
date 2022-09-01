@@ -52,8 +52,7 @@ impl Environment {
             connection.await.ok();
         });
 
-        let response = request_sender.send_request(request).await.unwrap();
-        response
+        request_sender.send_request(request).await.unwrap()
     }
 
     pub(crate) async fn connect(

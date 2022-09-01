@@ -63,7 +63,8 @@ pub async fn read_to_string(res: Response<Body>) -> std::io::Result<String> {
 pub async fn http_file(mut uri: Uri) -> std::io::Result<String> {
     let client = hyper::Client::new();
     let mut max_redirects = 10i32;
-    let content = loop {
+
+    loop {
         let res = client
             .get(uri.clone())
             .await
@@ -82,8 +83,7 @@ pub async fn http_file(mut uri: Uri) -> std::io::Result<String> {
                 format!("too many redirects in GET {}", &uri),
             ));
         }
-    };
-    content
+    }
 }
 
 #[derive(Debug)]
