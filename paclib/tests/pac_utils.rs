@@ -56,5 +56,9 @@ fn test_local_host_or_domain_is() {
 
 #[test]
 fn test_is_resolvable() {
-    find_proxy(r#"isResolvable(host)"#, "localhost", "thishostdoesnotexist");
+    find_proxy(
+        r#"isResolvable(host)"#,
+        "localhost",
+        "thishostdoesnotexist.",
+    );
 }

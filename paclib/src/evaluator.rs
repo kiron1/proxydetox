@@ -135,7 +135,7 @@ mod tests {
     fn dns_resolve() -> Result<(), Box<dyn std::error::Error>> {
         let mut eval = Evaluator::new()?;
         assert_ne!(eval.dns_resolve("localhost"), None);
-        assert_eq!(eval.dns_resolve("thishostdoesnotexist"), None);
+        assert_eq!(eval.dns_resolve("thishostdoesnotexist."), None);
         Ok(())
     }
 }
