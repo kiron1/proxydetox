@@ -67,7 +67,7 @@ fn test_is_resolvable() {
 fn test_my_ip_address() {
     let pac_script = r#"
         function FindProxyForURL(url, host) {{
-            if(myIpAddress() === "127.0.0.1") {{
+            if(myIpAddress() !== "127.0.0.1") {{
                 return "DIRECT";
             }}
             return "PROXY example.org:3128";

@@ -5,11 +5,6 @@
 // From: https://dxr.mozilla.org/mozilla-central/source/netwerk/base/ProxyAutoConfig.cpp
 //
 
-// https://developer.mozilla.org/en-US/docs/Web/HTTP/Proxy_servers_and_tunneling/Proxy_Auto-Configuration_PAC_file#myipaddress
-function myIpAddress() {
-    return "127.0.0.1";
-}
-
 function dnsDomainIs(host, domain) {
     return (host.length >= domain.length &&
         host.substring(host.length - domain.length) == domain);
