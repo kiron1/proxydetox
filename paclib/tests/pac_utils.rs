@@ -62,3 +62,23 @@ fn test_is_resolvable() {
         "thishostdoesnotexist.",
     );
 }
+
+#[test]
+fn test_my_ip_address() {
+    let pac_script = r#"
+        function FindProxyForURL(url, host) {{
+            if(myIpAddress() === "127.0.0.1") {{
+                return "DIRECT";
+            }}
+            return "PROXY example.org:3128";
+        }}
+    "#;
+    let mut eval = Evaluator::with_pac_script(pac_script).unwrap();
+
+    assert_eq!(
+        ProxyDesc::Direct,
+        eval.find_proxy(&"localhost".parse::<Uri>().unwrap())
+            .unwrap()
+            .first()
+    );
+}
