@@ -1,6 +1,7 @@
 use crate::DnsCache;
 use crate::Proxies;
 use crate::{DNS_CACHE_NAME, DNS_RESOLVE_NAME};
+use duktape::ContextRef;
 use duktape::{Context, Stack};
 use http::Uri;
 use std::result::Result;
@@ -46,6 +47,9 @@ impl Evaluator {
             .map_err(|_| CreateEvaluatorError::CreateContext)?;
 
         ctx.push_c_function(DNS_RESOLVE_NAME, crate::dns::dns_resolve, 1)
+            .map_err(|_| CreateEvaluatorError::CreateContext)?;
+
+        ctx.push_c_function("alert", alert, 1)
             .map_err(|_| CreateEvaluatorError::CreateContext)?;
 
         ctx.eval(PAC_UTILS).expect("eval pac_utils.js");
@@ -114,6 +118,19 @@ impl Evaluator {
     }
 }
 
+/// https://developer.mozilla.org/en-US/docs/Web/HTTP/Proxy_servers_and_tunneling/Proxy_Auto-Configuration_PAC_file#alert
+///
+/// # Safety
+/// Must be used as callback by duktape.
+unsafe extern "C" fn alert(ctx: *mut duktape_sys::duk_context) -> i32 {
+    let mut ctx = ContextRef::from(ctx);
+
+    if let Ok(message) = ctx.get_string(0) {
+        println!("{}", &message);
+    }
+    0
+}
+
 #[cfg(test)]
 mod tests {
     use super::Evaluator;
@@ -122,20 +139,32 @@ mod tests {
     use crate::ProxyDesc;
 
     #[test]
-    fn find_proxy() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_find_proxy() -> Result<(), Box<dyn std::error::Error>> {
         let mut eval = Evaluator::new()?;
         assert_eq!(
-            eval.find_proxy(&"http://localhost:3128/".parse::<Uri>().unwrap())?,
+            eval.find_proxy(&"http://localhost/".parse::<Uri>().unwrap())?,
             Proxies::new(vec![ProxyDesc::Direct])
         );
         Ok(())
     }
 
     #[test]
-    fn dns_resolve() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_dns_resolve() -> Result<(), Box<dyn std::error::Error>> {
         let mut eval = Evaluator::new()?;
         assert_ne!(eval.dns_resolve("localhost"), None);
         assert_eq!(eval.dns_resolve("thishostdoesnotexist."), None);
+        Ok(())
+    }
+
+    #[test]
+    fn test_alert() -> Result<(), Box<dyn std::error::Error>> {
+        let mut eval = Evaluator::with_pac_script(
+            "function FindProxyForURL(url, host) { alert(\"alert\"); return \"DIRECT\"; }",
+        )?;
+        assert_eq!(
+            eval.find_proxy(&"http://localhost/".parse::<Uri>().unwrap())?,
+            Proxies::new(vec![ProxyDesc::Direct])
+        );
         Ok(())
     }
 }
