@@ -52,6 +52,9 @@ impl Evaluator {
         ctx.push_c_function("alert", alert, 1)
             .map_err(|_| CreateEvaluatorError::CreateContext)?;
 
+        ctx.push_c_function("myIpAddress", my_ip_address, 0)
+            .map_err(|_| CreateEvaluatorError::CreateContext)?;
+
         ctx.eval(PAC_UTILS).expect("eval pac_utils.js");
         ctx.eval(crate::DEFAULT_PAC_SCRIPT)
             .expect("eval default PAC script");
@@ -129,6 +132,23 @@ unsafe extern "C" fn alert(ctx: *mut duktape_sys::duk_context) -> i32 {
         println!("{}", &message);
     }
     0
+}
+
+unsafe extern "C" fn my_ip_address(ctx: *mut duktape_sys::duk_context) -> i32 {
+    let mut ctx = ContextRef::from(ctx);
+
+    let hostname = gethostname::gethostname();
+    let ip = hostname
+        .into_string()
+        .map(|h| crate::dns::resolve(&h))
+        .ok()
+        .flatten()
+        .unwrap_or_else(|| String::from("127.0.0.1"));
+
+    if ctx.push_string(&ip).is_err() {
+        ctx.push_null();
+    }
+    1
 }
 
 #[cfg(test)]

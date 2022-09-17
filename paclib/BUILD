@@ -13,9 +13,10 @@ rust_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "//detox_net",
         "//duktape",
         "//duktape-sys",
-        "//detox_net",
+        "//paclib/cargo:gethostname",
         "//paclib/cargo:http",
         "//paclib/cargo:lazy_static",
         "//paclib/cargo:log",

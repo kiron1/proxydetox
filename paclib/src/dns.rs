@@ -63,7 +63,7 @@ impl DnsCache {
 }
 
 // Resolve the host name and return the IP address as string, if resolvable.
-fn resolve(host: &str) -> Option<String> {
+pub(crate) fn resolve(host: &str) -> Option<String> {
     use std::net::ToSocketAddrs;
 
     let host_port = (host, 0u16);
