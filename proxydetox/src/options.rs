@@ -111,12 +111,9 @@ fn which_pac_file() -> Option<PathBuf> {
         #[cfg(target_family = "windows")]
         sys_pac,
     ];
-    for path in config_locations {
-        if Path::new(&path).is_file() {
-            return Some(path);
-        }
-    }
-    None
+    config_locations
+        .into_iter()
+        .find(|path| Path::new(&path).is_file())
 }
 
 impl Options {
