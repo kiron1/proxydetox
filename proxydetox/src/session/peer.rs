@@ -1,3 +1,5 @@
+#![allow(clippy::type_complexity)]
+
 use std::convert::Infallible;
 use std::future::Future;
 use std::net::SocketAddr;
