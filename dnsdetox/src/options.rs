@@ -1,5 +1,5 @@
 use http::Uri;
-use std::{ffi::OsString, fs::read_to_string, net::SocketAddr, path::PathBuf, str::FromStr};
+use std::{ffi::OsString, fs::read_to_string, net::SocketAddr, path::PathBuf};
 
 use clap::{Arg, ArgMatches, Command};
 
@@ -9,13 +9,6 @@ pub struct Options {
     pub proxy: Uri,
     pub primary: SocketAddr,
     pub secondary: Uri,
-}
-
-fn is_num<T: FromStr + PartialOrd>(v: &str) -> Result<(), String> {
-    match v.parse::<T>() {
-        Ok(_v) => Ok(()),
-        Err(ref _cause) => Err("invalid number".to_string()),
-    }
 }
 
 impl Options {
@@ -31,7 +24,7 @@ impl Options {
                     .long("port")
                     .value_name("PORT")
                     .help("Listening port")
-                    .validator(is_num::<u16>)
+                    .value_parser(clap::value_parser!(u16))
                     .default_value("5353"),
             )
             .arg(
@@ -48,7 +41,7 @@ impl Options {
                     .value_name("IP:PORT")
                     .help("Primary DNS server using UDP protocol")
                     .required(true)
-                    .takes_value(true),
+                    .action(clap::ArgAction::Set),
             )
             .arg(
                 Arg::new("secondary")
@@ -57,7 +50,7 @@ impl Options {
                     .help("Secondary DNS server using DNS over HTTPS (DoH) protocol")
                     .default_value("https://8.8.8.8/dns-query")
                     .required(true)
-                    .takes_value(true),
+                    .action(clap::ArgAction::Set),
             );
 
         let mut args = Vec::new();
@@ -73,22 +66,10 @@ impl Options {
 impl From<ArgMatches> for Options {
     fn from(m: ArgMatches) -> Self {
         Self {
-            port: m
-                .value_of("port")
-                .map(|s| s.parse::<u16>().unwrap())
-                .unwrap(),
-            proxy: m
-                .value_of("proxy")
-                .map(|s| s.parse::<Uri>().unwrap())
-                .unwrap(),
-            primary: m
-                .value_of("primary")
-                .map(|s| s.parse::<SocketAddr>().unwrap())
-                .unwrap(),
-            secondary: m
-                .value_of("secondary")
-                .map(|s| s.parse::<Uri>().unwrap())
-                .unwrap(),
+            port: *m.get_one("port").unwrap(),
+            proxy: m.get_one::<Uri>("proxy").cloned().unwrap(),
+            primary: *m.get_one("primary").unwrap(),
+            secondary: m.get_one::<Uri>("secondary").cloned().unwrap(),
         }
     }
 }

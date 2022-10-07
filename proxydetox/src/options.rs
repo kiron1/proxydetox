@@ -6,10 +6,21 @@ use std::{
     time::Duration,
 };
 
-use clap::{Arg, ArgMatches, Command};
+use clap::{Arg, ArgAction, ArgMatches, Command};
 use http::Uri;
 use tracing_subscriber::filter::LevelFilter;
 
+lazy_static::lazy_static! {
+    static ref VERSION: String = {
+        if let Some(hash) = option_env!("PROXYDETOX_BUILD_GIT_HASH") {
+            format!("{} ({})", env!("CARGO_PKG_VERSION"), hash)
+        } else {
+            env!("CARGO_PKG_VERSION").to_owned()
+        }
+    };
+
+    static ref VERSION_STR: &'static str = &VERSION;
+}
 #[derive(Debug, PartialEq, Eq)]
 pub enum Authorization {
     Basic(PathBuf),
@@ -69,24 +80,20 @@ pub struct Options {
     pub graceful_shutdown_timeout: Duration,
 }
 
-fn is_num<T: FromStr + PartialOrd>(v: &str) -> Result<(), String> {
-    match v.parse::<T>() {
-        Ok(_v) => Ok(()),
-        Err(ref _cause) => Err("invalid number".to_string()),
-    }
-}
-
-fn is_file(v: &str) -> Result<(), String> {
-    if Path::new(&v).is_file() {
-        Ok(())
+fn is_file(v: &str) -> Result<PathBuf, String> {
+    let p = Path::new(&v);
+    if p.is_file() {
+        Ok(p.to_owned())
     } else {
         Err(format!("file '{}' does not exists", &v))
     }
 }
 
-fn is_file_or_http_uri(v: &str) -> Result<(), String> {
-    if (v.starts_with("http://") & v.parse::<Uri>().is_ok()) | Path::new(&v).is_file() {
-        Ok(())
+fn is_file_or_http_uri(v: &str) -> Result<PathOrUri, String> {
+    if v.starts_with("http://") & v.parse::<Uri>().is_ok() {
+        Ok(PathOrUri::Uri(v.parse::<Uri>().unwrap()))
+    } else if Path::new(&v).is_file() {
+        Ok(PathOrUri::Path(PathBuf::from(v)))
     } else {
         Err(format!("path '{}' is not a file nor a http URI", &v))
     }
@@ -126,13 +133,8 @@ impl Options {
     }
 
     fn parse_args(args: &[OsString]) -> Self {
-        let version = if let Some(hash) = option_env!("PROXYDETOX_BUILD_GIT_HASH") {
-            format!("{} ({})", env!("CARGO_PKG_VERSION"), hash)
-        } else {
-            env!("CARGO_PKG_VERSION").to_owned()
-        };
-        let app: _ = Command::new(env!("CARGO_PKG_NAME"))
-            .version(&*version)
+        let app = Command::new(env!("CARGO_PKG_NAME"))
+            .version(&*VERSION_STR)
             .about("A small proxy to relieve the pain of some corporate proxies")
             .args_override_self(true);
 
@@ -141,14 +143,15 @@ impl Options {
             Arg::new("negotiate")
                 .short('n')
                 .long("negotiate")
+                .action(ArgAction::SetTrue)
                 .help("Enables Negotiate (SPNEGO) authentication"),
         );
 
         let netrc_arg = Arg::new("netrc_file")
             .long("netrc-file")
             .help("Path to a .netrc file to be used for basic authentication")
-            .validator(is_file)
-            .takes_value(true);
+            .value_parser(is_file)
+            .action(clap::ArgAction::Set);
         #[cfg(feature = "negotiate")]
         let netrc_arg = netrc_arg.conflicts_with("negotiate");
 
@@ -157,28 +160,28 @@ impl Options {
                 Arg::new("verbose")
                     .short('v')
                     .long("verbose")
-                    .multiple_occurrences(true)
+                    .action(ArgAction::Count)
                     .help("Increases verbosity level"),
             )
             .arg(
                  Arg::new("quiet")
                     .short('q')
                     .long("quiet")
-                    .multiple_occurrences(true)
+                    .action(ArgAction::Count)
                     .help("Decreases verbosity level"),
             )
             .arg(
                  Arg::new("activate_socket")
                      .long("activate-socket")
                      .help("Socket name create by the service manager which needs to be activated")
-                     .takes_value(true),
+                     .action(clap::ArgAction::Set),
              )
             .arg(
                 Arg::new("port")
                     .short('P')
                     .long("port")
                     .help("Listening port")
-                    .validator(is_num::<u16>)
+                    .value_parser(clap::value_parser!(u16))
                     .default_value("3128"),
             )
             .arg(
@@ -188,8 +191,8 @@ impl Options {
                     .help(
                         "PAC file to be used to decide which upstream proxy to forward the request (local file path or http:// URI are accepted)",
                     )
-                    .validator(is_file_or_http_uri)
-                    .takes_value(true),
+                    .value_parser(is_file_or_http_uri)
+                    .action(clap::ArgAction::Set),
             )
             .arg(netrc_arg)
             .arg(
@@ -208,16 +211,16 @@ impl Options {
                     .short('c')
                     .long("connect-timeout")
                     .help("Timeout to establish a connection in faction sections")
-                    .validator(is_num::<f32>)
-                    .takes_value(true)
+                    .value_parser(clap::value_parser!(f64))
+                    .action(clap::ArgAction::Set)
                     .default_value("10"),
             )
             .arg(
                 Arg::new("graceful_shutdown_timeout")
                     .long("graceful-shutdown-timeout")
                     .help("Timeout to wait for a graceful shutdown")
-                    .validator(is_num::<f32>)
-                    .takes_value(true)
+                    .value_parser(clap::value_parser!(u64))
+                    .action(clap::ArgAction::Set)
                     .default_value("30"),
             );
 
@@ -229,8 +232,8 @@ impl Options {
 impl From<ArgMatches> for Options {
     fn from(m: ArgMatches) -> Self {
         let log_level = 2 /* INFO */;
-        let log_level = log_level + m.occurrences_of("verbose") as i32;
-        let log_level = log_level - m.occurrences_of("quiet") as i32;
+        let log_level = log_level + m.get_count("verbose") as i32;
+        let log_level = log_level - m.get_count("quiet") as i32;
         let log_level = match log_level {
             0 => LevelFilter::ERROR,
             1 => LevelFilter::WARN,
@@ -240,8 +243,8 @@ impl From<ArgMatches> for Options {
             _ => LevelFilter::OFF,
         };
         let netrc_file = m
-            .value_of("netrc_file")
-            .map(PathBuf::from)
+            .get_one::<PathBuf>("netrc_file")
+            .cloned()
             .unwrap_or_else(|| {
                 let mut netrc_path = dirs::home_dir().unwrap_or_default();
                 netrc_path.push(".netrc");
@@ -249,7 +252,7 @@ impl From<ArgMatches> for Options {
             });
 
         #[cfg(feature = "negotiate")]
-        let authorization = if m.is_present("negotiate") {
+        let authorization = if m.get_flag("negotiate") {
             Authorization::Negotiate
         } else {
             Authorization::Basic(netrc_file)
@@ -260,24 +263,21 @@ impl From<ArgMatches> for Options {
         Self {
             log_level,
             pac_file: m
-                .value_of("pac_file")
-                .map(|s| s.parse::<PathOrUri>().unwrap())
+                .get_one::<PathOrUri>("pac_file")
+                .cloned()
                 .or_else(|| which_pac_file().map(PathOrUri::from)),
             authorization,
-            always_use_connect: m.is_present("always_use_connect"),
-            direct_fallback: m.is_present("direct_fallback"),
+            always_use_connect: m.contains_id("always_use_connect"),
+            direct_fallback: m.contains_id("direct_fallback"),
             connect_timeout: m
-                .value_of("connect_timeout")
-                .map(|s| Duration::from_secs(s.parse::<u64>().unwrap()))
+                .get_one::<f64>("connect_timeout")
+                .map(|s| Duration::from_millis((*s * 1000.0) as u64))
                 .expect("default value for connect_timeout"),
-            activate_socket: m.value_of("activate_socket").map(String::from),
-            port: m
-                .value_of("port")
-                .map(|s| s.parse::<u16>().unwrap())
-                .expect("default value for port"),
+            activate_socket: m.get_one::<String>("activate_socket").cloned(),
+            port: *m.get_one::<u16>("port").expect("default value for port"),
             graceful_shutdown_timeout: m
-                .value_of("graceful_shutdown_timeout")
-                .map(|s| Duration::from_secs(s.parse().unwrap()))
+                .get_one::<u64>("graceful_shutdown_timeout")
+                .map(|s| Duration::from_secs(*s))
                 .expect("default value for graceful_shutdown_timeout"),
         }
     }
@@ -338,12 +338,6 @@ pub fn portable_dir(path: impl AsRef<Path>) -> PathBuf {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_is_num() {
-        assert!(is_num::<u16>("3128").is_ok());
-        assert!(is_num::<u16>("hello").is_err());
-    }
 
     #[test]
     fn test_is_file() {
