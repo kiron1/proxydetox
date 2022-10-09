@@ -77,7 +77,9 @@ async fn run(config: &Options) -> Result<(), proxydetox::Error> {
 
     let auth = match &config.authorization {
         #[cfg(feature = "negotiate")]
-        Authorization::Negotiate => AuthenticatorFactory::negotiate(),
+        Authorization::Negotiate(ref negotiate) => {
+            AuthenticatorFactory::negotiate(negotiate.clone())
+        }
         #[cfg(not(feature = "negotiate"))]
         Authorization::Negotiate => unreachable!(),
         Authorization::Basic(netrc_file) => {

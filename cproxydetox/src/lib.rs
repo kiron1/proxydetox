@@ -67,7 +67,7 @@ pub unsafe extern "C" fn proxydetox_new(
     #[cfg(feature = "negotiate")]
     let auth = if negotiate {
         #[cfg(feature = "negotiate")]
-        AuthenticatorFactory::negotiate()
+        AuthenticatorFactory::negotiate(Vec::new())
     } else {
         AuthenticatorFactory::basic(load_netrc_store())
     };
