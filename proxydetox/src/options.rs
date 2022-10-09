@@ -182,6 +182,7 @@ impl Options {
                     .long("port")
                     .help("Listening port")
                     .value_parser(clap::value_parser!(u16))
+                    .action(ArgAction::Set)
                     .default_value("3128"),
             )
             .arg(
@@ -199,12 +200,14 @@ impl Options {
                 Arg::new("always_use_connect")
                     .short('C')
                     .long("always-use-connect")
-                    .help("Always use CONNECT method even for http:// resources"),
+                    .help("Always use CONNECT method even for http:// resources")
+                    .action(ArgAction::SetTrue),
             )
             .arg(
                 Arg::new("direct_fallback")
                     .long("direct-fallback")
-                    .help("Try a direct connection when connecting proxies fails"),
+                    .help("Try a direct connection when connecting proxies fails")
+                    .action(ArgAction::SetTrue),
             )
             .arg(
                 Arg::new("connect_timeout")
@@ -212,7 +215,7 @@ impl Options {
                     .long("connect-timeout")
                     .help("Timeout to establish a connection in faction sections")
                     .value_parser(clap::value_parser!(f64))
-                    .action(clap::ArgAction::Set)
+                    .action(ArgAction::Set)
                     .default_value("10"),
             )
             .arg(
@@ -220,7 +223,7 @@ impl Options {
                     .long("graceful-shutdown-timeout")
                     .help("Timeout to wait for a graceful shutdown")
                     .value_parser(clap::value_parser!(u64))
-                    .action(clap::ArgAction::Set)
+                    .action(ArgAction::Set)
                     .default_value("30"),
             );
 
