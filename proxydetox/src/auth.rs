@@ -27,7 +27,7 @@ pub enum AuthenticatorFactory {
     None,
     Basic(netrc::Store),
     #[cfg(feature = "negotiate")]
-    Negotiate,
+    Negotiate(Vec<String>),
 }
 
 impl AuthenticatorFactory {
@@ -36,8 +36,8 @@ impl AuthenticatorFactory {
     }
 
     #[cfg(feature = "negotiate")]
-    pub fn negotiate() -> Self {
-        AuthenticatorFactory::Negotiate
+    pub fn negotiate(hosts: Vec<String>) -> Self {
+        AuthenticatorFactory::Negotiate(hosts)
     }
 
     pub fn make(&self, proxy_fqdn: &str) -> Result<Box<dyn Authenticator>> {
@@ -48,19 +48,41 @@ impl AuthenticatorFactory {
                 Ok(Box::new(BasicAuthenticator::new(token)))
             }
             #[cfg(feature = "negotiate")]
-            Self::Negotiate => Ok(Box::new(NegotiateAuthenticator::new(proxy_fqdn)?)),
+            Self::Negotiate(ref hosts) => {
+                if hosts.is_empty() || hosts.iter().any(|k| k == proxy_fqdn) {
+                    // if the lists of hosts is empty, negotiate with all hosts
+                    // otherwise only use negotiate for hosts in the allow list
+                    Ok(Box::new(NegotiateAuthenticator::new(proxy_fqdn)?))
+                } else {
+                    // hosts which are not in the allow list will use no authentication
+                    Ok(Box::new(NoneAuthenticator))
+                }
+            }
         }
     }
 }
 
 impl std::fmt::Display for AuthenticatorFactory {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        let name = match *self {
-            Self::None => "none",
-            Self::Basic(ref _netrc_path) => "basic",
+        match *self {
+            Self::None => f.write_str("none")?,
+            Self::Basic(ref store) => {
+                let hosts = store.hosts();
+                if hosts.is_empty() {
+                    f.write_str("basic")?;
+                } else {
+                    write!(f, "basic {}", store.hosts().join(","))?;
+                }
+            }
             #[cfg(feature = "negotiate")]
-            Self::Negotiate => "negotiate",
+            Self::Negotiate(ref hosts) => {
+                if hosts.is_empty() {
+                    f.write_str("negotiate any")?;
+                } else {
+                    write!(f, "negotiate {}", hosts.join(","))?;
+                }
+            }
         };
-        f.write_str(name)
+        Ok(())
     }
 }

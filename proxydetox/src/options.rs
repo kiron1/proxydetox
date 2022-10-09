@@ -25,7 +25,7 @@ lazy_static::lazy_static! {
 pub enum Authorization {
     Basic(PathBuf),
     #[allow(dead_code)]
-    Negotiate,
+    Negotiate(Vec<String>),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -143,8 +143,9 @@ impl Options {
             Arg::new("negotiate")
                 .short('n')
                 .long("negotiate")
-                .action(ArgAction::SetTrue)
-                .help("Enables Negotiate (SPNEGO) authentication"),
+                .help("Enables Negotiate (SPNEGO) authentication")
+                .action(ArgAction::Append)
+                .num_args(0..=1),
         );
 
         let netrc_arg = Arg::new("netrc_file")
@@ -255,8 +256,8 @@ impl From<ArgMatches> for Options {
             });
 
         #[cfg(feature = "negotiate")]
-        let authorization = if m.get_flag("negotiate") {
-            Authorization::Negotiate
+        let authorization = if let Some(negotiate) = m.get_many::<String>("negotiate") {
+            Authorization::Negotiate(negotiate.cloned().collect())
         } else {
             Authorization::Basic(netrc_file)
         };
@@ -400,7 +401,23 @@ mod tests {
     #[test]
     fn test_negotiate() {
         let args = Options::parse_args(&["proxydetox".into(), "--negotiate".into()]);
-        assert_eq!(args.authorization, Authorization::Negotiate);
+        assert!(matches!(args.authorization, Authorization::Negotiate(_)));
+    }
+
+    #[cfg(feature = "negotiate")]
+    #[test]
+    fn test_negotiate_host() {
+        let args = Options::parse_args(&[
+            "proxydetox".into(),
+            "--negotiate".into(),
+            "proxyA.exampe.net".into(),
+            "--negotiate".into(),
+            "proxyB.exampe.net".into(),
+        ]);
+        assert_eq!(
+            args.authorization,
+            Authorization::Negotiate(vec!["proxyA.exampe.net".into(), "proxyB.exampe.net".into(),])
+        );
     }
 
     #[test]

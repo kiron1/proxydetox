@@ -94,6 +94,10 @@ impl Store {
         Ok(())
     }
 
+    pub fn hosts(&self) -> Vec<String> {
+        self.entries.read().unwrap().hosts.keys().cloned().collect()
+    }
+
     pub(crate) fn get(&self, k: &str) -> Result<String, Error> {
         let entries = self.entries.read().unwrap();
         let default = &entries.default;
