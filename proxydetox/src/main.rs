@@ -84,21 +84,7 @@ async fn run(config: &Options) -> Result<(), proxydetox::Error> {
         Authorization::Negotiate => unreachable!(),
         Authorization::Basic(netrc_file) => {
             let store = if let Ok(file) = File::open(&netrc_file) {
-                let netrc_store = netrc::Store::new(std::io::BufReader::new(file));
-                #[allow(clippy::let_and_return)]
-                let netrc_store = match netrc_store {
-                    Err(cause) => return Err(cause.into()),
-                    Ok(netrc_store) => netrc_store,
-                };
-                #[cfg(target_os = "linux")]
-                {
-                    let monitored_netrc_store = netrc_store.clone();
-                    let netrc_file = netrc_file.clone();
-                    tokio::spawn(async move {
-                        monitor_netrc(&netrc_file, monitored_netrc_store).await;
-                    });
-                }
-                netrc_store
+                netrc::Store::new(std::io::BufReader::new(file))?
             } else {
                 netrc::Store::default()
             };
@@ -202,44 +188,4 @@ async fn run(config: &Options) -> Result<(), proxydetox::Error> {
         _ = timeout_rx => {},
     }
     Ok(())
-}
-
-#[cfg(target_os = "linux")]
-async fn monitor_netrc(path: impl AsRef<std::path::Path>, store: netrc::Store) {
-    use futures_util::StreamExt;
-    use inotify::{Inotify, WatchMask};
-
-    fn reload_netrc(path: impl AsRef<std::path::Path>, store: &netrc::Store) {
-        tracing::info!(path=%path.as_ref().display(), "change detected");
-        if let Ok(file) = File::open(path.as_ref()) {
-            if let Err(cause) = store.update(std::io::BufReader::new(file)) {
-                tracing::error!("failed to read {}: {}", path.as_ref().display(), cause);
-            }
-        }
-    }
-
-    let parent = path.as_ref().parent().expect("file must have a parent");
-    let file_name = path.as_ref().file_name().expect("file must have a name");
-
-    let mut inotify = Inotify::init().expect("Inotify::init");
-
-    inotify
-        .add_watch(parent, WatchMask::MOVED_TO | WatchMask::CLOSE_WRITE)
-        .expect("add_watch");
-
-    let mut buffer = [0u8; 4096];
-    let mut stream = inotify.event_stream(&mut buffer).expect("stream");
-    while let Some(event) = stream.next().await {
-        match event {
-            Ok(ref event) => {
-                if event.name.as_ref().map(|n| n == file_name).unwrap_or(false) {
-                    reload_netrc(&path, &store);
-                }
-            }
-            Err(ref cause) => {
-                tracing::error!("inotify: {}", cause);
-                break;
-            }
-        }
-    }
 }
