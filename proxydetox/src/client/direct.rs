@@ -2,10 +2,11 @@ use std::future::Future;
 use std::pin::Pin;
 
 use http::{Request, Uri};
-use hyper::{client, Body};
+use hyper::Body;
 
-type ClientService = client::service::Connect<client::connect::HttpConnector, Body, Uri>;
-type HyperSendRequest = client::conn::SendRequest<Body>;
+type ClientService =
+    hyper::client::service::Connect<hyper::client::connect::HttpConnector, Body, Uri>;
+type HyperSendRequest = hyper::client::conn::SendRequest<Body>;
 
 pub struct Direct(ClientService);
 
@@ -17,9 +18,9 @@ impl Direct {
 
 impl Default for Direct {
     fn default() -> Self {
-        let client = client::service::Connect::new(
-            client::connect::HttpConnector::new(),
-            client::conn::Builder::new(),
+        let client = hyper::client::service::Connect::new(
+            hyper::client::connect::HttpConnector::new(),
+            hyper::client::conn::Builder::new(),
         );
 
         Self(client)
@@ -64,7 +65,8 @@ impl tower::Service<Request<Body>> for SendRequest {
 
     fn call(&mut self, mut req: Request<Body>) -> Self::Future {
         if req.method() != http::Method::CONNECT {
-            // strip the authority, since direct clients to not expect this
+            // strip the authority part of the request URI, since direct clients will only send
+            // the path and query in the requst URI part.
             *req.uri_mut() = Uri::builder()
                 .path_and_query(
                     req.uri()
