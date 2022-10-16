@@ -1,24 +1,22 @@
-use argh::FromArgs;
+use clap::Parser;
 use http::Uri;
 use paclib::Evaluator;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
 
-#[derive(Debug, FromArgs)]
+#[derive(Debug, Parser)]
 /// Evaluate a PAC JavaSciript file
 struct Opt {
     /// path to a PAC file
-    #[argh(positional)]
     pac_file: PathBuf,
 
     /// list of URIs to evaluate
-    #[argh(positional)]
     urls: Vec<String>,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let opt: Opt = argh::from_env();
+    let opt = Opt::parse();
 
     let pac_content = {
         let mut pac_file = File::open(&opt.pac_file)?;
