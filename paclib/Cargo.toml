@@ -14,7 +14,7 @@ lazy_static = "1.4"
 detox_net = { path = "../detox_net" }
 duktape = { path = "../duktape" }
 duktape-sys = { path = "../duktape-sys" }
-gethostname = "0.2"
+gethostname = "0.3"
 
 [lib]
 doctest = false
