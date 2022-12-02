@@ -41,7 +41,7 @@ fn load_pac_file(path: &str) -> Option<String> {
             "".into()
         }
     } else {
-        read_to_string(&path).unwrap_or_default()
+        read_to_string(path).unwrap_or_default()
     };
 
     if content.trim().is_empty() {

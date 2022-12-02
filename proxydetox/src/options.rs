@@ -134,7 +134,7 @@ impl Options {
 
     fn parse_args(args: &[OsString]) -> Self {
         let app = Command::new(env!("CARGO_PKG_NAME"))
-            .version(&*VERSION_STR)
+            .version(*VERSION_STR)
             .about("A small proxy to relieve the pain of some corporate proxies")
             .args_override_self(true);
 
