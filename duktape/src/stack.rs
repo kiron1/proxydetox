@@ -29,7 +29,7 @@ pub trait Stack {
     /// # Safety
     ///
     /// Implementor must own the target object and ensure that the point is valid.
-    unsafe fn ptr(&self) -> *mut duk_context;
+    unsafe fn ptr(&self) -> *const duk_context;
 
     fn pop_string(&mut self) -> Result<crate::Value, Error> {
         let result = self.get_string(-1)?;
@@ -152,8 +152,8 @@ pub trait Stack {
         }
     }
 
-    fn is_undefined(&self, idx: i32) -> bool {
-        unsafe { duk_is_undefined(self.ptr(), idx) != 0u32 }
+    fn is_undefined(&mut self, idx: i32) -> bool {
+        unsafe { duk_is_undefined(self.ptr_mut(), idx) != 0u32 }
     }
 
     fn get_global_string(&mut self, name: &str) -> Result<(), Error> {
@@ -194,7 +194,7 @@ pub trait Stack {
     }
 
     fn push_bool(&mut self, value: bool) {
-        let value = if value { 1 } else { 0 };
+        let value = u32::from(value);
         unsafe {
             duk_push_boolean(self.ptr_mut(), value);
         }

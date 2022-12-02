@@ -17,7 +17,7 @@ impl Server {
     {
         let handler = Arc::new(handler);
         let local_addr = SocketAddr::from(([127, 0, 0, 1], 0));
-        let listener = std::net::TcpListener::bind(&local_addr).unwrap();
+        let listener = std::net::TcpListener::bind(local_addr).unwrap();
         let local_addr = listener.local_addr().unwrap();
         let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();
 

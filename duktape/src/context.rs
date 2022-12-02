@@ -43,7 +43,7 @@ impl Stack for Context {
         self.ptr
     }
 
-    unsafe fn ptr(&self) -> *mut duk_context {
+    unsafe fn ptr(&self) -> *const duktape_sys::duk_hthread {
         self.ptr
     }
 }
@@ -67,7 +67,7 @@ impl Stack for ContextRef {
         self.ptr
     }
 
-    unsafe fn ptr(&self) -> *mut duk_context {
+    unsafe fn ptr(&self) -> *const duktape_sys::duk_hthread {
         self.ptr
     }
 }

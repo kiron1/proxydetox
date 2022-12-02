@@ -83,7 +83,7 @@ async fn run(config: &Options) -> Result<(), proxydetox::Error> {
         #[cfg(not(feature = "negotiate"))]
         Authorization::Negotiate => unreachable!(),
         Authorization::Basic(netrc_file) => {
-            let store = if let Ok(file) = File::open(&netrc_file) {
+            let store = if let Ok(file) = File::open(netrc_file) {
                 netrc::Store::new(std::io::BufReader::new(file))?
             } else {
                 netrc::Store::default()
