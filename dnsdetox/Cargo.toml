@@ -9,7 +9,7 @@ edition = "2021"
 clap = { version = "4.0", features = ["env"] }
 dirs = "4.0"
 dns-parser = "0.8"
-env_logger = "0.9"
+env_logger = "0.10"
 futures-util = { version = "0.3", default-features = false }
 http = "0.2"
 hyper = { version = "0.14", features = ["http1", "http2", "client", "stream", "tcp"] }
