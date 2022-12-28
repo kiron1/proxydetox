@@ -40,7 +40,6 @@ rust_library(
         "//proxydetox/cargo:base64",
         "//proxydetox/cargo:chrono",
         "//proxydetox/cargo:dirs",
-        "//proxydetox/cargo:env_logger",
         "//proxydetox/cargo:futures_util",
         "//proxydetox/cargo:http",
         "//proxydetox/cargo:hyper",

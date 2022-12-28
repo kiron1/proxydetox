@@ -15,11 +15,10 @@ libc = "0.2"
 chrono = "0.4"
 clap = "4.0"
 cross-krb5 = { version = "0.3", default-features = false, optional = true }
-base64 = "0.13"
+base64 = "0.20"
 bytes = "1.1"
 detox_net = { path = "../detox_net" }
 dirs = "4.0"
-env_logger = "0.9"
 futures-util = { version = "0.3", default-features = false }
 http = "0.2"
 hyper = { version = "0.14", features = ["http1", "http2", "client", "server", "stream", "tcp"] }
