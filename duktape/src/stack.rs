@@ -131,7 +131,7 @@ pub trait Stack {
     }
 
     fn top(&mut self) -> i32 {
-        unsafe { duk_get_top(self.ptr_mut()) as i32 }
+        unsafe { duk_get_top(self.ptr_mut()) }
     }
 
     fn swap_top(&mut self, idx: i32) {

@@ -67,7 +67,7 @@ impl Store {
         // Generate the `Basic base64("login:password") token
         fn make_token(login: &str, password: &str) -> String {
             let t = format!("{}:{}", login, password);
-            format!("Basic {}", base64::encode(&t))
+            format!("Basic {}", base64::encode(t))
         }
 
         let netrc = netrc::Netrc::parse(input).map_err(|_| Error::NetrcParserError)?;

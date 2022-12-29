@@ -306,7 +306,7 @@ fn readrc() -> Vec<OsString> {
         portable_dir("proxydetoxrc.txt"),
     ];
     for path in config_locations {
-        if let Ok(content) = read_to_string(&path) {
+        if let Ok(content) = read_to_string(path) {
             // todo: this will fail with arguments which require a space (e.g. path of pac_file)
             let args = content
                 .split('\n')
