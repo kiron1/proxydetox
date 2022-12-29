@@ -42,10 +42,10 @@ sed -e "s|\${prefix}|${prefix}|" "${root}/debian/proxydetox.service" \
   >"${workdir}/lib/systemd/user/proxydetox.service"
 
 version=$(sed -n 's/^version\s*=\s*"\([0-9.]*\)"/\1/p' "${root}/proxydetox/Cargo.toml")
-echo "::set-output name=version::${version}"
+echo "version=${version}" >> "${GITHUB_OUTPUT:-/dev/stdout}"
 
 pkgfile=proxydetox-${version}-x86_64-linux.deb
-echo "::set-output name=pkgfile::${pkgfile}"
+echo "pkgfile=${pkgfile}" >> "${GITHUB_OUTPUT:-/dev/stdout}"
 
 sed -e "s/\${version}/${version}/" "${root}/debian/control" >"${workdir}/DEBIAN/control"
 for f in postinst postrm; do

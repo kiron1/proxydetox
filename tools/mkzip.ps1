@@ -13,7 +13,7 @@ cargo install --path "${root}/proxydetox" --root "${destdir}" --no-track --featu
 Copy-Item "${root}/pkg/windows/install.bat" "${destdir}/"
 
 $pkgfile = "proxydetox-win64.zip"
-Write-Output "::set-output name=pkgfile::${pkgfile}"
+Write-Output "pkgfile=${pkgfile}" | Out-File -Path "$env:GITHUB_OUTPUT"
 
 if(Test-Path "${pkgfile}") {
   Remove-Item "${pkgfile}"
