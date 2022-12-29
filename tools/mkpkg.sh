@@ -48,8 +48,8 @@ install -v "${setproxy_helper}" "${workdir}/${prefix}/libexec/setproxy_helper"
 
 version=$(sed -n 's/^version[ \t]*=[ \t]*"\([0-9.]*\)"/\1/p' "${root}/proxydetox/Cargo.toml")
 pkgfile=proxydetox-${version}-${arch}-apple-darwin.pkg
-echo "::set-output name=version::${version}"
-echo "::set-output name=pkgfile::${pkgfile}"
+echo "version=${version}" >> "${GITHUB_OUTPUT:-/dev/stdout}"
+echo "pkgfile=${pkgfile}" >> "${GITHUB_OUTPUT:-/dev/stdout}"
 
 echo "Building ${pkgfile}"
 pkgbuild \
