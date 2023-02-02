@@ -110,7 +110,7 @@ async fn run(config: &Options) -> Result<(), proxydetox::Error> {
             .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "no socket found"))?;
         hyper::Server::from_tcp(listener)?
     } else {
-        let addr = SocketAddr::from(([127, 0, 0, 1], config.port));
+        let addr = SocketAddr::new(config.interface, config.port);
         hyper::Server::try_bind(&addr)?
     };
     let server = server.serve(session.clone());

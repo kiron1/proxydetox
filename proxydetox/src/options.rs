@@ -1,6 +1,7 @@
 use std::{
     ffi::OsString,
     fs::read_to_string,
+    net::IpAddr,
     path::{Path, PathBuf},
     str::FromStr,
     time::Duration,
@@ -76,6 +77,7 @@ pub struct Options {
     pub direct_fallback: bool,
     pub always_use_connect: bool,
     pub activate_socket: Option<String>,
+    pub interface: IpAddr,
     pub port: u16,
     pub graceful_shutdown_timeout: Duration,
 }
@@ -96,6 +98,13 @@ fn is_file_or_http_uri(v: &str) -> Result<PathOrUri, String> {
         Ok(PathOrUri::Path(PathBuf::from(v)))
     } else {
         Err(format!("path '{}' is not a file nor a http URI", &v))
+    }
+}
+
+fn is_ip(v: &str) -> Result<IpAddr, String> {
+    match v.parse::<IpAddr>() {
+        Ok(ip) => Ok(ip),
+        Err(_) => Err(format!("value '{}' is not a valid IP address", &v)),
     }
 }
 
@@ -177,6 +186,15 @@ impl Options {
                      .help("Socket name create by the service manager which needs to be activated")
                      .action(clap::ArgAction::Set),
              )
+             .arg(
+                Arg::new("interface")
+                    .long("interface")
+                    .short('i')
+                    .help("Interface to listen on for incoming connections")
+                    .default_value("127.0.0.1")
+                    .value_parser(is_ip)
+                    .action(ArgAction::Set),
+            )
             .arg(
                 Arg::new("port")
                     .short('P')
@@ -278,6 +296,7 @@ impl From<ArgMatches> for Options {
                 .map(|s| Duration::from_millis((*s * 1000.0) as u64))
                 .expect("default value for connect_timeout"),
             activate_socket: m.get_one::<String>("activate_socket").cloned(),
+            interface: *m.get_one::<IpAddr>("interface").unwrap(),
             port: *m.get_one::<u16>("port").expect("default value for port"),
             graceful_shutdown_timeout: m
                 .get_one::<u64>("graceful_shutdown_timeout")
@@ -358,6 +377,13 @@ mod tests {
     }
 
     #[test]
+    fn test_is_ip() {
+        assert!(is_ip("0.0.0.0").is_ok());
+        assert!(is_ip("::1").is_ok());
+        assert!(is_ip("this.is.not.ip").is_err())
+    }
+
+    #[test]
     fn test_is_file_or_uri() {
         assert!(is_file_or_http_uri("http://example.org/").is_ok());
         assert!(is_file_or_http_uri("/does/not/exist").is_err());
@@ -389,6 +415,17 @@ mod tests {
             proxy_pac.clone().into(),
         ]);
         assert_eq!(args.pac_file, proxy_pac.parse().ok());
+    }
+
+    #[test]
+    fn test_interface() {
+        let addr = String::from("0.0.0.0");
+        let args = Options::parse_args(&[
+            "proxydetox".into(),
+            "--interface".into(),
+            addr.clone().into(),
+        ]);
+        assert_eq!(args.interface, addr.parse::<IpAddr>().unwrap());
     }
 
     #[test]
