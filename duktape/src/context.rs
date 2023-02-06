@@ -20,7 +20,7 @@ unsafe extern "C" fn fatal_handler(_udata: *mut c_void, msg: *const i8) {
     } else {
         String::from("unknown")
     };
-    panic!("duk error: {}", msg);
+    panic!("duk error: {msg}");
 }
 
 pub struct Context {

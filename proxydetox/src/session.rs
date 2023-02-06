@@ -141,13 +141,13 @@ where
     E: std::error::Error + Send + Sync,
 {
     let mut description = String::new();
-    write!(&mut description, "<p><strong>Error:</strong> {}</p>", error).ok();
+    write!(&mut description, "<p><strong>Error:</strong> {error}</p>").ok();
     if let Some(cause) = error.source() {
         description
             .write_str("<p><strong>Caused by:</strong></p><ol reversed>")
             .ok();
         for msg in std::iter::successors(Some(cause), |e| e.source()) {
-            write!(&mut description, "<li>{}</li>", msg).ok();
+            write!(&mut description, "<li>{msg}</li>").ok();
         }
         description.write_str("</ol>").ok();
     }

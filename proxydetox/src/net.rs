@@ -53,7 +53,7 @@ where
 pub async fn read_to_string(res: Response<Body>) -> std::io::Result<String> {
     let body = hyper::body::aggregate(res)
         .await
-        .map_err(|e| Error::new(ErrorKind::Other, format!("aggregate: {}", e)))?;
+        .map_err(|e| Error::new(ErrorKind::Other, format!("aggregate: {e}")))?;
     let mut buffer = String::new();
     body.reader().read_to_string(&mut buffer)?;
     Ok(buffer)
@@ -106,7 +106,7 @@ impl HttpGetProgress {
                     let location = location.to_str().map_err(|e| {
                         Error::new(
                             ErrorKind::Other,
-                            format!("location value is not a valid string: {}", e),
+                            format!("location value is not a valid string: {e}"),
                         )
                     })?;
                     // turn `location` string into an `Uri` object

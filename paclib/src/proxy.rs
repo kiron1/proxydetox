@@ -49,7 +49,7 @@ impl Proxies {
 impl fmt::Display for Proxies {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for el in &self.0 {
-            write!(f, "{};", el)?;
+            write!(f, "{el};")?;
         }
         Ok(())
     }
