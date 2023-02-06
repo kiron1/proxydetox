@@ -1,3 +1,4 @@
+use base64::Engine;
 use http::{
     header::{PROXY_AUTHENTICATE, PROXY_AUTHORIZATION},
     HeaderValue,
@@ -38,7 +39,7 @@ impl super::Authenticator for NegotiateAuthenticator {
 
         match client_ctx {
             Ok((_pending, token)) => {
-                let b64token = base64::encode(&*token);
+                let b64token = base64::engine::general_purpose::STANDARD.encode(&*token);
                 let auth_str = format!("Negotiate {b64token}");
                 headers.append(
                     PROXY_AUTHORIZATION,
@@ -64,7 +65,7 @@ fn server_token(last_headers: &hyper::HeaderMap) -> Option<Vec<u8>> {
         .map(|s| s.splitn(2, ' '))
         .map(|mut i| (i.next(), i.next()))
         .filter_map(|k| if Some("Negotiate") == k.0 { k.1 } else { None })
-        .map(base64::decode)
+        .map(|x| base64::engine::general_purpose::STANDARD.decode(x))
         .find_map(std::result::Result::ok);
 
     server_tok
