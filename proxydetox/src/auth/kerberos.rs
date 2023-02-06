@@ -21,7 +21,7 @@ pub struct NegotiateAuthenticator {
 
 impl NegotiateAuthenticator {
     pub fn new(proxy_fqdn: &str) -> Result<Self, Error> {
-        let target_principal = format!("HTTP/{}", proxy_fqdn);
+        let target_principal = format!("HTTP/{proxy_fqdn}");
         Ok(Self { target_principal })
     }
 }
@@ -39,7 +39,7 @@ impl super::Authenticator for NegotiateAuthenticator {
         match client_ctx {
             Ok((_pending, token)) => {
                 let b64token = base64::encode(&*token);
-                let auth_str = format!("Negotiate {}", b64token);
+                let auth_str = format!("Negotiate {b64token}");
                 headers.append(
                     PROXY_AUTHORIZATION,
                     HeaderValue::from_str(&auth_str).expect("valid header value"),

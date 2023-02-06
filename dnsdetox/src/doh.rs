@@ -43,7 +43,7 @@ impl Client {
 pub async fn read_to_end(res: http::Response<Body>) -> std::io::Result<Vec<u8>> {
     let body = hyper::body::aggregate(res)
         .await
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, format!("aggregate: {}", e)))?;
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, format!("aggregate: {e}")))?;
     let mut data = Vec::new();
     body.reader().read_to_end(&mut data)?;
     Ok(data)

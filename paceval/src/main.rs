@@ -30,7 +30,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for url in opt.urls {
         let uri = url.parse::<Uri>()?;
         let proxies = pac.find_proxy(&uri)?;
-        println!("{}: {}", uri, proxies);
+        println!("{uri}: {proxies}");
     }
     Ok(())
 }

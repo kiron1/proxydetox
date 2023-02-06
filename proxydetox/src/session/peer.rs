@@ -198,11 +198,11 @@ impl PeerSession {
         let stream = BroadcastStream::new(stream);
         let stream = stream.map(|entry| match entry {
             Ok(entry) => {
-                let chunk = format!("data:{}\n\n", entry);
+                let chunk = format!("data:{entry}\n\n");
                 std::result::Result::<_, std::io::Error>::Ok(chunk)
             }
             Err(tokio_stream::wrappers::errors::BroadcastStreamRecvError::Lagged(count)) => {
-                let chunk = format!("event:lagged\ndata:{}\n\n", count);
+                let chunk = format!("event:lagged\ndata:{count}\n\n");
                 Ok(chunk)
             }
         });

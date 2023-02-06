@@ -21,9 +21,9 @@ impl fmt::Display for Value {
         match *self {
             Value::Undefined => write!(f, "undefined"),
             Value::Null => write!(f, "null"),
-            Value::Boolean(k) => write!(f, "{}", k),
-            Value::Number(k) => write!(f, "{}", k),
-            Value::String(ref k) => write!(f, "{}", k),
+            Value::Boolean(k) => write!(f, "{k}"),
+            Value::Number(k) => write!(f, "{k}"),
+            Value::String(ref k) => write!(f, "{k}"),
         }
     }
 }

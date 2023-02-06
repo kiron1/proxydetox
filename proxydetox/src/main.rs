@@ -29,11 +29,11 @@ where
     E: std::error::Error + Send + Sync,
     W: std::io::Write,
 {
-    writeln!(writer, "fatal error: {}", error)?;
+    writeln!(writer, "fatal error: {error}")?;
     if let Some(cause) = error.source() {
         writeln!(writer, "Caused by:")?;
         for (i, e) in std::iter::successors(Some(cause), |e| e.source()).enumerate() {
-            writeln!(writer, "{}: {}", i, e)?;
+            writeln!(writer, "{i}: {e}")?;
         }
     }
     Ok(())

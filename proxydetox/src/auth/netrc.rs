@@ -66,7 +66,7 @@ impl Store {
     fn map_from_netrc(input: impl BufRead) -> Result<Entries, Error> {
         // Generate the `Basic base64("login:password") token
         fn make_token(login: &str, password: &str) -> String {
-            let t = format!("{}:{}", login, password);
+            let t = format!("{login}:{password}");
             format!("Basic {}", base64::encode(t))
         }
 

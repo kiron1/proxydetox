@@ -7,13 +7,12 @@ fn find_proxy(cmd: &str, good: &str, bad: &str) {
     let pac_script = format!(
         r#"
         function FindProxyForURL(url, host) {{
-            if({} === true) {{
+            if({cmd} === true) {{
                 return "DIRECT";
             }}
-            return "PROXY {}";
+            return "PROXY {endpoint}";
         }}
-    "#,
-        cmd, endpoint
+    "#
     );
     let mut eval = Evaluator::with_pac_script(&pac_script).unwrap();
 

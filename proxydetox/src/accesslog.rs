@@ -100,14 +100,14 @@ impl std::fmt::Display for Entry {
         )?;
         match self.response {
             Response::Success { status_code, bytes } => {
-                write!(f, " {}", status_code)?;
+                write!(f, " {status_code}")?;
                 if let Some(bytes) = bytes {
-                    write!(f, " {}b", bytes)?;
+                    write!(f, " {bytes}b")?;
                 } else {
                     f.write_str(" -")?;
                 }
             }
-            Response::Error(ref cause) => write!(f, " error: \"{}\"", cause)?,
+            Response::Error(ref cause) => write!(f, " error: \"{cause}\"")?,
         }
         if let Some(ref ua) = self.user_agent {
             f.write_str(" \"")?;
