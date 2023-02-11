@@ -3,7 +3,7 @@ mod environment;
 use crate::environment::Environment;
 use http::{header::PROXY_AUTHORIZATION, Request, Response, Uri};
 use hyper::Body;
-use proxydetox::net::read_to_string;
+use proxydetoxlib::net::read_to_string;
 use tokio::join;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]

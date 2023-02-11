@@ -1,4 +1,5 @@
 load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
 
 rust_library(
     name = "detox_net",
@@ -7,10 +8,12 @@ rust_library(
         "src/lib.rs",
         "src/metered.rs",
     ],
+    aliases = aliases(),
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
     visibility = ["//visibility:public"],
-    deps = [
-        "//proxy_client/cargo:http",
-        "//proxy_client/cargo:thiserror",
-        "//proxy_client/cargo:tokio",
-    ],
+    deps = all_crate_deps(
+        normal = True,
+    ),
 )

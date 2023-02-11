@@ -7,7 +7,7 @@ use std::sync::{
 
 use http::{header::LOCATION, Response, StatusCode};
 use hyper::Body;
-use proxydetox::http_file;
+use proxydetoxlib::http_file;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn http_file_too_many_redirects() {

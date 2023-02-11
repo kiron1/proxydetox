@@ -42,7 +42,7 @@ apple_support_dependencies()
 
 versioned_http_archive(
     name = "rules_rust",
-    sha256 = "5c2b6745236f8ce547f82eeacbbcc81d736734cc8bd92e60d3e3cdfa6e167bb5",
+    sha256 = "2466e5b2514772e84f9009010797b9cd4b51c1e6445bbd5b5e24848d90e6fb2e",
     urls = [
         "https://mirror.bazel.build/github.com/bazelbuild/rules_rust/releases/download/{version}/rules_rust-v{version}.tar.gz",
         "https://github.com/bazelbuild/rules_rust/releases/download/{version}/rules_rust-v{version}.tar.gz",
@@ -54,16 +54,44 @@ load("@rules_rust//rust:repositories.bzl", "rust_repositories")
 
 rust_repositories(
     edition = "2021",
-    version = "1.67.1",
+    # version = "1.67.0",
 )
+
+load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencies")
+
+crate_universe_dependencies(bootstrap = True)
+
+load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
+
+crates_repository(
+    name = "crate_index",
+    cargo_config = "//:.cargo/config.toml",
+    cargo_lockfile = "//:Cargo.lock",
+    # Generate with:
+    # CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
+    lockfile = "//:Cargo.Bazel.lock",
+    manifests = [
+        "//:Cargo.toml",
+        "//cproxydetox:Cargo.toml",
+        "//detox_net:Cargo.toml",
+        "//dnsdetox:Cargo.toml",
+        "//duktape:Cargo.toml",
+        "//duktape-sys:Cargo.toml",
+        "//paceval:Cargo.toml",
+        "//paclib:Cargo.toml",
+        "//proxy_client:Cargo.toml",
+        "//proxydetox:Cargo.toml",
+        "//proxydetoxlib:Cargo.toml",
+    ],
+)
+
+load("@crate_index//:defs.bzl", "crate_repositories")
+
+crate_repositories()
 
 load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
 
 rust_bindgen_repositories()
-
-load("//cargo:crates.bzl", "raze_fetch_remote_crates")
-
-raze_fetch_remote_crates()
 
 versioned_http_archive(
     name = "rules_pkg",
