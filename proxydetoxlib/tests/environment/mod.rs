@@ -7,7 +7,7 @@ use std::{io::Cursor, net::SocketAddr};
 use hyper::Body;
 use tokio::{net::TcpStream, sync::oneshot, task};
 
-use proxydetox::auth::{netrc, AuthenticatorFactory};
+use proxydetoxlib::auth::{netrc, AuthenticatorFactory};
 
 pub use httpd::Server;
 
@@ -102,7 +102,7 @@ impl Builder {
             .map(|x| netrc::Store::new(Cursor::new(x)).unwrap())
             .map(AuthenticatorFactory::basic);
 
-        let session = proxydetox::Session::builder()
+        let session = proxydetoxlib::Session::builder()
             .pac_script(self.pac_script)
             .authenticator_factory(auth)
             .always_use_connect(self.always_use_connect)

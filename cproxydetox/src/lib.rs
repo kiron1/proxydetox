@@ -1,6 +1,6 @@
-use proxydetox::auth::netrc;
-use proxydetox::auth::AuthenticatorFactory;
-use proxydetox::http_file;
+use proxydetoxlib::auth::netrc;
+use proxydetoxlib::auth::AuthenticatorFactory;
+use proxydetoxlib::http_file;
 use std::ffi::CStr;
 use std::fs::read_to_string;
 use std::fs::File;
@@ -74,7 +74,7 @@ pub unsafe extern "C" fn proxydetox_new(
     #[cfg(not(feature = "negotiate"))]
     let auth = AuthenticatorFactory::basic(load_netrc_store());
 
-    let session = proxydetox::Session::builder()
+    let session = proxydetoxlib::Session::builder()
         .pac_script(pac_script)
         .authenticator_factory(Some(auth))
         .build();

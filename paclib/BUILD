@@ -1,4 +1,5 @@
 load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
 
 rust_library(
     name = "paclib",
@@ -8,19 +9,19 @@ rust_library(
         "src/lib.rs",
         "src/proxy.rs",
     ],
+    aliases = aliases(),
     compile_data = [
         "src/pac_utils.js",
     ],
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
     visibility = ["//visibility:public"],
     deps = [
         "//detox_net",
         "//duktape",
         "//duktape-sys",
-        "//paclib/cargo:gethostname",
-        "//paclib/cargo:http",
-        "//paclib/cargo:lazy_static",
-        "//paclib/cargo:log",
-        "//paclib/cargo:regex",
-        "//paclib/cargo:thiserror",
-    ],
+    ] + all_crate_deps(
+        normal = True,
+    ),
 )

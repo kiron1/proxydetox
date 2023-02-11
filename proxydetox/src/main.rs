@@ -6,9 +6,9 @@
 mod options;
 
 use options::{Authorization, Options};
-use proxydetox::auth::netrc;
-use proxydetox::auth::AuthenticatorFactory;
-use proxydetox::socket;
+use proxydetoxlib::auth::netrc;
+use proxydetoxlib::auth::AuthenticatorFactory;
+use proxydetoxlib::socket;
 use std::fs::File;
 use std::net::SocketAddr;
 use std::result::Result;
@@ -40,7 +40,7 @@ where
 }
 
 #[tokio::main]
-async fn run(config: &Options) -> Result<(), proxydetox::Error> {
+async fn run(config: &Options) -> Result<(), proxydetoxlib::Error> {
     let env_name = format!("{}_LOG", env!("CARGO_PKG_NAME").to_uppercase());
 
     let filter = if let Ok(filter) = EnvFilter::try_from_env(&env_name) {
@@ -81,7 +81,7 @@ async fn run(config: &Options) -> Result<(), proxydetox::Error> {
             AuthenticatorFactory::negotiate(negotiate.clone())
         }
         #[cfg(not(feature = "negotiate"))]
-        Authorization::Negotiate => unreachable!(),
+        Authorization::Negotiate(_) => unreachable!(),
         Authorization::Basic(netrc_file) => {
             let store = if let Ok(file) = File::open(netrc_file) {
                 netrc::Store::new(std::io::BufReader::new(file))?
@@ -92,7 +92,7 @@ async fn run(config: &Options) -> Result<(), proxydetox::Error> {
         }
     };
 
-    let session = proxydetox::Session::builder()
+    let session = proxydetoxlib::Session::builder()
         .pac_script(pac_script)
         .authenticator_factory(Some(auth.clone()))
         .always_use_connect(config.always_use_connect)

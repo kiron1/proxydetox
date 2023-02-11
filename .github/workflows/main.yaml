@@ -96,20 +96,13 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 1
-      - name: Install cargo-raze
-        uses: baptiste0928/cargo-install@v1
-        with:
-          crate: cargo-raze
-      - name: Run cargo raze
-        run: |
-          cargo raze
       - name: Bazel cache
         uses: actions/cache@v3
         with:
           path: |
             ~/.cache/bazel_build_cache
             ~/.cache/bazel_repo_cache
-          key: ${{ runner.os }}-bazel-${{ hashFiles('**/Cargo.toml', '**/WORKSPACE', '**/BUILD', '**/*.bazel') }}
+          key: ${{ runner.os }}-bazel-${{ hashFiles('Cargo.Bazel.lock', 'WORKSPACE') }}
           restore-keys: |
             ${{ runner.os }}-bazel-
       - name: Bazel build

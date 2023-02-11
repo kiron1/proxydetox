@@ -6,34 +6,15 @@ homepage = "https://proxydetox.colorto.cc/"
 
 [features]
 default = ["negotiate"]
-negotiate = ["cross-krb5"]
-
-[target.'cfg(unix)'.dependencies]
-libc = "0.2"
+negotiate = ["proxydetoxlib/negotiate"]
 
 [dependencies]
-chrono = "0.4"
 clap = "4.1"
-cross-krb5 = { version = "0.3", default-features = false, optional = true }
-base64 = "0.21"
-bytes = "1.1"
-detox_net = { path = "../detox_net" }
 dirs = "4.0"
-futures-util = { version = "0.3", default-features = false }
 http = "0.2"
 hyper = { version = "0.14", features = ["http1", "http2", "client", "server", "stream", "tcp"] }
 lazy_static = "1.4"
-netrc = { git = "https://github.com/kiron1/netrc-rs", branch = "modernize" }
-paclib = { path = "../paclib" }
-proxy_client = { path = "../proxy_client" }
-thiserror = "1.0"
+proxydetoxlib = { path = "../proxydetoxlib" }
 tokio = { version = "1", features = ["rt-multi-thread", "net", "macros", "sync", "signal"] }
-tokio-stream = { version = "0.1", features = ["sync"] }
 tracing = "0.1"
-tracing-attributes = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-tracing-futures = "0.2"
-tower = { version = "0.4", features = ["util"] }
-
-[lib]
-doctest = false

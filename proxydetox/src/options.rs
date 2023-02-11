@@ -39,7 +39,7 @@ impl PathOrUri {
     pub async fn contents(&self) -> std::io::Result<String> {
         match *self {
             PathOrUri::Path(ref p) => read_to_string(p),
-            PathOrUri::Uri(ref u) => proxydetox::http_file(u.clone()).await,
+            PathOrUri::Uri(ref u) => proxydetoxlib::http_file(u.clone()).await,
         }
     }
 }

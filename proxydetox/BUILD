@@ -1,63 +1,6 @@
 load("@rules_pkg//:pkg.bzl", "pkg_zip")
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
-
-rust_library(
-    name = "proxydetoxlib",
-    srcs = [
-        "src/accesslog.rs",
-        "src/auth.rs",
-        "src/auth/kerberos.rs",
-        "src/auth/netrc.rs",
-        "src/client.rs",
-        "src/client/direct.rs",
-        "src/client/proxy.rs",
-        "src/connect.rs",
-        "src/lib.rs",
-        "src/net.rs",
-        "src/session.rs",
-        "src/session/builder.rs",
-        "src/session/peer.rs",
-        "src/session/shared.rs",
-        "src/socket.rs",
-    ],
-    compile_data = [
-        "src/502.html",
-        "src/accesslog.html",
-    ],
-    crate_features = select({
-        "//:enable_negotiate": ["negotiate"],
-        "//conditions:default": [],
-    }),
-    crate_name = "proxydetox",
-    proc_macro_deps = [
-        "//proxydetox/cargo:tracing_attributes",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//detox_net",
-        "//paclib",
-        "//proxy_client",
-        "//proxydetox/cargo:base64",
-        "//proxydetox/cargo:chrono",
-        "//proxydetox/cargo:dirs",
-        "//proxydetox/cargo:futures_util",
-        "//proxydetox/cargo:http",
-        "//proxydetox/cargo:hyper",
-        "//proxydetox/cargo:lazy_static",
-        "//proxydetox/cargo:libc",
-        "//proxydetox/cargo:netrc",
-        "//proxydetox/cargo:thiserror",
-        "//proxydetox/cargo:tokio",
-        "//proxydetox/cargo:tokio_stream",
-        "//proxydetox/cargo:tower",
-        "//proxydetox/cargo:tracing",
-        "//proxydetox/cargo:tracing_futures",
-        "//proxydetox/cargo:tracing_subscriber",
-    ] + select({
-        "//:enable_negotiate": ["//proxydetox/cargo:cross_krb5"],
-        "//conditions:default": [],
-    }),
-)
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
 
 rust_binary(
     name = "proxydetox",
@@ -65,19 +8,18 @@ rust_binary(
         "src/main.rs",
         "src/options.rs",
     ],
+    aliases = aliases(),
+    crate_features = select({
+        "//:enable_negotiate": ["negotiate"],
+        "//conditions:default": [],
+    }),
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
     visibility = ["//visibility:public"],
-    deps = [
-        ":proxydetoxlib",
-        "//proxydetox/cargo:clap",
-        "//proxydetox/cargo:dirs",
-        "//proxydetox/cargo:futures_util",
-        "//proxydetox/cargo:http",
-        "//proxydetox/cargo:hyper",
-        "//proxydetox/cargo:libc",
-        "//proxydetox/cargo:tokio",
-        "//proxydetox/cargo:tracing",
-        "//proxydetox/cargo:tracing_subscriber",
-    ],
+    deps = ["//proxydetoxlib"] + all_crate_deps(
+        normal = True,
+    ),
 )
 
 pkg_zip(

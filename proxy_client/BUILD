@@ -1,4 +1,5 @@
 load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
 
 rust_library(
     name = "proxy_client",
@@ -9,13 +10,14 @@ rust_library(
         "src/http_proxy_stream.rs",
         "src/lib.rs",
     ],
+    aliases = aliases(),
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
     visibility = ["//visibility:public"],
     deps = [
         "//detox_net",
-        "//proxy_client/cargo:http",
-        "//proxy_client/cargo:hyper",
-        "//proxy_client/cargo:thiserror",
-        "//proxy_client/cargo:tokio",
-        "//proxy_client/cargo:tower",
-    ],
+    ] + all_crate_deps(
+        normal = True,
+    ),
 )

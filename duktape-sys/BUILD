@@ -1,5 +1,6 @@
 load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen")
 load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
 
 cc_library(
     name = "duktapelib",
@@ -40,14 +41,18 @@ rust_library(
     srcs = [
         "src/lib.rs",
     ],
+    aliases = aliases(),
     compile_data = [
         ":bindings",
     ],
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
     rustc_env = {
         "DUKTAPE_BINDINGS_RS": "$(execpath :bindings)",
     },
     visibility = ["//visibility:public"],
-    deps = [
-        ":duktapelib",
-    ],
+    deps = [":duktapelib"] + all_crate_deps(
+        normal = True,
+    ),
 )

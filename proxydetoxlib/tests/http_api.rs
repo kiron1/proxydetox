@@ -6,7 +6,7 @@ use http::{
     Request,
 };
 use hyper::Body;
-use proxydetox::net::read_to_string;
+use proxydetoxlib::net::read_to_string;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn api_get_request() {

@@ -1,22 +1,23 @@
 load("@rules_rust//rust:defs.bzl", "rust_static_library")
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_c_module")
+load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
 
 rust_static_library(
     name = "cproxydetoximpl",
     srcs = [
         "src/lib.rs",
     ],
+    aliases = aliases(),
     crate_features = select({
         "//:enable_negotiate": ["negotiate"],
         "//conditions:default": [],
     }),
-    deps = [
-        "//cproxydetox/cargo:dirs",
-        "//cproxydetox/cargo:hyper",
-        "//cproxydetox/cargo:libc",
-        "//cproxydetox/cargo:tokio",
-        "//proxydetox:proxydetoxlib",
-    ],
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
+    deps = ["//proxydetoxlib"] + all_crate_deps(
+        normal = True,
+    ),
 )
 
 cc_library(

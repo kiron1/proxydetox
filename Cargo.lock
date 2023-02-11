@@ -259,7 +259,7 @@ dependencies = [
  "dirs",
  "hyper",
  "libc",
- "proxydetox",
+ "proxydetoxlib",
  "tokio",
 ]
 
@@ -1113,10 +1113,24 @@ dependencies = [
 name = "proxydetox"
 version = "0.6.1"
 dependencies = [
+ "clap 4.1.4",
+ "dirs",
+ "http",
+ "hyper",
+ "lazy_static",
+ "proxydetoxlib",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "proxydetoxlib"
+version = "0.6.1"
+dependencies = [
  "base64",
  "bytes",
  "chrono",
- "clap 4.1.4",
  "cross-krb5",
  "detox_net",
  "dirs",
