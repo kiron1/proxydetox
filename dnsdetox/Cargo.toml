@@ -15,6 +15,7 @@ http = "0.2"
 hyper = { version = "0.14", features = ["http1", "http2", "client", "stream", "tcp"] }
 hyper-tls = "0.5"
 log = "0.4"
+paclib = { path = "../paclib" }
 proxy_client = { path = "../proxy_client" }
 thiserror = "1.0"
 tokio = { version = "1", features = ["rt-multi-thread", "net", "macros", "sync", "signal"] }

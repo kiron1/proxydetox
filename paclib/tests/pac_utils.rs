@@ -1,6 +1,6 @@
 use detox_net::HostAndPort;
 use http::Uri;
-use paclib::{Evaluator, ProxyDesc};
+use paclib::{Evaluator, Proxy, ProxyOrDirect};
 
 fn find_proxy(cmd: &str, good: &str, bad: &str) {
     let endpoint = "example.org:3128".parse::<HostAndPort>().unwrap();
@@ -17,13 +17,13 @@ fn find_proxy(cmd: &str, good: &str, bad: &str) {
     let mut eval = Evaluator::with_pac_script(&pac_script).unwrap();
 
     assert_eq!(
-        ProxyDesc::Direct,
+        ProxyOrDirect::Direct,
         eval.find_proxy(&good.parse::<Uri>().unwrap())
             .unwrap()
             .first()
     );
     assert_eq!(
-        ProxyDesc::Proxy(endpoint),
+        ProxyOrDirect::Proxy(Proxy::Http(endpoint)),
         eval.find_proxy(&bad.parse::<Uri>().unwrap())
             .unwrap()
             .first()
@@ -75,7 +75,7 @@ fn test_my_ip_address() {
     let mut eval = Evaluator::with_pac_script(pac_script).unwrap();
 
     assert_eq!(
-        ProxyDesc::Direct,
+        ProxyOrDirect::Direct,
         eval.find_proxy(&"localhost".parse::<Uri>().unwrap())
             .unwrap()
             .first()

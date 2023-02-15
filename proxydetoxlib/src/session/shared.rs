@@ -6,6 +6,7 @@ use detox_net::HostAndPort;
 use http::Uri;
 use http::{Request, Response};
 use hyper::Body;
+use paclib::ProxyOrDirect;
 use proxy_client::HttpProxyConnector;
 use tokio::sync::broadcast::Sender;
 use tokio::time::timeout;
@@ -18,12 +19,12 @@ use crate::accesslog;
 use crate::auth::AuthenticatorFactory;
 use crate::client::ProxyClient;
 use crate::connect::Connect;
-use paclib::proxy::ProxyDesc;
+use paclib::proxy::Proxy;
 
 pub(crate) struct Shared {
     pub(super) eval: Mutex<paclib::Evaluator>,
     pub(super) direct_client: Mutex<crate::client::Direct>,
-    pub(super) proxy_clients: Mutex<HashMap<HostAndPort, ProxyClient>>,
+    pub(super) proxy_clients: Mutex<HashMap<Proxy, ProxyClient>>,
     pub(super) auth: AuthenticatorFactory,
     pub(super) always_use_connect: bool,
     pub(super) direct_fallback: bool,
@@ -45,13 +46,13 @@ impl Shared {
         })
     }
 
-    pub(super) fn proxy_for(&self, endpoint: HostAndPort) -> Result<ProxyClient> {
+    pub(super) fn proxy_for(&self, proxy: Proxy) -> Result<ProxyClient> {
         let mut proxies = self.proxy_clients.lock().unwrap();
-        match proxies.get(&endpoint) {
+        match proxies.get(&proxy) {
             Some(proxy) => Ok(proxy.clone()),
             None => {
-                tracing::debug!(endpoint=%endpoint, "new proxy client");
-                let auth = self.auth.make(endpoint.host());
+                tracing::debug!(%proxy, "new proxy client");
+                let auth = self.auth.make(proxy.host());
                 let auth = match auth {
                     Ok(auth) => auth,
                     Err(ref cause) => {
@@ -59,10 +60,9 @@ impl Shared {
                         Box::new(crate::auth::NoneAuthenticator)
                     }
                 };
-                let client =
-                    hyper::Client::builder().build(HttpProxyConnector::new(endpoint.clone()));
+                let client = hyper::Client::builder().build(HttpProxyConnector::new(proxy.clone()));
                 let client = ProxyClient::new(client, auth);
-                proxies.insert(endpoint, client.clone());
+                proxies.insert(proxy, client.clone());
                 Ok(client)
             }
         }
@@ -71,7 +71,7 @@ impl Shared {
     #[instrument(level = "trace", skip(self))]
     pub(super) fn proxy_client(
         &self,
-        proxy: HostAndPort,
+        proxy: Proxy,
     ) -> Result<BoxService<Request<Body>, Response<Body>, Error>> {
         let client = self.proxy_for(proxy.clone());
         client.map(|s| s.map_err(move |e| Error::MakeProxyClient(e, proxy)).boxed())
@@ -79,7 +79,7 @@ impl Shared {
 
     async fn proxy_connect(
         &self,
-        proxy: HostAndPort,
+        proxy: Proxy,
         uri: http::Uri,
     ) -> Result<BoxService<Request<Body>, Response<Body>, Error>> {
         let proxy_client = self.proxy_for(proxy.clone())?;
@@ -122,7 +122,7 @@ impl Shared {
     #[instrument(skip(self, method, uri))]
     pub(super) async fn establish_connection(
         &self,
-        proxy: paclib::ProxyDesc,
+        proxy: ProxyOrDirect,
         method: &http::Method,
         uri: &http::Uri,
     ) -> Result<BoxService<Request<Body>, Response<Body>, Error>> {
@@ -130,10 +130,12 @@ impl Shared {
         let use_connect = self.always_use_connect;
 
         match (is_connect, use_connect, proxy) {
-            (true, _, ProxyDesc::Proxy(proxy)) => self.proxy_connect(proxy, uri.clone()).await,
-            (false, true, ProxyDesc::Proxy(proxy)) => self.proxy_connect(proxy, uri.clone()).await,
-            (false, false, ProxyDesc::Proxy(proxy)) => self.proxy_client(proxy),
-            (true, _, ProxyDesc::Direct) => {
+            (true, _, ProxyOrDirect::Proxy(proxy)) => self.proxy_connect(proxy, uri.clone()).await,
+            (false, true, ProxyOrDirect::Proxy(proxy)) => {
+                self.proxy_connect(proxy, uri.clone()).await
+            }
+            (false, false, ProxyOrDirect::Proxy(proxy)) => self.proxy_client(proxy),
+            (true, _, ProxyOrDirect::Direct) => {
                 let mut conn = Connect::new();
                 let handshake = conn.call(uri.clone()).await;
                 handshake
@@ -143,7 +145,7 @@ impl Shared {
                     })
                     .map(|s| s.map_err(|_| Error::Handshake).boxed())
             }
-            (false, _, ProxyDesc::Direct) => self.direct_client(uri.clone()).await,
+            (false, _, ProxyOrDirect::Direct) => self.direct_client(uri.clone()).await,
         }
     }
 }

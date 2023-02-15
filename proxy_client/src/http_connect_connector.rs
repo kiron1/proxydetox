@@ -1,8 +1,11 @@
-use crate::HttpConnectStream;
+use crate::{stream::MaybeTlsStream, HttpConnectStream};
+use detox_net::HostAndPort;
 use http::{header::HOST, Request, StatusCode};
 use hyper::{body::Bytes, client::conn, Body};
+use paclib::Proxy;
 use std::{future::Future, io::Cursor, pin::Pin};
 use tokio::{io::AsyncReadExt, net::TcpStream};
+use tokio_native_tls::{native_tls, TlsConnector};
 use tower::ServiceExt;
 
 #[derive(thiserror::Error, Debug)]
@@ -31,6 +34,14 @@ pub enum Error {
         #[source]
         hyper::Error,
     ),
+    #[error("error connecting to {0}")]
+    ConnectError(HostAndPort, #[source] std::io::Error),
+    #[error("TLS error")]
+    TlsError(
+        #[from]
+        #[source]
+        tokio_native_tls::native_tls::Error,
+    ),
     #[error("internal error: {0}")]
     JoinError(
         #[from]
@@ -43,25 +54,31 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Clone)]
 pub struct HttpConnectConnector {
-    proxy_uri: http::Uri,
+    proxy: Proxy,
+    tls: TlsConnector,
 }
 
 impl HttpConnectConnector {
-    pub fn new(proxy_uri: http::Uri) -> Self {
-        Self { proxy_uri }
+    pub fn new(proxy: Proxy) -> Self {
+        let tls = native_tls::TlsConnector::new()
+            .map(Into::into)
+            .unwrap_or_else(|e| panic!("HttpProxyConnector::new() failure: {}", e));
+        Self { proxy, tls }
     }
 
     async fn call_async(&self, dst: http::Uri) -> Result<HttpConnectStream> {
-        let proxy_addr = (
-            self.proxy_uri
-                .host()
-                .ok_or_else(|| Error::InvalidProxyUri(self.proxy_uri.clone()))?,
-            self.proxy_uri
-                .port_u16()
-                .ok_or_else(|| Error::InvalidProxyUri(self.proxy_uri.clone()))?,
-        );
-
-        let stream = TcpStream::connect(proxy_addr).await?;
+        let stream = TcpStream::connect(self.proxy.endpoint().to_pair())
+            .await
+            .map_err(|e| Error::ConnectError(self.proxy.endpoint().clone(), e))?;
+        let local_addr = stream.local_addr().ok();
+        let remote_addr = stream.peer_addr().ok();
+        let stream: MaybeTlsStream<TcpStream> = match self.proxy {
+            Proxy::Http(_) => stream.into(),
+            Proxy::Https(_) => {
+                let tls = self.tls.connect(self.proxy.host(), stream).await?;
+                tls.into()
+            }
+        };
 
         let (mut request_sender, connection) = conn::handshake(stream).await?;
 
@@ -74,13 +91,15 @@ impl HttpConnectConnector {
             }
         });
 
-        let target = format!(
-            "{}:{}",
-            dst.host()
-                .ok_or_else(|| Error::InvalidConnectUri(self.proxy_uri.clone()))?,
-            dst.port_u16()
-                .ok_or_else(|| Error::InvalidConnectUri(self.proxy_uri.clone()))?,
-        );
+        let target = {
+            let host = dst
+                .host()
+                .ok_or_else(|| Error::InvalidConnectUri(dst.clone()))?;
+            let port = dst
+                .port_u16()
+                .ok_or_else(|| Error::InvalidConnectUri(dst.clone()))?;
+            format!("{}:{}", host, port)
+        };
         let request = Request::connect(&target)
             .header(HOST, target)
             .body(Body::from(""))?;
@@ -102,7 +121,9 @@ impl HttpConnectConnector {
 
         let rd = <Cursor<Bytes> as AsyncReadExt>::chain(buf, rd);
         let rd = Box::new(rd);
+        let wr = Box::new(wr);
         let stream = HttpConnectStream::new(rd, wr);
+        let stream = stream.with_addr(local_addr, remote_addr);
 
         Ok(stream)
     }

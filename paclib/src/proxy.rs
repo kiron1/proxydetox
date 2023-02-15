@@ -4,8 +4,8 @@ use detox_net::HostAndPort;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("unknown directive, expected DIRECT or PROXY")]
-    UnknowDirective,
+    #[error("unknown directive {0}, expected DIRECT, PROXY, HTTP, or HTTPS")]
+    UnknowDirective(String),
     #[error("empty entry ")]
     EmptyEntry,
     #[error("invalid input")]
@@ -22,26 +22,26 @@ pub enum Error {
 ///
 /// See [Proxy Auto-Configuration (PAC) file, return value format](https://developer.mozilla.org/en-US/docs/Web/HTTP/Proxy_servers_and_tunneling/Proxy_Auto-Configuration_PAC_file#return_value_format)
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct Proxies(Vec<ProxyDesc>);
+pub struct Proxies(Vec<ProxyOrDirect>);
 
 impl Proxies {
-    pub fn new(proxies: Vec<ProxyDesc>) -> Self {
+    pub fn new(proxies: Vec<ProxyOrDirect>) -> Self {
         Self(proxies)
     }
 
     pub fn direct() -> Self {
-        Self::new(vec![ProxyDesc::Direct])
+        Self::new(vec![ProxyOrDirect::Direct])
     }
 
-    pub fn first(&self) -> ProxyDesc {
+    pub fn first(&self) -> ProxyOrDirect {
         self.0.get(0).unwrap().clone()
     }
 
-    pub fn iter(&self) -> std::slice::Iter<ProxyDesc> {
+    pub fn iter(&self) -> std::slice::Iter<ProxyOrDirect> {
         self.0.iter()
     }
 
-    pub fn push(&mut self, p: ProxyDesc) {
+    pub fn push(&mut self, p: ProxyOrDirect) {
         self.0.push(p)
     }
 }
@@ -78,38 +78,76 @@ impl std::str::FromStr for Proxies {
     }
 }
 
-/// A single proxy directive.
-///
-/// Either `DIRECT` or `PROXY host:port`.
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub enum ProxyDesc {
+/// Either a proxy or direct connection endpoint.
+#[derive(Debug, Hash, PartialEq, Eq, Clone)]
+pub enum ProxyOrDirect {
     Direct,
-    Proxy(HostAndPort),
+    Proxy(Proxy),
 }
 
-impl fmt::Display for ProxyDesc {
+/// A HTTP or HTTTPS proxy endpoint.
+#[derive(Debug, Hash, PartialEq, Eq, Clone)]
+pub enum Proxy {
+    Http(HostAndPort),
+    Https(HostAndPort),
+}
+
+impl Proxy {
+    pub fn endpoint(&self) -> &HostAndPort {
+        match *self {
+            Self::Http(ref ep) => ep,
+            Self::Https(ref ep) => ep,
+        }
+    }
+
+    pub fn host(&self) -> &str {
+        self.endpoint().host()
+    }
+
+    pub fn port(&self) -> u16 {
+        self.endpoint().port()
+    }
+}
+
+impl fmt::Display for ProxyOrDirect {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            ProxyDesc::Direct => f.write_str("DIRECT"),
-            ProxyDesc::Proxy(ref host) => {
+            Self::Direct => f.write_str("DIRECT"),
+            Self::Proxy(ref proxy) => proxy.fmt(f),
+        }
+    }
+}
+
+impl fmt::Display for Proxy {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Self::Http(ref endpoint) => {
                 f.write_str("PROXY ")?;
-                f.write_str(&host.to_string())
+                f.write_str(&endpoint.to_string())
+            }
+            Self::Https(ref endpoint) => {
+                f.write_str("HTTPS ")?;
+                f.write_str(&endpoint.to_string())
             }
         }
     }
 }
 
-impl std::str::FromStr for ProxyDesc {
+impl std::str::FromStr for ProxyOrDirect {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let s = s.trim();
-        if let Some(host_port) = s.strip_prefix("PROXY") {
-            Ok(ProxyDesc::Proxy(host_port.parse()?))
+        if let Some(host_port) = s.strip_prefix("HTTPS") {
+            Ok(Self::Proxy(Proxy::Https(host_port.parse()?)))
+        } else if let Some(host_port) = s.strip_prefix("PROXY") {
+            Ok(Self::Proxy(Proxy::Http(host_port.parse()?)))
+        } else if let Some(host_port) = s.strip_prefix("HTTP") {
+            Ok(Self::Proxy(Proxy::Http(host_port.parse()?)))
         } else if s == "DIRECT" {
-            Ok(ProxyDesc::Direct)
+            Ok(Self::Direct)
         } else {
-            Err(Error::UnknowDirective)
+            Err(Error::UnknowDirective(s.to_owned()))
         }
     }
 }
@@ -117,20 +155,29 @@ impl std::str::FromStr for ProxyDesc {
 #[cfg(test)]
 mod tests {
     use super::Proxies;
-    use super::ProxyDesc;
+    use super::Proxy;
+    use super::ProxyOrDirect;
 
     #[test]
-    fn proxy_desc_parse() -> Result<(), Box<dyn std::error::Error>> {
-        assert!("FOOBAR".parse::<ProxyDesc>().is_err());
-        assert!("DIRECTx".parse::<ProxyDesc>().is_err());
-        assert!("direct".parse::<ProxyDesc>().is_err());
-        assert_eq!("DIRECT".parse::<ProxyDesc>()?, ProxyDesc::Direct);
-        assert_eq!(" DIRECT ".parse::<ProxyDesc>()?, ProxyDesc::Direct);
+    fn proxy_parse() -> Result<(), Box<dyn std::error::Error>> {
+        assert!("FOOBAR".parse::<ProxyOrDirect>().is_err());
+        assert!("DIRECTx".parse::<ProxyOrDirect>().is_err());
+        assert!("direct".parse::<ProxyOrDirect>().is_err());
+        assert_eq!("DIRECT".parse::<ProxyOrDirect>()?, ProxyOrDirect::Direct);
+        assert_eq!(" DIRECT ".parse::<ProxyOrDirect>()?, ProxyOrDirect::Direct);
         assert_eq!(
-            "PROXY 127.0.0.1:3128".parse::<ProxyDesc>()?,
-            ProxyDesc::Proxy("127.0.0.1:3128".parse()?)
+            "PROXY 127.0.0.1:3128".parse::<ProxyOrDirect>()?,
+            ProxyOrDirect::Proxy(Proxy::Http("127.0.0.1:3128".parse()?))
         );
-        assert!("PROXY 127.0.0.1:abc".parse::<ProxyDesc>().is_err());
+        assert_eq!(
+            "HTTP 127.0.0.1:3128".parse::<ProxyOrDirect>()?,
+            ProxyOrDirect::Proxy(Proxy::Http("127.0.0.1:3128".parse()?))
+        );
+        assert_eq!(
+            "HTTPS 127.0.0.1:3128".parse::<ProxyOrDirect>()?,
+            ProxyOrDirect::Proxy(Proxy::Https("127.0.0.1:3128".parse()?))
+        );
+        assert!("PROXY 127.0.0.1:abc".parse::<ProxyOrDirect>().is_err());
         Ok(())
     }
 
@@ -141,17 +188,31 @@ mod tests {
         assert!(";".parse::<Proxies>().is_err());
         assert_eq!(
             "DIRECT".parse::<Proxies>()?,
-            Proxies::new(vec![ProxyDesc::Direct])
+            Proxies::new(vec![ProxyOrDirect::Direct])
         );
         assert_eq!(
             "DIRECT;".parse::<Proxies>()?,
-            Proxies::new(vec![ProxyDesc::Direct])
+            Proxies::new(vec![ProxyOrDirect::Direct])
         );
         assert_eq!(
             "PROXY localhost:3128; DIRECT".parse::<Proxies>()?,
             Proxies::new(vec![
-                ProxyDesc::Proxy("localhost:3128".parse()?),
-                ProxyDesc::Direct
+                ProxyOrDirect::Proxy(Proxy::Http("localhost:3128".parse()?)),
+                ProxyOrDirect::Direct
+            ])
+        );
+        assert_eq!(
+            "HTTP localhost:3128; DIRECT".parse::<Proxies>()?,
+            Proxies::new(vec![
+                ProxyOrDirect::Proxy(Proxy::Http("localhost:3128".parse()?)),
+                ProxyOrDirect::Direct
+            ])
+        );
+        assert_eq!(
+            "HTTPS localhost:3128; DIRECT".parse::<Proxies>()?,
+            Proxies::new(vec![
+                ProxyOrDirect::Proxy(Proxy::Https("localhost:3128".parse()?)),
+                ProxyOrDirect::Direct
             ])
         );
         Ok(())

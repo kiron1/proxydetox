@@ -1,6 +1,7 @@
 use hyper::body::Buf;
 use hyper::{body::Bytes, Body};
 use hyper_tls::HttpsConnector;
+use paclib::Proxy;
 use proxy_client::HttpConnectConnector;
 use std::io::Read;
 use std::time::Duration;
@@ -13,8 +14,8 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new(remote_uri: http::Uri, proxy_uri: http::Uri) -> Self {
-        let http_proxy = HttpConnectConnector::new(proxy_uri);
+    pub fn new(remote_uri: http::Uri, proxy: Proxy) -> Self {
+        let http_proxy = HttpConnectConnector::new(proxy);
         let https = HttpsConnector::new_with_connector(http_proxy);
         let client = hyper::Client::builder().build::<_, hyper::Body>(https);
         let timeout = Duration::from_millis(1500);

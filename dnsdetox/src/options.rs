@@ -1,4 +1,5 @@
 use http::Uri;
+use paclib::Proxy;
 use std::{ffi::OsString, fs::read_to_string, net::SocketAddr, path::PathBuf};
 
 use clap::{Arg, ArgMatches, Command};
@@ -6,7 +7,7 @@ use clap::{Arg, ArgMatches, Command};
 #[derive(Debug)]
 pub struct Options {
     pub port: u16,
-    pub proxy: Uri,
+    pub proxy: Proxy,
     pub primary: SocketAddr,
     pub secondary: Uri,
 }
@@ -67,7 +68,7 @@ impl From<ArgMatches> for Options {
     fn from(m: ArgMatches) -> Self {
         Self {
             port: *m.get_one("port").unwrap(),
-            proxy: m.get_one::<Uri>("proxy").cloned().unwrap(),
+            proxy: m.get_one::<Proxy>("proxy").cloned().unwrap(),
             primary: *m.get_one("primary").unwrap(),
             secondary: m.get_one::<Uri>("secondary").cloned().unwrap(),
         }
