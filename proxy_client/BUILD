@@ -9,6 +9,7 @@ rust_library(
         "src/http_proxy_connector.rs",
         "src/http_proxy_stream.rs",
         "src/lib.rs",
+        "src/stream.rs",
     ],
     aliases = aliases(),
     proc_macro_deps = all_crate_deps(
@@ -17,6 +18,7 @@ rust_library(
     visibility = ["//visibility:public"],
     deps = [
         "//detox_net",
+        "//paclib",
     ] + all_crate_deps(
         normal = True,
     ),

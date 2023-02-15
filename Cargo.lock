@@ -372,6 +372,7 @@ dependencies = [
  "hyper",
  "hyper-tls",
  "log",
+ "paclib",
  "proxy_client",
  "thiserror",
  "tokio",
@@ -1104,8 +1105,10 @@ dependencies = [
  "detox_net",
  "http",
  "hyper",
+ "paclib",
  "thiserror",
  "tokio",
+ "tokio-native-tls",
  "tower",
 ]
 

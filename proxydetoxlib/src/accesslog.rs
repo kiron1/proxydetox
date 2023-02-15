@@ -3,7 +3,7 @@ use std::{fmt::Write, net::SocketAddr};
 use chrono::{DateTime, Duration, Local, SecondsFormat};
 
 use http::StatusCode;
-use paclib::ProxyDesc;
+use paclib::ProxyOrDirect;
 
 #[derive(Clone, Debug)]
 enum Response {
@@ -22,7 +22,7 @@ pub struct Entry {
     uri: http::Uri,
     version: http::Version,
     user_agent: Option<String>,
-    proxy: ProxyDesc,
+    proxy: ProxyOrDirect,
     response: Response,
     duration: Duration,
 }
@@ -37,7 +37,12 @@ pub struct EntryBegin {
 }
 
 impl EntryBegin {
-    pub fn success(self, proxy: ProxyDesc, status_code: StatusCode, bytes: Option<u64>) -> Entry {
+    pub fn success(
+        self,
+        proxy: ProxyOrDirect,
+        status_code: StatusCode,
+        bytes: Option<u64>,
+    ) -> Entry {
         Entry {
             timestamp: self.timestamp,
             peer_addr: self.peer_addr,
@@ -51,7 +56,7 @@ impl EntryBegin {
         }
     }
 
-    pub fn error(self, proxy: ProxyDesc, error: &impl std::error::Error) -> Entry {
+    pub fn error(self, proxy: ProxyOrDirect, error: &impl std::error::Error) -> Entry {
         Entry {
             timestamp: self.timestamp,
             peer_addr: self.peer_addr,
@@ -122,7 +127,7 @@ impl std::fmt::Display for Entry {
 
 #[cfg(test)]
 mod tests {
-    use paclib::ProxyDesc;
+    use paclib::{Proxy, ProxyOrDirect};
 
     use super::Entry;
 
@@ -136,7 +141,7 @@ mod tests {
             Some("curl/7.79.1".to_string()),
         );
         let entry = entry.success(
-            ProxyDesc::Proxy("127.0.0.1:8080".parse().unwrap()),
+            ProxyOrDirect::Proxy(Proxy::Http("127.0.0.1:8080".parse().unwrap())),
             http::StatusCode::OK,
             Some(4096),
         );
@@ -162,7 +167,7 @@ mod tests {
             http::Version::HTTP_11,
             Some("curl/7.79.1".to_string()),
         );
-        let entry = entry.success(ProxyDesc::Direct, http::StatusCode::OK, None);
+        let entry = entry.success(ProxyOrDirect::Direct, http::StatusCode::OK, None);
         let entry = entry.to_string();
 
         assert!(entry.contains(" - "));
@@ -177,7 +182,7 @@ mod tests {
             http::Version::HTTP_11,
             None,
         );
-        let entry = entry.success(ProxyDesc::Direct, http::StatusCode::OK, Some(1024));
+        let entry = entry.success(ProxyOrDirect::Direct, http::StatusCode::OK, Some(1024));
         let entry = entry.to_string();
 
         assert!(entry.contains(" -"));
@@ -193,7 +198,7 @@ mod tests {
             Some("curl/7.79.1".to_string()),
         );
         let entry = entry.error(
-            ProxyDesc::Direct,
+            ProxyOrDirect::Direct,
             &std::io::Error::new(std::io::ErrorKind::Other, "ERROR"),
         );
         let entry = entry.to_string();

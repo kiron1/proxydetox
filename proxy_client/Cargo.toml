@@ -9,7 +9,9 @@ edition = "2021"
 detox_net = { path = "../detox_net" }
 http = "0.2"
 hyper = { version = "0.14", features = ["http1", "http2", "client", "server", "tcp"] }
+paclib = { path = "../paclib" }
 tokio = { version = "1", features = ["rt-multi-thread", "net", "macros", "sync"] }
+tokio-native-tls = "0.3"
 thiserror = "1.0"
 tower = { version = "0.4", features = ["util"] }
 

@@ -12,12 +12,12 @@ use http::header::CONTENT_TYPE;
 use http::Response;
 use http::Uri;
 use hyper::Body;
+use paclib::ProxyOrDirect;
 use tower::Service;
 use tracing_futures::Instrument;
 
 use builder::Builder;
-use detox_net::HostAndPort;
-use paclib::proxy::ProxyDesc;
+use paclib::proxy::Proxy;
 use peer::PeerSession;
 use shared::Shared;
 
@@ -32,13 +32,13 @@ pub enum Error {
         detox_net::host_and_port::Error,
     ),
     #[error("timeout when connecting to {0}")]
-    ConnectTimeout(HostAndPort),
+    ConnectTimeout(Proxy),
     #[error("upstream error reaching {2} via {1}: {0}")]
-    Upstream(#[source] crate::client::Error, HostAndPort, Uri),
+    Upstream(#[source] crate::client::Error, Proxy, Uri),
     #[error("error creating client for {1}: {0}")]
     MakeClient(#[source] hyper::Error, Uri),
     #[error("error creating proxy for {1}: {0}")]
-    MakeProxyClient(#[source] crate::client::Error, HostAndPort),
+    MakeProxyClient(#[source] crate::client::Error, Proxy),
     #[error("client error: {0}")]
     Client(
         #[from]
@@ -48,9 +48,9 @@ pub enum Error {
     #[error("connect error reaching {1}: {0}")]
     Connect(#[source] tokio::io::Error, Uri),
     #[error("proxy connect error reaching {2} via {1}: {0}")]
-    ProxyConnect(#[source] crate::client::ConnectError, HostAndPort, Uri),
+    ProxyConnect(#[source] crate::client::ConnectError, Proxy, Uri),
     #[error("upstream proxy ({0}) requires authentication")]
-    ProxyAuthenticationRequired(ProxyDesc),
+    ProxyAuthenticationRequired(ProxyOrDirect),
     #[error("http error: {0}")]
     Http(
         #[source]

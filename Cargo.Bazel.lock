@@ -1,5 +1,5 @@
 {
-  "checksum": "d80b07c0230d9170b9d84f01024aad004ba083930d0c0c6115dc9b1b3a01d7ff",
+  "checksum": "5c3ba1ab9bd303a441ed1b38259d7d734dc46b2707930772d2efd55198766092",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -5977,6 +5977,10 @@
             {
               "id": "tokio 1.25.0",
               "target": "tokio"
+            },
+            {
+              "id": "tokio-native-tls 0.3.1",
+              "target": "tokio_native_tls"
             },
             {
               "id": "tower 0.4.13",

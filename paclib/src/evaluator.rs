@@ -156,14 +156,14 @@ mod tests {
     use super::Evaluator;
     use super::Uri;
     use crate::Proxies;
-    use crate::ProxyDesc;
+    use crate::ProxyOrDirect;
 
     #[test]
     fn test_find_proxy() -> Result<(), Box<dyn std::error::Error>> {
         let mut eval = Evaluator::new()?;
         assert_eq!(
             eval.find_proxy(&"http://localhost/".parse::<Uri>().unwrap())?,
-            Proxies::new(vec![ProxyDesc::Direct])
+            Proxies::new(vec![ProxyOrDirect::Direct])
         );
         Ok(())
     }
@@ -183,7 +183,7 @@ mod tests {
         )?;
         assert_eq!(
             eval.find_proxy(&"http://localhost/".parse::<Uri>().unwrap())?,
-            Proxies::new(vec![ProxyDesc::Direct])
+            Proxies::new(vec![ProxyOrDirect::Direct])
         );
         Ok(())
     }

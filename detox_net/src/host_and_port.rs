@@ -25,7 +25,7 @@ pub enum Error {
 /// # use detox_net::HostAndPort;
 /// let endpoint = "example.org:8080".parse::<HostAndPort>().unwrap();
 /// ```
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct HostAndPort(String, u16);
 
 impl HostAndPort {
@@ -39,7 +39,10 @@ impl HostAndPort {
                 } else {
                     return Err(Error::NoPort);
                 };
-                Ok(HostAndPort(host.to_owned(), port))
+                Ok(HostAndPort(
+                    host.trim_matches(|c| c == '[' || c == ']').to_owned(),
+                    port,
+                ))
             }
             (_, Some(host), Some(port)) => Ok(HostAndPort(host.to_owned(), port)),
             (_, _, _) => Err(Error::InvalidUri),
@@ -63,12 +66,6 @@ impl Display for HostAndPort {
         f.write_str(&self.0)?;
         f.write_char(':')?;
         write!(f, "{}", self.1)
-    }
-}
-
-impl std::fmt::Debug for HostAndPort {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        <Self as Display>::fmt(self, f)
     }
 }
 

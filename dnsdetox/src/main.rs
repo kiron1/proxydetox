@@ -3,6 +3,7 @@ use std::{net::SocketAddr, sync::Arc};
 use dnsdetox::{dns, doh};
 use futures_util::StreamExt;
 use http::Uri;
+use paclib::Proxy;
 
 mod options;
 
@@ -12,9 +13,9 @@ struct Upstream {
 }
 
 impl Upstream {
-    fn new(primary_addr: SocketAddr, secondary_uri: Uri, proxy_uri: Uri) -> Self {
+    fn new(primary_addr: SocketAddr, secondary_uri: Uri, proxy: Proxy) -> Self {
         let primary = dns::Client::new(primary_addr);
-        let secondary = doh::Client::new(secondary_uri, proxy_uri);
+        let secondary = doh::Client::new(secondary_uri, proxy);
         Self { primary, secondary }
     }
 

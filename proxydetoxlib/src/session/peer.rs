@@ -15,6 +15,7 @@ use http::header::{
 use http::{HeaderMap, Request, Response};
 use hyper::Body;
 use lazy_static::lazy_static;
+use paclib::ProxyOrDirect;
 use tokio_stream::wrappers::BroadcastStream;
 use tower::{util::BoxService, Service};
 use tracing_attributes::instrument;
@@ -26,7 +27,6 @@ use super::Error;
 use super::Result;
 use super::Shared;
 use crate::accesslog;
-use paclib::proxy::ProxyDesc;
 
 lazy_static! {
     // "proxy-connection" is not an official header, but used by many clients.
@@ -95,8 +95,8 @@ impl PeerSession {
             if self.shared.direct_fallback {
                 // If the returned list of proxies does not contain a `DIRECT`, add one as fall back
                 // option in case all connections attempts fail.
-                if !proxies.iter().any(|p| *p == ProxyDesc::Direct) {
-                    proxies.push(ProxyDesc::Direct);
+                if !proxies.iter().any(|p| *p == ProxyOrDirect::Direct) {
+                    proxies.push(ProxyOrDirect::Direct);
                 }
             }
             proxies
@@ -147,10 +147,13 @@ impl PeerSession {
         proxies: paclib::Proxies,
         method: &http::Method,
         uri: &http::Uri,
-    ) -> Result<(BoxService<Request<Body>, Response<Body>, Error>, ProxyDesc)> {
+    ) -> Result<(
+        BoxService<Request<Body>, Response<Body>, Error>,
+        ProxyOrDirect,
+    )> {
         let mut client: Result<BoxService<Request<Body>, Response<Body>, Error>> =
             Err(Error::UnableToEstablishConnection(uri.clone()));
-        let mut upstream_proxy: Option<paclib::ProxyDesc> = None;
+        let mut upstream_proxy: Option<paclib::ProxyOrDirect> = None;
 
         for proxy in proxies.iter() {
             tracing::debug!(%proxy, "try connect");
@@ -173,7 +176,7 @@ impl PeerSession {
             tracing::error!("unable to establish connection");
         }
 
-        let proxy = upstream_proxy.unwrap_or(ProxyDesc::Direct);
+        let proxy = upstream_proxy.unwrap_or(ProxyOrDirect::Direct);
         client.map(move |c| (c, proxy))
     }
 
