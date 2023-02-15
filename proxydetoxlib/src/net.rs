@@ -24,26 +24,39 @@ where
         .await
         .map(|_| ());
 
+    let dt = Instant::now() - begin;
+    let upstream_in = upstream.bytes_read();
+    let upstream_out = upstream.bytes_written();
+    let downstream_in = downstream.bytes_read();
+    let downstream_out = downstream.bytes_written();
+    let bytes_lost = upstream_in != downstream_out || upstream_out != downstream_in;
+
     // Ignore errors which we cannot influence (e.g. peer is terminating the
     // connection without a clean shutdown/close)
-    #[cfg(not(debug_assertions))]
     let cp = match cp {
         Ok(_) => Ok(()),
         Err(e) => match e.kind() {
             ErrorKind::ConnectionReset | ErrorKind::BrokenPipe => Ok(()),
+            ErrorKind::NotConnected => {
+                // https://github.com/tokio-rs/tokio/issues/4674
+                if bytes_lost {
+                    Err(e)
+                } else {
+                    Ok(())
+                }
+            }
             _ => Err(e),
         },
     };
 
     if let Err(ref cause) = cp {
-        let dt = Instant::now() - begin;
         tracing::error!(
             %cause,
             ?dt,
-            upstream_in = %upstream.bytes_read(),
-            upstream_out = %upstream.bytes_written(),
-            downstream_in = %downstream.bytes_read(),
-            downstream_out = %downstream.bytes_written(),
+            upstream_in = %upstream_in,
+            upstream_out = %upstream_out,
+            downstream_in = %downstream_in,
+            downstream_out = %downstream_out,
             "tunnel error"
         );
     }
