@@ -3,6 +3,7 @@ use http::header::LOCATION;
 use http::{Response, StatusCode, Uri};
 use hyper::body::Buf;
 use hyper::Body;
+use hyper_tls::HttpsConnector;
 use std::io::prelude::*;
 use std::io::{Error, ErrorKind};
 use std::time::Instant;
@@ -74,7 +75,7 @@ pub async fn read_to_string(res: Response<Body>) -> std::io::Result<String> {
 
 /// We currently support only IETF RFC 2616, which requires absolute URIs in case of an redirect
 pub async fn http_file(mut uri: Uri) -> std::io::Result<String> {
-    let client = hyper::Client::new();
+    let client = hyper::Client::builder().build::<_, Body>(HttpsConnector::new());
     let mut max_redirects = 10i32;
 
     loop {
