@@ -59,7 +59,7 @@ rust_repositories(
 
 load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencies")
 
-crate_universe_dependencies(bootstrap = True)
+crate_universe_dependencies()
 
 load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
 

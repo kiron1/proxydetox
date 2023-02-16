@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+
+set -eu
+
+cargo update
+bazel sync --repo_env=CARGO_BAZEL_REPIN=1 --only=crate_index
