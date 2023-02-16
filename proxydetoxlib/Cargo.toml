@@ -18,6 +18,7 @@ dirs = "4.0"
 futures-util = { version = "0.3", default-features = false }
 http = "0.2"
 hyper = { version = "0.14", features = ["http1", "http2", "client", "server", "stream", "tcp"] }
+hyper-tls = "0.5"
 lazy_static = "1.4"
 libc = "0.2"
 netrc = { git = "https://github.com/kiron1/netrc-rs", branch = "modernize" }

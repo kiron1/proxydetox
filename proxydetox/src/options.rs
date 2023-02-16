@@ -92,7 +92,7 @@ fn is_file(v: &str) -> Result<PathBuf, String> {
 }
 
 fn is_file_or_http_uri(v: &str) -> Result<PathOrUri, String> {
-    if v.starts_with("http://") & v.parse::<Uri>().is_ok() {
+    if (v.starts_with("http://") | v.starts_with("https://")) & v.parse::<Uri>().is_ok() {
         Ok(PathOrUri::Uri(v.parse::<Uri>().unwrap()))
     } else if Path::new(&v).is_file() {
         Ok(PathOrUri::Path(PathBuf::from(v)))
@@ -386,6 +386,7 @@ mod tests {
     #[test]
     fn test_is_file_or_uri() {
         assert!(is_file_or_http_uri("http://example.org/").is_ok());
+        assert!(is_file_or_http_uri("https://example.org/").is_ok());
         assert!(is_file_or_http_uri("/does/not/exist").is_err());
     }
 
