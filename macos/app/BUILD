@@ -29,6 +29,10 @@ macos_application(
     # ],
     entitlements = ":ProxydetoxApp.entitlements",
     infoplists = ["Info.plist"],
+    linkopts = [
+        "-framework",
+        "GSS",
+    ],
     minimum_os_version = "11.1",
     target_compatible_with = ["@platforms//os:macos"],
     visibility = ["//visibility:public"],

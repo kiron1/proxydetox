@@ -15,6 +15,14 @@ lazy_static::lazy_static! {
     static ref NORC: bool = {
         std::env::var(concat!(env!("CARGO_PKG_NAME"), "_NORC").to_uppercase()).map(|s| !s.is_empty()).unwrap_or(false)
     };
+
+    static ref VERSION: String = {
+        if let Some(hash) = option_env!("PROXYDETOX_BUILD_GIT_HASH") {
+            format!("{} ({})", env!("CARGO_PKG_VERSION"), hash)
+        } else {
+            env!("CARGO_PKG_VERSION").to_owned()
+        }
+    };
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -99,6 +107,14 @@ impl Options {
         if !*NORC {
             args.extend(readrc());
         }
+        args.extend(std::env::args_os().skip(1));
+        Self::parse_args(&args)
+    }
+
+    #[allow(dead_code)]
+    pub fn load_without_rcfile() -> Arc<Self> {
+        let mut args = Vec::new();
+        args.extend(std::env::args_os().take(1));
         args.extend(std::env::args_os().skip(1));
         Self::parse_args(&args)
     }
