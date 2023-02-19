@@ -209,7 +209,7 @@ impl Options {
                     .long("pac-file")
                     .short('p')
                     .help(
-                        "PAC file to be used to decide which upstream proxy to forward the request (local file path or http:// URI are accepted)",
+                        "PAC file to be used to decide which upstream proxy to forward the request (local file path, http://, or https:// URI are accepted)",
                     )
                     .value_parser(is_file_or_http_uri)
                     .action(clap::ArgAction::Set),
@@ -225,14 +225,14 @@ impl Options {
             .arg(
                 Arg::new("direct_fallback")
                     .long("direct-fallback")
-                    .help("Try a direct connection when connecting proxies fails")
+                    .help("Try a direct connection when connecting via proxies fails")
                     .action(ArgAction::SetTrue),
             )
             .arg(
                 Arg::new("connect_timeout")
                     .short('c')
                     .long("connect-timeout")
-                    .help("Timeout to establish a connection in faction sections")
+                    .help("Timeout to establish a connection in fraction seconds")
                     .value_parser(clap::value_parser!(f64))
                     .action(ArgAction::Set)
                     .default_value("10"),
