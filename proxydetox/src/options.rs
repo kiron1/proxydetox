@@ -12,6 +12,12 @@ use detox_net::TcpKeepAlive;
 use http::Uri;
 use tracing_subscriber::filter::LevelFilter;
 
+lazy_static::lazy_static! {
+    static ref NORC: bool = {
+        std::env::var(concat!(env!("CARGO_PKG_NAME"), "_NORC")).map(|s| !s.is_empty()).unwrap_or(false)
+    };
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum Authorization {
     Basic(PathBuf),
@@ -126,10 +132,21 @@ fn which_pac_file() -> Option<PathBuf> {
 }
 
 impl Options {
+    #[allow(dead_code)]
     pub fn load() -> Self {
         let mut args = Vec::new();
         args.extend(std::env::args_os().take(1));
-        args.extend(readrc());
+        if !*NORC {
+            args.extend(readrc());
+        }
+        args.extend(std::env::args_os().skip(1));
+        Self::parse_args(&args)
+    }
+
+    #[allow(dead_code)]
+    pub fn load_without_rcfile() -> Self {
+        let mut args = Vec::new();
+        args.extend(std::env::args_os().take(1));
         args.extend(std::env::args_os().skip(1));
         Self::parse_args(&args)
     }
@@ -399,6 +416,7 @@ impl From<ArgMatches> for Options {
 }
 
 /// Load config file, but command line flags will override config file values.
+#[allow(dead_code)]
 fn readrc() -> Vec<OsString> {
     let user_config = dirs::config_dir()
         .unwrap_or_else(|| "".into())

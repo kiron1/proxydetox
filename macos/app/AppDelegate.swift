@@ -2,37 +2,42 @@ import Cocoa
 import ServiceManagement
 
 extension Notification.Name {
-    static let killLauncher = Notification.Name("killLauncher")
+  static let killLauncher = Notification.Name("killLauncher")
 }
 
 // @NSApplicationMain
 class AppDelegate: NSObject {
-    static let launcherAppId = "cc.colorto.ProxydetoxLauncher";
-    let proxydetox = ProxydetxoControl();
-    var statusItemController : StatusItemController?;
+  static let launcherAppId = "cc.colorto.ProxydetoxLauncher"
+  let proxydetox = ProxydetoxControl()
+  var internalNetworkController: InternalNetworkController
+  var statusItemController: StatusItemController?
+
+  override init() {
+    self.internalNetworkController = InternalNetworkController(proxydetox)
+  }
 }
 
-
 extension AppDelegate: NSApplicationDelegate {
+  func applicationDidFinishLaunching(_ aNotification: Notification) {
 
-    func applicationDidFinishLaunching(_ aNotification: Notification) {
-        killLauncher();
-        SMLoginItemSetEnabled(AppDelegate.launcherAppId as CFString, true)
+    killLauncher()
+    SMLoginItemSetEnabled(AppDelegate.launcherAppId as CFString, true)
 
-        self.statusItemController = StatusItemController(proxydetox)
-        proxydetox.start()
+    self.statusItemController = StatusItemController(proxydetox)
+    proxydetox.start()
+  }
+
+  func applicationWillTerminate(_ notification: Notification) {
+    proxydetox.stop()
+  }
+
+  func killLauncher() {
+    let runningApps = NSWorkspace.shared.runningApplications
+    let isRunning = !runningApps.filter { $0.bundleIdentifier == AppDelegate.launcherAppId }.isEmpty
+
+    if isRunning {
+      DistributedNotificationCenter.default().post(
+        name: .killLauncher, object: Bundle.main.bundleIdentifier!)
     }
-
-    func applicationWillTerminate(_ notification: Notification) {
-        proxydetox.stop()
-    }
-
-    func killLauncher() {
-        let runningApps = NSWorkspace.shared.runningApplications
-        let isRunning = !runningApps.filter { $0.bundleIdentifier == AppDelegate.launcherAppId }.isEmpty
-
-        if isRunning {
-            DistributedNotificationCenter.default().post(name: .killLauncher, object: Bundle.main.bundleIdentifier!)
-        }
-    }
+  }
 }

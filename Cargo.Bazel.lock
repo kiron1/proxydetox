@@ -1,5 +1,5 @@
 {
-  "checksum": "64cbc0def249b1a36d3071dec712fe8ff8f5a3cb8521f2c74e62668339732441",
+  "checksum": "dbca0fa9c2f256a3556112a5a16e4554d2a1558a7d01e3c07c603eaf3e1750dc",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -1049,13 +1049,13 @@
       },
       "license": "MIT"
     },
-    "clap 4.1.7": {
+    "clap 4.1.8": {
       "name": "clap",
-      "version": "4.1.7",
+      "version": "4.1.8",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/clap/4.1.7/download",
-          "sha256": "2f3061d6db6d8fcbbd4b05e057f2acace52e64e96b498c08c2d7a4e65addd340"
+          "url": "https://crates.io/api/v1/crates/clap/4.1.8/download",
+          "sha256": "c3d7ae14b20b94cb02149ed21a86c423859cbe18dc7ed69845cace50e52b40a5"
         }
       },
       "targets": [
@@ -1121,23 +1121,23 @@
         "proc_macro_deps": {
           "common": [
             {
-              "id": "clap_derive 4.1.7",
+              "id": "clap_derive 4.1.8",
               "target": "clap_derive"
             }
           ],
           "selects": {}
         },
-        "version": "4.1.7"
+        "version": "4.1.8"
       },
       "license": "MIT OR Apache-2.0"
     },
-    "clap_derive 4.1.7": {
+    "clap_derive 4.1.8": {
       "name": "clap_derive",
-      "version": "4.1.7",
+      "version": "4.1.8",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/clap_derive/4.1.7/download",
-          "sha256": "34d122164198950ba84a918270a3bb3f7ededd25e15f7451673d986f55bd2667"
+          "url": "https://crates.io/api/v1/crates/clap_derive/4.1.8/download",
+          "sha256": "44bec8e5c9d09e439c4335b1af0abaab56dcf3b94999a936e1bb47b9134288f0"
         }
       },
       "targets": [
@@ -1188,7 +1188,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "4.1.7"
+        "version": "4.1.8"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -1370,42 +1370,6 @@
       },
       "license": "MIT / Apache-2.0"
     },
-    "cproxydetox 0.1.0": {
-      "name": "cproxydetox",
-      "version": "0.1.0",
-      "repository": null,
-      "targets": [],
-      "library_target_name": null,
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "dirs 4.0.0",
-              "target": "dirs"
-            },
-            {
-              "id": "hyper 0.14.24",
-              "target": "hyper"
-            },
-            {
-              "id": "libc 0.2.139",
-              "target": "libc"
-            },
-            {
-              "id": "tokio 1.25.0",
-              "target": "tokio"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2021",
-        "version": "0.1.0"
-      },
-      "license": null
-    },
     "cross-krb5 0.3.0": {
       "name": "cross-krb5",
       "version": "0.3.0",
@@ -1466,13 +1430,13 @@
       },
       "license": "MIT"
     },
-    "cxx 1.0.91": {
+    "cxx 1.0.92": {
       "name": "cxx",
-      "version": "1.0.91",
+      "version": "1.0.92",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/cxx/1.0.91/download",
-          "sha256": "86d3488e7665a7a483b57e25bdd90d0aeb2bc7608c8d0346acf2ad3f1caf1d62"
+          "url": "https://crates.io/api/v1/crates/cxx/1.0.92/download",
+          "sha256": "9a140f260e6f3f79013b8bfc65e7ce630c9ab4388c6a89c71e07226f49487b72"
         }
       },
       "targets": [
@@ -1503,7 +1467,7 @@
         "deps": {
           "common": [
             {
-              "id": "cxx 1.0.91",
+              "id": "cxx 1.0.92",
               "target": "build_script_build"
             },
             {
@@ -1517,13 +1481,13 @@
         "proc_macro_deps": {
           "common": [
             {
-              "id": "cxxbridge-macro 1.0.91",
+              "id": "cxxbridge-macro 1.0.92",
               "target": "cxxbridge_macro"
             }
           ],
           "selects": {}
         },
-        "version": "1.0.91"
+        "version": "1.0.92"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -1536,7 +1500,7 @@
               "target": "cc"
             },
             {
-              "id": "cxxbridge-flags 1.0.91",
+              "id": "cxxbridge-flags 1.0.92",
               "target": "cxxbridge_flags"
             }
           ],
@@ -1546,13 +1510,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "cxx-build 1.0.91": {
+    "cxx-build 1.0.92": {
       "name": "cxx-build",
-      "version": "1.0.91",
+      "version": "1.0.92",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/cxx-build/1.0.91/download",
-          "sha256": "48fcaf066a053a41a81dfb14d57d99738b767febb8b735c3016e469fac5da690"
+          "url": "https://crates.io/api/v1/crates/cxx-build/1.0.92/download",
+          "sha256": "da6383f459341ea689374bf0a42979739dc421874f112ff26f829b8040b8e613"
         }
       },
       "targets": [
@@ -1594,7 +1558,7 @@
               "target": "quote"
             },
             {
-              "id": "scratch 1.0.3",
+              "id": "scratch 1.0.5",
               "target": "scratch"
             },
             {
@@ -1605,17 +1569,17 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "1.0.91"
+        "version": "1.0.92"
       },
       "license": "MIT OR Apache-2.0"
     },
-    "cxxbridge-flags 1.0.91": {
+    "cxxbridge-flags 1.0.92": {
       "name": "cxxbridge-flags",
-      "version": "1.0.91",
+      "version": "1.0.92",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/cxxbridge-flags/1.0.91/download",
-          "sha256": "a2ef98b8b717a829ca5603af80e1f9e2e48013ab227b68ef37872ef84ee479bf"
+          "url": "https://crates.io/api/v1/crates/cxxbridge-flags/1.0.92/download",
+          "sha256": "90201c1a650e95ccff1c8c0bb5a343213bdd317c6e600a93075bca2eff54ec97"
         }
       },
       "targets": [
@@ -1635,17 +1599,17 @@
           "**"
         ],
         "edition": "2018",
-        "version": "1.0.91"
+        "version": "1.0.92"
       },
       "license": "MIT OR Apache-2.0"
     },
-    "cxxbridge-macro 1.0.91": {
+    "cxxbridge-macro 1.0.92": {
       "name": "cxxbridge-macro",
-      "version": "1.0.91",
+      "version": "1.0.92",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/cxxbridge-macro/1.0.91/download",
-          "sha256": "086c685979a698443656e5cf7856c95c642295a38599f12fb1ff76fb28d19892"
+          "url": "https://crates.io/api/v1/crates/cxxbridge-macro/1.0.92/download",
+          "sha256": "0b75aed41bb2e6367cae39e6326ef817a851db13c13e4f3263714ca3cfb8de56"
         }
       },
       "targets": [
@@ -1682,7 +1646,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "1.0.91"
+        "version": "1.0.92"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -1713,15 +1677,15 @@
               "target": "http"
             },
             {
-              "id": "socket2 0.4.7",
+              "id": "socket2 0.4.9",
               "target": "socket2"
             },
             {
-              "id": "thiserror 1.0.38",
+              "id": "thiserror 1.0.39",
               "target": "thiserror"
             },
             {
-              "id": "tokio 1.25.0",
+              "id": "tokio 1.26.0",
               "target": "tokio"
             }
           ],
@@ -1890,7 +1854,7 @@
         "deps": {
           "common": [
             {
-              "id": "clap 4.1.7",
+              "id": "clap 4.1.8",
               "target": "clap"
             },
             {
@@ -1926,11 +1890,11 @@
               "target": "log"
             },
             {
-              "id": "thiserror 1.0.38",
+              "id": "thiserror 1.0.39",
               "target": "thiserror"
             },
             {
-              "id": "tokio 1.25.0",
+              "id": "tokio 1.26.0",
               "target": "tokio"
             }
           ],
@@ -1968,7 +1932,7 @@
               "target": "libc"
             },
             {
-              "id": "thiserror 1.0.38",
+              "id": "thiserror 1.0.39",
               "target": "thiserror"
             }
           ],
@@ -3039,7 +3003,7 @@
               "target": "slab"
             },
             {
-              "id": "tokio 1.25.0",
+              "id": "tokio 1.26.0",
               "target": "tokio"
             },
             {
@@ -3274,7 +3238,7 @@
               "target": "fnv"
             },
             {
-              "id": "itoa 1.0.5",
+              "id": "itoa 1.0.6",
               "target": "itoa"
             }
           ],
@@ -3530,7 +3494,7 @@
               "target": "httpdate"
             },
             {
-              "id": "itoa 1.0.5",
+              "id": "itoa 1.0.6",
               "target": "itoa"
             },
             {
@@ -3538,11 +3502,11 @@
               "target": "pin_project_lite"
             },
             {
-              "id": "socket2 0.4.7",
+              "id": "socket2 0.4.9",
               "target": "socket2"
             },
             {
-              "id": "tokio 1.25.0",
+              "id": "tokio 1.26.0",
               "target": "tokio"
             },
             {
@@ -3605,7 +3569,7 @@
               "target": "native_tls"
             },
             {
-              "id": "tokio 1.25.0",
+              "id": "tokio 1.26.0",
               "target": "tokio"
             },
             {
@@ -3732,7 +3696,7 @@
         "deps": {
           "common": [
             {
-              "id": "cxx 1.0.91",
+              "id": "cxx 1.0.92",
               "target": "cxx"
             },
             {
@@ -3752,7 +3716,7 @@
         "deps": {
           "common": [
             {
-              "id": "cxx-build 1.0.91",
+              "id": "cxx-build 1.0.92",
               "target": "cxx_build"
             }
           ],
@@ -3982,7 +3946,7 @@
           "selects": {
             "cfg(not(any(windows, target_os = \"hermit\", target_os = \"unknown\")))": [
               {
-                "id": "rustix 0.36.8",
+                "id": "rustix 0.36.9",
                 "target": "rustix"
               }
             ],
@@ -4005,13 +3969,13 @@
       },
       "license": "MIT"
     },
-    "itoa 1.0.5": {
+    "itoa 1.0.6": {
       "name": "itoa",
-      "version": "1.0.5",
+      "version": "1.0.6",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/itoa/1.0.5/download",
-          "sha256": "fad582f4b9e86b6caa621cabeb0963332d92eea04729ab12892c2533951e6440"
+          "url": "https://crates.io/api/v1/crates/itoa/1.0.6/download",
+          "sha256": "453ad9f582a441959e5f0d088b02ce04cfe8d51a8eaf077f12ac6d3e94164ca6"
         }
       },
       "targets": [
@@ -4031,7 +3995,7 @@
           "**"
         ],
         "edition": "2018",
-        "version": "1.0.5"
+        "version": "1.0.6"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -5510,7 +5474,7 @@
         "deps": {
           "common": [
             {
-              "id": "clap 4.1.7",
+              "id": "clap 4.1.8",
               "target": "clap"
             },
             {
@@ -5568,7 +5532,7 @@
               "target": "regex"
             },
             {
-              "id": "thiserror 1.0.38",
+              "id": "thiserror 1.0.39",
               "target": "thiserror"
             }
           ],
@@ -5995,7 +5959,7 @@
               "target": "build_script_build"
             },
             {
-              "id": "unicode-ident 1.0.6",
+              "id": "unicode-ident 1.0.8",
               "target": "unicode_ident"
             }
           ],
@@ -6042,11 +6006,11 @@
               "target": "hyper"
             },
             {
-              "id": "thiserror 1.0.38",
+              "id": "thiserror 1.0.39",
               "target": "thiserror"
             },
             {
-              "id": "tokio 1.25.0",
+              "id": "tokio 1.26.0",
               "target": "tokio"
             },
             {
@@ -6085,7 +6049,7 @@
         "deps": {
           "common": [
             {
-              "id": "clap 4.1.7",
+              "id": "clap 4.1.8",
               "target": "clap"
             },
             {
@@ -6109,7 +6073,7 @@
               "target": "lazy_static"
             },
             {
-              "id": "tokio 1.25.0",
+              "id": "tokio 1.26.0",
               "target": "tokio"
             },
             {
@@ -6224,11 +6188,11 @@
               "target": "build_script_build"
             },
             {
-              "id": "thiserror 1.0.38",
+              "id": "thiserror 1.0.39",
               "target": "thiserror"
             },
             {
-              "id": "tokio 1.25.0",
+              "id": "tokio 1.26.0",
               "target": "tokio"
             },
             {
@@ -6447,7 +6411,7 @@
               "target": "syscall"
             },
             {
-              "id": "thiserror 1.0.38",
+              "id": "thiserror 1.0.39",
               "target": "thiserror"
             }
           ],
@@ -6655,13 +6619,13 @@
       },
       "license": "Apache-2.0/MIT"
     },
-    "rustix 0.36.8": {
+    "rustix 0.36.9": {
       "name": "rustix",
-      "version": "0.36.8",
+      "version": "0.36.9",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/rustix/0.36.8/download",
-          "sha256": "f43abb88211988493c1abb44a70efa56ff0ce98f233b7b276146f1f3f7ba9644"
+          "url": "https://crates.io/api/v1/crates/rustix/0.36.9/download",
+          "sha256": "fd5c6ff11fecd55b40746d1995a02f2eb375bf8c00d192d521ee09f42bef37bc"
         }
       },
       "targets": [
@@ -6712,7 +6676,7 @@
               "target": "io_lifetimes"
             },
             {
-              "id": "rustix 0.36.8",
+              "id": "rustix 0.36.9",
               "target": "build_script_build"
             }
           ],
@@ -6753,7 +6717,7 @@
           }
         },
         "edition": "2018",
-        "version": "0.36.8"
+        "version": "0.36.9"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -6801,13 +6765,13 @@
       },
       "license": "MIT"
     },
-    "scratch 1.0.3": {
+    "scratch 1.0.5": {
       "name": "scratch",
-      "version": "1.0.3",
+      "version": "1.0.5",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/scratch/1.0.3/download",
-          "sha256": "ddccb15bcce173023b3fedd9436f882a0739b8dfb45e4f6b6002bee5929f61b2"
+          "url": "https://crates.io/api/v1/crates/scratch/1.0.5/download",
+          "sha256": "1792db035ce95be60c3f8853017b3999209281c24e2ba5bc8e59bf97a0c590c1"
         }
       },
       "targets": [
@@ -6838,14 +6802,14 @@
         "deps": {
           "common": [
             {
-              "id": "scratch 1.0.3",
+              "id": "scratch 1.0.5",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2015",
-        "version": "1.0.3"
+        "version": "1.0.5"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -7180,13 +7144,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "socket2 0.4.7": {
+    "socket2 0.4.9": {
       "name": "socket2",
-      "version": "0.4.7",
+      "version": "0.4.9",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/socket2/0.4.7/download",
-          "sha256": "02e2d2db9033d13a1567121ddd7a095ee144db4e1ca1b1bda3419bc0da294ebd"
+          "url": "https://crates.io/api/v1/crates/socket2/0.4.9/download",
+          "sha256": "64a4a911eed85daf18834cfaa86a79b7d266ff93ff5ba14005426219480ed662"
         }
       },
       "targets": [
@@ -7229,7 +7193,7 @@
           }
         },
         "edition": "2018",
-        "version": "0.4.7"
+        "version": "0.4.9"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -7358,7 +7322,7 @@
               "target": "build_script_build"
             },
             {
-              "id": "unicode-ident 1.0.6",
+              "id": "unicode-ident 1.0.8",
               "target": "unicode_ident"
             }
           ],
@@ -7413,7 +7377,7 @@
           "selects": {
             "cfg(any(unix, target_os = \"wasi\"))": [
               {
-                "id": "rustix 0.36.8",
+                "id": "rustix 0.36.9",
                 "target": "rustix"
               }
             ],
@@ -7516,13 +7480,13 @@
       },
       "license": "MIT"
     },
-    "thiserror 1.0.38": {
+    "thiserror 1.0.39": {
       "name": "thiserror",
-      "version": "1.0.38",
+      "version": "1.0.39",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/thiserror/1.0.38/download",
-          "sha256": "6a9cd18aa97d5c45c6603caea1da6628790b37f7a34b6ca89522331c5180fed0"
+          "url": "https://crates.io/api/v1/crates/thiserror/1.0.39/download",
+          "sha256": "a5ab016db510546d856297882807df8da66a16fb8c4101cb8b30054b0d5b2d9c"
         }
       },
       "targets": [
@@ -7553,7 +7517,7 @@
         "deps": {
           "common": [
             {
-              "id": "thiserror 1.0.38",
+              "id": "thiserror 1.0.39",
               "target": "build_script_build"
             }
           ],
@@ -7563,13 +7527,13 @@
         "proc_macro_deps": {
           "common": [
             {
-              "id": "thiserror-impl 1.0.38",
+              "id": "thiserror-impl 1.0.39",
               "target": "thiserror_impl"
             }
           ],
           "selects": {}
         },
-        "version": "1.0.38"
+        "version": "1.0.39"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -7578,13 +7542,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "thiserror-impl 1.0.38": {
+    "thiserror-impl 1.0.39": {
       "name": "thiserror-impl",
-      "version": "1.0.38",
+      "version": "1.0.39",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/thiserror-impl/1.0.38/download",
-          "sha256": "1fb327af4685e4d03fa8cbcf1716380da910eeb2bb8be417e7f9fd3fb164f36f"
+          "url": "https://crates.io/api/v1/crates/thiserror-impl/1.0.39/download",
+          "sha256": "5420d42e90af0c38c3290abcca25b9b3bdf379fc9f55c528f53a269d9c9a267e"
         }
       },
       "targets": [
@@ -7621,7 +7585,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "1.0.38"
+        "version": "1.0.39"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -7720,13 +7684,13 @@
       },
       "license": "MIT/Apache-2.0"
     },
-    "tokio 1.25.0": {
+    "tokio 1.26.0": {
       "name": "tokio",
-      "version": "1.25.0",
+      "version": "1.26.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/tokio/1.25.0/download",
-          "sha256": "c8e00990ebabbe4c14c08aca901caed183ecd5c09562a12c824bb53d3c3fd3af"
+          "url": "https://crates.io/api/v1/crates/tokio/1.26.0/download",
+          "sha256": "03201d01c3c27a29c8a5cee5b55a93ddae1ccf6f08f65365c2c918f8c1b76f64"
         }
       },
       "targets": [
@@ -7800,20 +7764,20 @@
               "target": "pin_project_lite"
             },
             {
-              "id": "tokio 1.25.0",
+              "id": "tokio 1.26.0",
               "target": "build_script_build"
             }
           ],
           "selects": {
             "cfg(docsrs)": [
               {
-                "id": "windows-sys 0.42.0",
+                "id": "windows-sys 0.45.0",
                 "target": "windows_sys"
               }
             ],
             "cfg(not(any(target_arch = \"wasm32\", target_arch = \"wasm64\")))": [
               {
-                "id": "socket2 0.4.7",
+                "id": "socket2 0.4.9",
                 "target": "socket2"
               }
             ],
@@ -7829,7 +7793,7 @@
             ],
             "cfg(windows)": [
               {
-                "id": "windows-sys 0.42.0",
+                "id": "windows-sys 0.45.0",
                 "target": "windows_sys"
               }
             ]
@@ -7845,7 +7809,7 @@
           ],
           "selects": {}
         },
-        "version": "1.25.0"
+        "version": "1.26.0"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -7942,7 +7906,7 @@
               "target": "native_tls"
             },
             {
-              "id": "tokio 1.25.0",
+              "id": "tokio 1.26.0",
               "target": "tokio"
             }
           ],
@@ -7998,7 +7962,7 @@
               "target": "pin_project_lite"
             },
             {
-              "id": "tokio 1.25.0",
+              "id": "tokio 1.26.0",
               "target": "tokio"
             },
             {
@@ -8065,7 +8029,7 @@
               "target": "pin_project_lite"
             },
             {
-              "id": "tokio 1.25.0",
+              "id": "tokio 1.26.0",
               "target": "tokio"
             },
             {
@@ -8621,13 +8585,13 @@
       },
       "license": "MIT"
     },
-    "unicode-ident 1.0.6": {
+    "unicode-ident 1.0.8": {
       "name": "unicode-ident",
-      "version": "1.0.6",
+      "version": "1.0.8",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/unicode-ident/1.0.6/download",
-          "sha256": "84a22b9f218b40614adcb3f4ff08b703773ad44fa9423e4e0d346d5db86e4ebc"
+          "url": "https://crates.io/api/v1/crates/unicode-ident/1.0.8/download",
+          "sha256": "e5464a87b239f13a63a501f2701565754bae92d243d4bb7eb12f6d57d2269bf4"
         }
       },
       "targets": [
@@ -8647,7 +8611,7 @@
           "**"
         ],
         "edition": "2018",
-        "version": "1.0.6"
+        "version": "1.0.8"
       },
       "license": "(MIT OR Apache-2.0) AND Unicode-DFS-2016"
     },
@@ -9811,16 +9775,12 @@
             "Win32_Security",
             "Win32_Security_Authentication",
             "Win32_Security_Authentication_Identity",
-            "Win32_Security_Authorization",
             "Win32_Security_Credentials",
             "Win32_Security_Cryptography",
             "Win32_Storage",
             "Win32_Storage_FileSystem",
             "Win32_System",
-            "Win32_System_Console",
             "Win32_System_Memory",
-            "Win32_System_Pipes",
-            "Win32_System_SystemServices",
             "default"
           ],
           "selects": {}
@@ -9941,12 +9901,14 @@
             "Win32_Networking",
             "Win32_Networking_WinSock",
             "Win32_Security",
+            "Win32_Security_Authorization",
             "Win32_Storage",
             "Win32_Storage_FileSystem",
             "Win32_System",
             "Win32_System_Console",
             "Win32_System_IO",
             "Win32_System_Pipes",
+            "Win32_System_SystemServices",
             "Win32_System_Threading",
             "Win32_System_WindowsProgramming",
             "default"
@@ -10715,7 +10677,6 @@
   },
   "binary_crates": [],
   "workspace_members": {
-    "cproxydetox 0.1.0": "cproxydetox",
     "detox_net 0.1.0": "detox_net",
     "dnsdetox 0.1.0": "dnsdetox",
     "duktape 0.1.0": "duktape",

@@ -72,7 +72,6 @@ crates_repository(
     lockfile = "//:Cargo.Bazel.lock",
     manifests = [
         "//:Cargo.toml",
-        "//cproxydetox:Cargo.toml",
         "//detox_net:Cargo.toml",
         "//dnsdetox:Cargo.toml",
         "//duktape:Cargo.toml",
