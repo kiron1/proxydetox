@@ -1,6 +1,5 @@
 [workspace]
 members = [
-    "cproxydetox",
     "detox_net",
     "dnsdetox",
     "duktape",

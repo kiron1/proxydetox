@@ -15,6 +15,18 @@ use std::result::Result;
 use tokio_util::sync::CancellationToken;
 use tracing_subscriber::filter::EnvFilter;
 
+#[cfg(static_library)]
+#[no_mangle]
+pub extern "C" fn main() {
+    let config = Options::load_without_rcfile();
+    if let Err(error) = run(&config) {
+        tracing::error!(%error, "fatal error");
+        write_error(&mut std::io::stderr(), error).ok();
+        std::process::exit(1);
+    }
+}
+
+#[cfg(not(static_library))]
 fn main() {
     let config = Options::load();
     if let Err(error) = run(&config) {
