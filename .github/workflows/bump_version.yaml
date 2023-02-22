@@ -29,22 +29,13 @@ jobs:
         with:
           crate: cargo-edit
 
-      - name: Cargo update
-        run: |
-          cargo update
-
-      - name: Get current version
-        id: current_version
-        run: |
-          ./tools/version
-
       - name: Bump version
         run: |
           cargo set-version -p proxydetox --bump ${{ github.event.inputs.release_kind }}
 
       - name: Cargo update
         run: |
-          cargo update
+          ./tools/repin
 
       - name: Get new version
         id: new_version
