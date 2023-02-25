@@ -1,5 +1,5 @@
 {
-  "checksum": "5c3ba1ab9bd303a441ed1b38259d7d734dc46b2707930772d2efd55198766092",
+  "checksum": "10e07fadf569481c376cf80b2c6475ef04a47ec5ac2180af6f9007054b045667",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -369,7 +369,7 @@
               "target": "cexpr"
             },
             {
-              "id": "clang-sys 1.4.0",
+              "id": "clang-sys 1.6.0",
               "target": "clang_sys"
             },
             {
@@ -493,7 +493,7 @@
               "target": "cexpr"
             },
             {
-              "id": "clang-sys 1.4.0",
+              "id": "clang-sys 1.6.0",
               "target": "clang_sys"
             },
             {
@@ -533,7 +533,7 @@
               "target": "shlex"
             },
             {
-              "id": "syn 1.0.107",
+              "id": "syn 1.0.109",
               "target": "syn"
             },
             {
@@ -881,13 +881,13 @@
       },
       "license": "MIT/Apache-2.0"
     },
-    "clang-sys 1.4.0": {
+    "clang-sys 1.6.0": {
       "name": "clang-sys",
-      "version": "1.4.0",
+      "version": "1.6.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/clang-sys/1.4.0/download",
-          "sha256": "fa2e27ae6ab525c3d369ded447057bca5438d86dc3a68f6faafb8269ba82ebf3"
+          "url": "https://crates.io/api/v1/crates/clang-sys/1.6.0/download",
+          "sha256": "77ed9a53e5d4d9c573ae844bfac6872b159cb1d1585a83b29e7a64b7eef7332a"
         }
       },
       "targets": [
@@ -933,7 +933,7 @@
         "deps": {
           "common": [
             {
-              "id": "clang-sys 1.4.0",
+              "id": "clang-sys 1.6.0",
               "target": "build_script_build"
             },
             {
@@ -952,7 +952,7 @@
           "selects": {}
         },
         "edition": "2015",
-        "version": "1.4.0"
+        "version": "1.6.0"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -1095,11 +1095,11 @@
               "target": "bitflags"
             },
             {
-              "id": "clap_lex 0.3.1",
+              "id": "clap_lex 0.3.2",
               "target": "clap_lex"
             },
             {
-              "id": "is-terminal 0.4.3",
+              "id": "is-terminal 0.4.4",
               "target": "is_terminal"
             },
             {
@@ -1181,7 +1181,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.107",
+              "id": "syn 1.0.109",
               "target": "syn"
             }
           ],
@@ -1192,13 +1192,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "clap_lex 0.3.1": {
+    "clap_lex 0.3.2": {
       "name": "clap_lex",
-      "version": "0.3.1",
+      "version": "0.3.2",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/clap_lex/0.3.1/download",
-          "sha256": "783fe232adfca04f90f56201b26d79682d4cd2625e0bc7290b95123afe558ade"
+          "url": "https://crates.io/api/v1/crates/clap_lex/0.3.2/download",
+          "sha256": "350b9cf31731f9957399229e9b2adc51eeabdfbe9d71d9a0552275fd12710d09"
         }
       },
       "targets": [
@@ -1227,7 +1227,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.3.1"
+        "version": "0.3.2"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -1598,7 +1598,7 @@
               "target": "scratch"
             },
             {
-              "id": "syn 1.0.107",
+              "id": "syn 1.0.109",
               "target": "syn"
             }
           ],
@@ -1675,7 +1675,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.107",
+              "id": "syn 1.0.109",
               "target": "syn"
             }
           ],
@@ -1709,7 +1709,7 @@
         "deps": {
           "common": [
             {
-              "id": "http 0.2.8",
+              "id": "http 0.2.9",
               "target": "http"
             },
             {
@@ -1906,7 +1906,7 @@
               "target": "futures_util"
             },
             {
-              "id": "http 0.2.8",
+              "id": "http 0.2.9",
               "target": "http"
             },
             {
@@ -2115,7 +2115,7 @@
               "target": "humantime"
             },
             {
-              "id": "is-terminal 0.4.3",
+              "id": "is-terminal 0.4.4",
               "target": "is_terminal"
             },
             {
@@ -2956,7 +2956,7 @@
               "target": "futures_util"
             },
             {
-              "id": "http 0.2.8",
+              "id": "http 0.2.9",
               "target": "http"
             },
             {
@@ -2964,7 +2964,7 @@
               "target": "indexmap"
             },
             {
-              "id": "slab 0.4.7",
+              "id": "slab 0.4.8",
               "target": "slab"
             },
             {
@@ -3167,13 +3167,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "http 0.2.8": {
+    "http 0.2.9": {
       "name": "http",
-      "version": "0.2.8",
+      "version": "0.2.9",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/http/0.2.8/download",
-          "sha256": "75f43d41e26995c17e71ee126451dd3941010b0514a81a9d11f3b341debc2399"
+          "url": "https://crates.io/api/v1/crates/http/0.2.9/download",
+          "sha256": "bd6effc99afb63425aff9b05836f029929e345a6148a14b7ecd5ab67af944482"
         }
       },
       "targets": [
@@ -3210,7 +3210,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.2.8"
+        "version": "0.2.9"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -3246,7 +3246,7 @@
               "target": "bytes"
             },
             {
-              "id": "http 0.2.8",
+              "id": "http 0.2.9",
               "target": "http"
             },
             {
@@ -3443,7 +3443,7 @@
               "target": "h2"
             },
             {
-              "id": "http 0.2.8",
+              "id": "http 0.2.9",
               "target": "http"
             },
             {
@@ -3876,13 +3876,13 @@
       },
       "license": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT"
     },
-    "is-terminal 0.4.3": {
+    "is-terminal 0.4.4": {
       "name": "is-terminal",
-      "version": "0.4.3",
+      "version": "0.4.4",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/is-terminal/0.4.3/download",
-          "sha256": "22e18b0a45d56fe973d6db23972bf5bc46f988a4a2385deac9cc29572f09daef"
+          "url": "https://crates.io/api/v1/crates/is-terminal/0.4.4/download",
+          "sha256": "21b6b32576413a8e69b90e952e4a026476040d81017b80445deda5f2d3921857"
         }
       },
       "targets": [
@@ -3930,7 +3930,7 @@
           }
         },
         "edition": "2018",
-        "version": "0.4.3"
+        "version": "0.4.4"
       },
       "license": "MIT"
     },
@@ -5237,7 +5237,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.107",
+              "id": "syn 1.0.109",
               "target": "syn"
             }
           ],
@@ -5443,7 +5443,7 @@
               "target": "clap"
             },
             {
-              "id": "http 0.2.8",
+              "id": "http 0.2.9",
               "target": "http"
             }
           ],
@@ -5481,7 +5481,7 @@
               "target": "gethostname"
             },
             {
-              "id": "http 0.2.8",
+              "id": "http 0.2.9",
               "target": "http"
             },
             {
@@ -5613,7 +5613,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.107",
+              "id": "syn 1.0.109",
               "target": "syn"
             }
           ],
@@ -5771,7 +5771,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.107",
+              "id": "syn 1.0.109",
               "target": "syn"
             }
           ],
@@ -5963,7 +5963,7 @@
         "deps": {
           "common": [
             {
-              "id": "http 0.2.8",
+              "id": "http 0.2.9",
               "target": "http"
             },
             {
@@ -5994,9 +5994,9 @@
       },
       "license": null
     },
-    "proxydetox 0.6.1": {
+    "proxydetox 0.6.2": {
       "name": "proxydetox",
-      "version": "0.6.1",
+      "version": "0.6.2",
       "repository": null,
       "targets": [],
       "library_target_name": null,
@@ -6022,7 +6022,7 @@
               "target": "dirs"
             },
             {
-              "id": "http 0.2.8",
+              "id": "http 0.2.9",
               "target": "http"
             },
             {
@@ -6049,7 +6049,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.6.1"
+        "version": "0.6.2"
       },
       "license": null
     },
@@ -6117,7 +6117,7 @@
               "target": "futures_util"
             },
             {
-              "id": "http 0.2.8",
+              "id": "http 0.2.9",
               "target": "http"
             },
             {
@@ -6153,7 +6153,7 @@
               "target": "tokio"
             },
             {
-              "id": "tokio-stream 0.1.11",
+              "id": "tokio-stream 0.1.12",
               "target": "tokio_stream"
             },
             {
@@ -7042,13 +7042,13 @@
       },
       "license": "Apache-2.0/MIT"
     },
-    "slab 0.4.7": {
+    "slab 0.4.8": {
       "name": "slab",
-      "version": "0.4.7",
+      "version": "0.4.8",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/slab/0.4.7/download",
-          "sha256": "4614a76b2a8be0058caa9dbbaf66d988527d86d003c11a94fbd335d7661edcef"
+          "url": "https://crates.io/api/v1/crates/slab/0.4.8/download",
+          "sha256": "6528351c9bc8ab22353f9d776db39a20288e8d6c37ef8cfe3317cf875eecfc2d"
         }
       },
       "targets": [
@@ -7086,14 +7086,14 @@
         "deps": {
           "common": [
             {
-              "id": "slab 0.4.7",
+              "id": "slab 0.4.8",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.4.7"
+        "version": "0.4.8"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -7254,13 +7254,13 @@
       },
       "license": "MIT"
     },
-    "syn 1.0.107": {
+    "syn 1.0.109": {
       "name": "syn",
-      "version": "1.0.107",
+      "version": "1.0.109",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/syn/1.0.107/download",
-          "sha256": "1f4064b5b16e03ae50984a5a8ed5d4f8803e6bc1fd170a3cda91a1be4b18e3f5"
+          "url": "https://crates.io/api/v1/crates/syn/1.0.109/download",
+          "sha256": "72b64191b275b66ffe2469e8af2c1cfe3bafa67b529ead792a6d0160888b4237"
         }
       },
       "targets": [
@@ -7315,7 +7315,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.107",
+              "id": "syn 1.0.109",
               "target": "build_script_build"
             },
             {
@@ -7326,7 +7326,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "1.0.107"
+        "version": "1.0.109"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -7579,7 +7579,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.107",
+              "id": "syn 1.0.109",
               "target": "syn"
             }
           ],
@@ -7864,7 +7864,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.107",
+              "id": "syn 1.0.109",
               "target": "syn"
             }
           ],
@@ -7918,13 +7918,13 @@
       },
       "license": "MIT"
     },
-    "tokio-stream 0.1.11": {
+    "tokio-stream 0.1.12": {
       "name": "tokio-stream",
-      "version": "0.1.11",
+      "version": "0.1.12",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/tokio-stream/0.1.11/download",
-          "sha256": "d660770404473ccd7bc9f8b28494a811bc18542b915c0855c51e8f419d5223ce"
+          "url": "https://crates.io/api/v1/crates/tokio-stream/0.1.12/download",
+          "sha256": "8fb52b74f05dbf495a8fba459fdc331812b96aa086d9eb78101fa0d4569c3313"
         }
       },
       "targets": [
@@ -7974,7 +7974,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.1.11"
+        "version": "0.1.12"
       },
       "license": "MIT"
     },
@@ -8288,7 +8288,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.107",
+              "id": "syn 1.0.109",
               "target": "syn"
             }
           ],
@@ -9040,7 +9040,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.107",
+              "id": "syn 1.0.109",
               "target": "syn"
             },
             {
@@ -9146,7 +9146,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.107",
+              "id": "syn 1.0.109",
               "target": "syn"
             },
             {
@@ -10688,7 +10688,7 @@
     "paceval 0.1.0": "paceval",
     "paclib 0.3.0": "paclib",
     "proxy_client 0.1.0": "proxy_client",
-    "proxydetox 0.6.1": "proxydetox",
+    "proxydetox 0.6.2": "proxydetox",
     "proxydetoxlib 0.6.1": "proxydetoxlib"
   },
   "conditions": {
