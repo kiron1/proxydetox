@@ -8,9 +8,9 @@ swift_library(
     srcs = [
         "AppDelegate.swift",
         "InternalNetworkController.swift",
+        "ProxydetoxApp.swift",
         "ProxydetoxControl.swift",
         "StatusItemController.swift",
-        "main.swift",
     ],
     target_compatible_with = ["@platforms//os:macos"],
     visibility = ["//visibility:private"],
@@ -29,7 +29,11 @@ macos_application(
     # ],
     entitlements = ":ProxydetoxApp.entitlements",
     infoplists = ["Info.plist"],
-    minimum_os_version = "11.1",
+    linkopts = [
+        "-framework",
+        "GSS",
+    ],
+    minimum_os_version = "13.1",
     target_compatible_with = ["@platforms//os:macos"],
     visibility = ["//visibility:public"],
     deps = [
