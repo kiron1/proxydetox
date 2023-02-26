@@ -55,15 +55,11 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug, Clone)]
 pub struct HttpConnectConnector {
     proxy: Proxy,
-    tls: TlsConnector,
 }
 
 impl HttpConnectConnector {
     pub fn new(proxy: Proxy) -> Self {
-        let tls = native_tls::TlsConnector::new()
-            .map(Into::into)
-            .unwrap_or_else(|e| panic!("HttpProxyConnector::new() failure: {}", e));
-        Self { proxy, tls }
+        Self { proxy }
     }
 
     async fn call_async(&self, dst: http::Uri) -> Result<HttpConnectStream> {
@@ -75,7 +71,10 @@ impl HttpConnectConnector {
         let stream: MaybeTlsStream<TcpStream> = match self.proxy {
             Proxy::Http(_) => stream.into(),
             Proxy::Https(_) => {
-                let tls = self.tls.connect(self.proxy.host(), stream).await?;
+                let tls: TlsConnector = native_tls::TlsConnector::new()
+                    .map(Into::into)
+                    .unwrap_or_else(|e| panic!("HttpProxyConnector::new() failure: {}", e));
+                let tls = tls.connect(self.proxy.host(), stream).await?;
                 tls.into()
             }
         };

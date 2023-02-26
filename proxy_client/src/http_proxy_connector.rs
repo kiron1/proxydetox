@@ -28,15 +28,11 @@ pub enum Error {
 #[derive(Clone, Debug)]
 pub struct HttpProxyConnector {
     proxy: Proxy,
-    tls: TlsConnector,
 }
 
 impl HttpProxyConnector {
     pub fn new(proxy: Proxy) -> Self {
-        let tls = native_tls::TlsConnector::new()
-            .map(Into::into)
-            .unwrap_or_else(|e| panic!("HttpProxyConnector::new() failure: {}", e));
-        Self { proxy, tls }
+        Self { proxy }
     }
 
     async fn call_async(&mut self, _dst: Uri) -> std::result::Result<HttpProxyStream, Error> {
@@ -48,7 +44,10 @@ impl HttpProxyConnector {
         let stream = match self.proxy {
             Proxy::Http(_) => stream.into(),
             Proxy::Https(_) => {
-                let tls = self.tls.connect(self.proxy.host(), stream).await?;
+                let tls: TlsConnector = native_tls::TlsConnector::new()
+                    .map(Into::into)
+                    .unwrap_or_else(|e| panic!("HttpProxyConnector::new() failure: {}", e));
+                let tls = tls.connect(self.proxy.host(), stream).await?;
                 tls.into()
             }
         };
