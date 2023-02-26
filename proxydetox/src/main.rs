@@ -5,14 +5,14 @@
 
 mod options;
 
+use futures_util::stream::{FuturesUnordered, StreamExt};
 use options::{Authorization, Options};
 use proxydetoxlib::auth::netrc;
 use proxydetoxlib::auth::AuthenticatorFactory;
 use proxydetoxlib::socket;
 use std::fs::File;
-use std::net::SocketAddr;
 use std::result::Result;
-use tokio::sync::oneshot;
+use tokio_util::sync::CancellationToken;
 use tracing_subscriber::filter::EnvFilter;
 
 fn main() {
@@ -101,53 +101,80 @@ async fn run(config: &Options) -> Result<(), proxydetoxlib::Error> {
         .build();
 
     let server = if let Some(name) = &config.activate_socket {
-        let sockets = socket::activate_socket(name)?;
-        let listener: Vec<std::net::TcpListener> = sockets.take();
-        // TODO: currently we only support one listener socket
-        let listener = listener
+        socket::activate_socket(name)?
+            .take()
             .into_iter()
-            .next()
-            .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "no socket found"))?;
-        hyper::Server::from_tcp(listener)?
+            .map(hyper::Server::from_tcp)
+            .collect::<Result<Vec<_>, _>>()?
     } else {
-        let addr = SocketAddr::new(config.interface, config.port);
-        hyper::Server::try_bind(&addr)?
+        config
+            .listen
+            .iter()
+            .map(hyper::Server::try_bind)
+            .collect::<Result<Vec<_>, _>>()?
     };
-    let server = server.serve(session.clone());
+    let server: Vec<_> = server
+        .into_iter()
+        .map({
+            let s = session.clone();
+            move |k| {
+                let s = s.clone();
+                k.serve(s)
+            }
+        })
+        .collect();
 
-    let addr = server.local_addr();
-    let (shutdown_tx, shutdown_rx) = oneshot::channel();
-    let server = server.with_graceful_shutdown(async {
-        shutdown_rx.await.ok();
-    });
+    let addrs: Vec<_> = server.iter().map(|k| k.local_addr()).collect();
+    let shutdown_token = CancellationToken::new();
+    let server: FuturesUnordered<_> = server
+        .into_iter()
+        .map({
+            let shutdown = shutdown_token.clone();
+            move |k| {
+                let shutdown = shutdown.clone();
+                k.with_graceful_shutdown(async move { shutdown.cancelled().await })
+            }
+        })
+        .collect();
 
-    let (timeout_tx, timeout_rx) = oneshot::channel();
+    let timeout_token = CancellationToken::new();
+
     #[cfg(unix)]
     {
         use tokio::signal::unix::{signal, SignalKind};
-        let timeout = config.graceful_shutdown_timeout;
+        let graceful_shutdown_timeout = config.graceful_shutdown_timeout;
         let mut sigint = signal(SignalKind::interrupt())?;
         let mut sigterm = signal(SignalKind::terminate())?;
-        tokio::spawn(async move {
-            tokio::select! {
-                _ = sigint.recv() => {},
-                _ = sigterm.recv() => {},
+        tokio::spawn({
+            let timeout_token = timeout_token.clone();
+            let shutdown_token = shutdown_token.clone();
+            async move {
+                tokio::select! {
+                    _ = sigint.recv() => {},
+                    _ = sigterm.recv() => {},
+                }
+                tracing::info!("triggering graceful shutdown");
+                shutdown_token.cancel();
+                tokio::time::sleep(graceful_shutdown_timeout).await;
+                tracing::info!("graceful shutdown timeout");
+                timeout_token.cancel();
             }
-            tracing::info!("triggering graceful shutdown");
-            shutdown_tx.send(()).ok();
-            tokio::time::sleep(timeout).await;
-            tracing::info!("graceful shutdown timeout");
-            timeout_tx.send(()).ok();
         });
     }
     #[cfg(not(unix))]
     {
-        tokio::spawn(async move {
-            tokio::signal::ctrl_c().await.expect("ctrl_c event");
-            tracing::info!("triggering graceful shutdown");
-            shutdown_tx.send(()).ok();
-            tracing::info!("graceful shutdown timeout");
-            timeout_tx.send(()).ok();
+        let graceful_shutdown_timeout = config.graceful_shutdown_timeout;
+        tokio::spawn({
+            let timeout_token = timeout_token.clone();
+            let shutdown_token = shutdown_token.clone();
+            async move {
+                tokio::signal::ctrl_c().await.expect("ctrl_c event");
+                tracing::info!("triggering graceful shutdown");
+                shutdown_token.cancel();
+                tokio::time::sleep(graceful_shutdown_timeout).await;
+                tracing::info!("graceful shutdown timeout");
+                timeout_token.cancel();
+            }
         });
     }
 
@@ -178,14 +205,22 @@ async fn run(config: &Options) -> Result<(), proxydetoxlib::Error> {
         });
     }
 
-    tracing::info!(listening=?addr, authenticator=%auth, pac_file=?config.pac_file, "starting");
-    tokio::select! {
-        s = server => {
-            if let Err(cause) = s {
-                tracing::error!(%cause, "fatal server error");
-            }
-        },
-        _ = timeout_rx => {},
+    tracing::info!(listening=?addrs, authenticator=%auth, pac_file=?config.pac_file, "starting");
+    tokio::pin!(server);
+    tokio::pin!(timeout_token);
+    loop {
+        tokio::select! {
+            s = server.next() => {
+                if let Some(s) = s{
+                    if let Err(cause) = s {
+                        tracing::error!(%cause, "fatal server error");
+                    }
+                } else {
+                    break;
+                }
+            },
+            _ = timeout_token.cancelled() => break,
+        }
     }
     Ok(())
 }
