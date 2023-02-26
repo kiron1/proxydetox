@@ -46,9 +46,9 @@ impl Shared {
         })
     }
 
-    pub(super) fn proxy_for(&self, proxy: Proxy) -> Result<ProxyClient> {
+    pub(super) fn proxy_for(&self, proxy: &Proxy) -> Result<ProxyClient> {
         let mut proxies = self.proxy_clients.lock().unwrap();
-        match proxies.get(&proxy) {
+        match proxies.get(proxy) {
             Some(proxy) => Ok(proxy.clone()),
             None => {
                 tracing::debug!(%proxy, "new proxy client");
@@ -62,7 +62,7 @@ impl Shared {
                 };
                 let client = hyper::Client::builder().build(HttpProxyConnector::new(proxy.clone()));
                 let client = ProxyClient::new(client, auth);
-                proxies.insert(proxy, client.clone());
+                proxies.insert(proxy.clone(), client.clone());
                 Ok(client)
             }
         }
@@ -71,31 +71,38 @@ impl Shared {
     #[instrument(level = "trace", skip(self))]
     pub(super) fn proxy_client(
         &self,
-        proxy: Proxy,
+        proxy: &Proxy,
     ) -> Result<BoxService<Request<Body>, Response<Body>, Error>> {
-        let client = self.proxy_for(proxy.clone());
-        client.map(|s| s.map_err(move |e| Error::MakeProxyClient(e, proxy)).boxed())
+        let client = self.proxy_for(proxy);
+        client.map(|s| {
+            let proxy = proxy.clone();
+            s.map_err(move |e| Error::MakeProxyClient(e, proxy)).boxed()
+        })
     }
 
     async fn proxy_connect(
         &self,
-        proxy: Proxy,
-        uri: http::Uri,
+        proxy: &Proxy,
+        uri: &http::Uri,
     ) -> Result<BoxService<Request<Body>, Response<Body>, Error>> {
-        let proxy_client = self.proxy_for(proxy.clone())?;
-        let host = HostAndPort::try_from_uri(&uri)?;
+        let proxy_client = self.proxy_for(proxy)?;
+        let host = HostAndPort::try_from_uri(uri)?;
         let conn = timeout(self.connect_timeout, proxy_client.connect(host)).await;
         let conn = match conn {
             Ok(conn) => conn,
             // Timeout condition
-            Err(_) => return Err(Error::ConnectTimeout(proxy)),
+            Err(_) => return Err(Error::ConnectTimeout(proxy.clone())),
         };
         conn.map_err({
             let proxy = proxy.clone();
             let uri = uri.clone();
             move |e| Error::ProxyConnect(e, proxy, uri)
         })
-        .map(move |c| c.map_err(|e| Error::Upstream(e, proxy, uri)).boxed())
+        .map(move |c| {
+            let proxy = proxy.clone();
+            let uri = uri.clone();
+            c.map_err(|e| Error::Upstream(e, proxy, uri)).boxed()
+        })
     }
 
     async fn direct_client(
@@ -130,11 +137,9 @@ impl Shared {
         let use_connect = self.always_use_connect;
 
         match (is_connect, use_connect, proxy) {
-            (true, _, ProxyOrDirect::Proxy(proxy)) => self.proxy_connect(proxy, uri.clone()).await,
-            (false, true, ProxyOrDirect::Proxy(proxy)) => {
-                self.proxy_connect(proxy, uri.clone()).await
-            }
-            (false, false, ProxyOrDirect::Proxy(proxy)) => self.proxy_client(proxy),
+            (true, _, ProxyOrDirect::Proxy(ref proxy)) => self.proxy_connect(proxy, uri).await,
+            (false, true, ProxyOrDirect::Proxy(ref proxy)) => self.proxy_connect(proxy, uri).await,
+            (false, false, ProxyOrDirect::Proxy(ref proxy)) => self.proxy_client(proxy),
             (true, _, ProxyOrDirect::Direct) => {
                 let mut conn = Connect::new();
                 let handshake = conn.call(uri.clone()).await;
