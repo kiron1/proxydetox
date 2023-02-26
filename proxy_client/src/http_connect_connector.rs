@@ -1,5 +1,5 @@
 use crate::{stream::MaybeTlsStream, HttpConnectStream};
-use detox_net::HostAndPort;
+use detox_net::{HostAndPort, TcpKeepAlive};
 use http::{header::HOST, Request, StatusCode};
 use hyper::{body::Bytes, client::conn, Body};
 use paclib::Proxy;
@@ -55,17 +55,27 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug, Clone)]
 pub struct HttpConnectConnector {
     proxy: Proxy,
+    tcp_keepalive: TcpKeepAlive,
 }
 
 impl HttpConnectConnector {
     pub fn new(proxy: Proxy) -> Self {
-        Self { proxy }
+        Self {
+            proxy,
+            tcp_keepalive: Default::default(),
+        }
+    }
+
+    pub fn with_tcp_keepalive(mut self, keepalive: TcpKeepAlive) -> Self {
+        self.tcp_keepalive = keepalive;
+        self
     }
 
     async fn call_async(&self, dst: http::Uri) -> Result<HttpConnectStream> {
         let stream = TcpStream::connect(self.proxy.endpoint().to_pair())
             .await
             .map_err(|e| Error::ConnectError(self.proxy.endpoint().clone(), e))?;
+        self.tcp_keepalive.apply(&stream).ok();
         let local_addr = stream.local_addr().ok();
         let remote_addr = stream.peer_addr().ok();
         let stream: MaybeTlsStream<TcpStream> = match self.proxy {

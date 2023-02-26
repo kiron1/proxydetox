@@ -5,6 +5,7 @@ rust_library(
     name = "detox_net",
     srcs = [
         "src/host_and_port.rs",
+        "src/keepalive.rs",
         "src/lib.rs",
         "src/metered.rs",
     ],

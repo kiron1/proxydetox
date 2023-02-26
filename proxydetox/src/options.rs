@@ -8,6 +8,7 @@ use std::{
 };
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
+use detox_net::TcpKeepAlive;
 use http::Uri;
 use tracing_subscriber::filter::LevelFilter;
 
@@ -78,6 +79,10 @@ pub struct Options {
     pub always_use_connect: bool,
     pub activate_socket: Option<String>,
     pub listen: Vec<SocketAddr>,
+    pub interface: IpAddr,
+    pub port: u16,
+    pub client_tcp_keepalive: TcpKeepAlive,
+    pub server_tcp_keepalive: TcpKeepAlive,
     pub graceful_shutdown_timeout: Duration,
 }
 
@@ -247,6 +252,47 @@ impl Options {
                     .default_value("10"),
             )
             .arg(
+                Arg::new("client_tcp_keepalive_time")
+                    .long("client-tcp-keepalive-time")
+                    .help("TCP keep alive setting for client sockets")
+                    .value_parser(clap::value_parser!(f64))
+                    .action(ArgAction::Set)
+            )
+            .arg(
+                Arg::new("client_tcp_keepalive_interval")
+                    .long("client-tcp-keepalive-interval")
+                    .help("TCP keep alive setting for client sockets")
+                    .value_parser(clap::value_parser!(f64))
+                    .action(ArgAction::Set)
+            )
+            .arg(
+                Arg::new("client_tcp_keepalive_retries")
+                    .long("client-tcp-keepalive-retries")
+                    .help("TCP keep alive setting for client sockets")
+                    .value_parser(clap::value_parser!(u32))
+                    .action(ArgAction::Set)
+            )  .arg(
+                Arg::new("server_tcp_keepalive_time")
+                    .long("server-tcp-keepalive-time")
+                    .help("TCP keep alive setting for server sockets")
+                    .value_parser(clap::value_parser!(f64))
+                    .action(ArgAction::Set)
+            )
+            .arg(
+                Arg::new("server_tcp_keepalive_interval")
+                    .long("server-tcp-keepalive-interval")
+                    .help("TCP keep alive setting for server sockets")
+                    .value_parser(clap::value_parser!(f64))
+                    .action(ArgAction::Set)
+            )
+            .arg(
+                Arg::new("server_tcp_keepalive_retries")
+                    .long("server-tcp-keepalive-retries")
+                    .help("TCP keep alive setting for server sockets")
+                    .value_parser(clap::value_parser!(u32))
+                    .action(ArgAction::Set)
+            )
+            .arg(
                 Arg::new("graceful_shutdown_timeout")
                     .long("graceful-shutdown-timeout")
                     .help("Timeout to wait for a graceful shutdown")
@@ -299,6 +345,27 @@ impl From<ArgMatches> for Options {
             vec![SocketAddr::new(ip, port)]
         };
 
+        let client_tcp_keepalive = TcpKeepAlive::new()
+            .with_time(
+                m.get_one::<f64>("client_tcp_keepalive_time")
+                    .map(|s| Duration::from_millis((*s * 1000.0) as u64)),
+            )
+            .with_interval(
+                m.get_one::<f64>("client_tcp_keepalive_interval")
+                    .map(|s| Duration::from_millis((*s * 1000.0) as u64)),
+            )
+            .with_retries(m.get_one::<u32>("client_tcp_keepalive_retries").cloned());
+        let server_tcp_keepalive = TcpKeepAlive::new()
+            .with_time(
+                m.get_one::<f64>("server_tcp_keepalive_time")
+                    .map(|s| Duration::from_millis((*s * 1000.0) as u64)),
+            )
+            .with_interval(
+                m.get_one::<f64>("server_tcp_keepalive_interval")
+                    .map(|s| Duration::from_millis((*s * 1000.0) as u64)),
+            )
+            .with_retries(m.get_one::<u32>("server_tcp_keepalive_retries").cloned());
+
         Self {
             log_level,
             pac_file: m
@@ -314,6 +381,10 @@ impl From<ArgMatches> for Options {
                 .expect("default value for connect_timeout"),
             activate_socket: m.get_one::<String>("activate_socket").cloned(),
             listen,
+            interface: *m.get_one::<IpAddr>("interface").unwrap(),
+            port: *m.get_one::<u16>("port").expect("default value for port"),
+            client_tcp_keepalive,
+            server_tcp_keepalive,
             graceful_shutdown_timeout: m
                 .get_one::<u64>("graceful_shutdown_timeout")
                 .map(|s| Duration::from_secs(*s))
@@ -510,5 +581,48 @@ mod tests {
     fn test_basic() {
         let args = Options::parse_args(&["proxydetox".into()]);
         assert!(matches!(args.authorization, Authorization::Basic(_)));
+    }
+
+    #[test]
+    fn test_tcp_keep_alive() {
+        let args = &[
+            "proxydetox",
+            "--client-tcp-keepalive-time",
+            "10.0",
+            "--client-tcp-keepalive-interval",
+            "20.0",
+            "--client-tcp-keepalive-retries",
+            "5",
+            "--server-tcp-keepalive-time",
+            "100.0",
+            "--server-tcp-keepalive-interval",
+            "200.0",
+            "--server-tcp-keepalive-retries",
+            "50",
+        ]
+        .iter()
+        .map(OsString::from)
+        .collect::<Vec<_>>();
+        let args = Options::parse_args(args);
+
+        assert_eq!(
+            args.client_tcp_keepalive.time(),
+            Some(Duration::from_secs(10))
+        );
+        assert_eq!(
+            args.client_tcp_keepalive.interval(),
+            Some(Duration::from_secs(20))
+        );
+        assert_eq!(args.client_tcp_keepalive.retries(), Some(5));
+
+        assert_eq!(
+            args.server_tcp_keepalive.time(),
+            Some(Duration::from_secs(100))
+        );
+        assert_eq!(
+            args.server_tcp_keepalive.interval(),
+            Some(Duration::from_secs(200))
+        );
+        assert_eq!(args.server_tcp_keepalive.retries(), Some(50));
     }
 }

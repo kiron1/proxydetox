@@ -1,4 +1,5 @@
 use crate::net::copy_bidirectional;
+use detox_net::TcpKeepAlive;
 use http::{Request, Response, Uri};
 use hyper::Body;
 use std::{future::Future, pin::Pin};
@@ -16,11 +17,20 @@ pub enum Error {
 /// The Response from this service is a service which can be used to upgrade a http::Request to
 /// establish a connnected stream.
 #[derive(Debug, Default)]
-pub struct Connect;
+pub struct Connect {
+    tcp_keepalive: TcpKeepAlive,
+}
 
 impl Connect {
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            tcp_keepalive: Default::default(),
+        }
+    }
+
+    pub fn with_tcp_keepalive(mut self, keepalive: TcpKeepAlive) -> Self {
+        self.tcp_keepalive = keepalive;
+        self
     }
 }
 
@@ -38,11 +48,16 @@ impl tower::Service<Uri> for Connect {
     }
 
     fn call(&mut self, dst: Uri) -> Self::Future {
+        let keepalive = self.tcp_keepalive.clone();
         let res = async move {
             match (dst.host(), dst.port_u16()) {
-                (Some(host), Some(port)) => {
-                    TcpStream::connect((host, port)).await.map(Handshake::new)
-                }
+                (Some(host), Some(port)) => TcpStream::connect((host, port))
+                    .await
+                    .map(|s| {
+                        keepalive.apply(&s).ok();
+                        s
+                    })
+                    .map(Handshake::new),
                 (_, _) => Err(tokio::io::Error::new(
                     tokio::io::ErrorKind::AddrNotAvailable,
                     "invalid URI",

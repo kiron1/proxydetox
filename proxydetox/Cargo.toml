@@ -10,12 +10,13 @@ negotiate = ["proxydetoxlib/negotiate"]
 
 [dependencies]
 clap = "4.1"
+detox_net = { path = "../detox_net" }
 dirs = "4.0"
+futures-util = "0.3"
 http = "0.2"
 hyper = { version = "0.14", features = ["http1", "http2", "client", "server", "stream", "tcp"] }
 lazy_static = "1.4"
 proxydetoxlib = { path = "../proxydetoxlib" }
-futures-util = "0.3"
 tokio = { version = "1", features = ["rt-multi-thread", "net", "macros", "sync", "signal"] }
 tokio-util = "0.7"
 tracing = "0.1"
