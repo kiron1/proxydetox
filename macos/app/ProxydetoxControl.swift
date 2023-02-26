@@ -24,30 +24,30 @@ public class ProxydetoxControl {
     self.proxydetoxUrl = URL(fileURLWithPath: NSString.path(withComponents: components))
     print("proxydetoxcli \(self.proxydetoxUrl)")
 
-    let applicationSupportURL = FileManager.default.urls(
-      for: .applicationSupportDirectory, in: .userDomainMask
-    ).first
-    print("applicationSupportURL \(applicationSupportURL)")
+    // let applicationSupportURL = FileManager.default.urls(
+    //   for: .applicationSupportDirectory, in: .userDomainMask
+    // ).first
+    // print("applicationSupportURL \(applicationSupportURL)")
 
-    var proxyPacPath = FileManager.default.urls(
-      for: .applicationSupportDirectory, in: .userDomainMask
-    ).first!
-    proxyPacPath.appendPathComponent("Proxydetox")
+    // var proxyPacPath = FileManager.default.urls(
+    //   for: .applicationSupportDirectory, in: .userDomainMask
+    // ).first!
+    // proxyPacPath.appendPathComponent("Proxydetox")
 
-    if !FileManager.default.fileExists(atPath: proxyPacPath.path) {
-      do {
-        try FileManager.default.createDirectory(
-          atPath: proxyPacPath.path, withIntermediateDirectories: true, attributes: nil)
-      } catch {
-        NSLog("\(error.localizedDescription)")
-      }
-    }
-    proxyPacPath.appendPathComponent("proxy.pac")
+    // if !FileManager.default.fileExists(atPath: proxyPacPath.path) {
+    //   do {
+    //     try FileManager.default.createDirectory(
+    //       atPath: proxyPacPath.path, withIntermediateDirectories: true, attributes: nil)
+    //   } catch {
+    //     NSLog("\(error.localizedDescription)")
+    //   }
+    // }
+    // proxyPacPath.appendPathComponent("proxy.pac")
 
     UserDefaults.standard.register(defaults: [
       ProxydetoxControl.autostartKey: false,
       ProxydetoxControl.portKey: 8080,
-      ProxydetoxControl.pacFileKey: proxyPacPath.relativePath,
+      // ProxydetoxControl.pacFileKey: proxyPacPath.relativePath,
       ProxydetoxControl.negotiateKey: false,
       ProxydetoxControl.alwaysUseConnectKey: false,
       ProxydetoxControl.directFallbackKey: false,
