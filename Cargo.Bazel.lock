@@ -1,5 +1,5 @@
 {
-  "checksum": "10e07fadf569481c376cf80b2c6475ef04a47ec5ac2180af6f9007054b045667",
+  "checksum": "5b9a2313f1aa463b8d34426b4ca4e17b9920bd7d034a6aa3d618ec1021dae5e6",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -2607,6 +2607,53 @@
       },
       "license": "MIT OR Apache-2.0"
     },
+    "futures-macro 0.3.26": {
+      "name": "futures-macro",
+      "version": "0.3.26",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/futures-macro/0.3.26/download",
+          "sha256": "95a73af87da33b5acf53acfebdc339fe592ecf5357ac7c0a7734ab9d8c876a70"
+        }
+      },
+      "targets": [
+        {
+          "ProcMacro": {
+            "crate_name": "futures_macro",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "futures_macro",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "proc-macro2 1.0.51",
+              "target": "proc_macro2"
+            },
+            {
+              "id": "quote 1.0.23",
+              "target": "quote"
+            },
+            {
+              "id": "syn 1.0.109",
+              "target": "syn"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.3.26"
+      },
+      "license": "MIT OR Apache-2.0"
+    },
     "futures-sink 0.3.26": {
       "name": "futures-sink",
       "version": "0.3.26",
@@ -2681,7 +2728,8 @@
         ],
         "crate_features": {
           "common": [
-            "alloc"
+            "alloc",
+            "std"
           ],
           "selects": {}
         },
@@ -2740,7 +2788,13 @@
         ],
         "crate_features": {
           "common": [
-            "alloc"
+            "alloc",
+            "async-await",
+            "async-await-macro",
+            "default",
+            "futures-macro",
+            "slab",
+            "std"
           ],
           "selects": {}
         },
@@ -2765,11 +2819,24 @@
             {
               "id": "pin-utils 0.1.0",
               "target": "pin_utils"
+            },
+            {
+              "id": "slab 0.4.8",
+              "target": "slab"
             }
           ],
           "selects": {}
         },
         "edition": "2018",
+        "proc_macro_deps": {
+          "common": [
+            {
+              "id": "futures-macro 0.3.26",
+              "target": "futures_macro"
+            }
+          ],
+          "selects": {}
+        },
         "version": "0.3.26"
       },
       "build_script_attrs": {
@@ -4716,7 +4783,7 @@
                 "target": "security_framework_sys"
               },
               {
-                "id": "tempfile 3.3.0",
+                "id": "tempfile 3.4.0",
                 "target": "tempfile"
               }
             ],
@@ -6022,6 +6089,10 @@
               "target": "dirs"
             },
             {
+              "id": "futures-util 0.3.26",
+              "target": "futures_util"
+            },
+            {
               "id": "http 0.2.9",
               "target": "http"
             },
@@ -6036,6 +6107,10 @@
             {
               "id": "tokio 1.25.0",
               "target": "tokio"
+            },
+            {
+              "id": "tokio-util 0.7.7",
+              "target": "tokio_util"
             },
             {
               "id": "tracing 0.1.37",
@@ -6539,47 +6614,6 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "remove_dir_all 0.5.3": {
-      "name": "remove_dir_all",
-      "version": "0.5.3",
-      "repository": {
-        "Http": {
-          "url": "https://crates.io/api/v1/crates/remove_dir_all/0.5.3/download",
-          "sha256": "3acd125665422973a33ac9d3dd2df85edad0f4ae9b00dafb1a05e43a9f5ef8e7"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "remove_dir_all",
-            "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        }
-      ],
-      "library_target_name": "remove_dir_all",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [],
-          "selects": {
-            "cfg(windows)": [
-              {
-                "id": "winapi 0.3.9",
-                "target": "winapi"
-              }
-            ]
-          }
-        },
-        "edition": "2015",
-        "version": "0.5.3"
-      },
-      "license": "MIT/Apache-2.0"
-    },
     "rustc-hash 1.1.0": {
       "name": "rustc-hash",
       "version": "1.1.0",
@@ -6654,6 +6688,7 @@
         "crate_features": {
           "common": [
             "default",
+            "fs",
             "io-lifetimes",
             "libc",
             "std",
@@ -7335,13 +7370,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "tempfile 3.3.0": {
+    "tempfile 3.4.0": {
       "name": "tempfile",
-      "version": "3.3.0",
+      "version": "3.4.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/tempfile/3.3.0/download",
-          "sha256": "5cdb1ef4eaeeaddc8fbd371e5017057064af0911902ef36b39801f67cc6d79e4"
+          "url": "https://crates.io/api/v1/crates/tempfile/3.4.0/download",
+          "sha256": "af18f7ae1acd354b992402e9ec5864359d693cd8a79dcbef59f76891701c1e95"
         }
       },
       "targets": [
@@ -7369,17 +7404,13 @@
             {
               "id": "fastrand 1.9.0",
               "target": "fastrand"
-            },
-            {
-              "id": "remove_dir_all 0.5.3",
-              "target": "remove_dir_all"
             }
           ],
           "selects": {
             "cfg(any(unix, target_os = \"wasi\"))": [
               {
-                "id": "libc 0.2.139",
-                "target": "libc"
+                "id": "rustix 0.36.8",
+                "target": "rustix"
               }
             ],
             "cfg(target_os = \"redox\")": [
@@ -7390,14 +7421,14 @@
             ],
             "cfg(windows)": [
               {
-                "id": "winapi 0.3.9",
-                "target": "winapi"
+                "id": "windows-sys 0.42.0",
+                "target": "windows_sys"
               }
             ]
           }
         },
         "edition": "2018",
-        "version": "3.3.0"
+        "version": "3.4.0"
       },
       "license": "MIT OR Apache-2.0"
     },

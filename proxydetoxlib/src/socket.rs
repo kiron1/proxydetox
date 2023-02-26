@@ -56,11 +56,18 @@ pub fn activate_socket(name: &str) -> std::io::Result<ActivateSocket> {
         return Err(std::io::Error::from_raw_os_error(error));
     }
 
-    let out = unsafe { std::slice::from_raw_parts(fds, cnt).to_vec() };
-
-    unsafe {
-        libc::free(fds as *mut _);
+    if cnt == 0 {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "no socket found",
+        ));
     }
+
+    let out = unsafe {
+        let out = std::slice::from_raw_parts(fds, cnt).to_vec();
+        libc::free(fds as *mut _);
+        out
+    };
 
     Ok(ActivateSocket(out))
 }

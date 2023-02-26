@@ -1,7 +1,7 @@
 use std::{
     ffi::OsString,
     fs::read_to_string,
-    net::IpAddr,
+    net::{IpAddr, SocketAddr},
     path::{Path, PathBuf},
     str::FromStr,
     time::Duration,
@@ -77,8 +77,7 @@ pub struct Options {
     pub direct_fallback: bool,
     pub always_use_connect: bool,
     pub activate_socket: Option<String>,
-    pub interface: IpAddr,
-    pub port: u16,
+    pub listen: Vec<SocketAddr>,
     pub graceful_shutdown_timeout: Duration,
 }
 
@@ -187,10 +186,19 @@ impl Options {
                      .action(clap::ArgAction::Set),
              )
              .arg(
+                Arg::new("listen")
+                    .short('L')
+                    .long("listen")
+                    .help("Listening interface (e.g. 127.0.0.1:3128)")
+                    .value_parser(clap::value_parser!(SocketAddr))
+                    .action(ArgAction::Append)
+            )
+             .arg(
                 Arg::new("interface")
                     .long("interface")
                     .short('i')
-                    .help("Interface to listen on for incoming connections")
+                    .help("Interface to listen on for incoming connections (DEPRECATED: use --listen)")
+                    .conflicts_with("listen")
                     .default_value("127.0.0.1")
                     .value_parser(is_ip)
                     .action(ArgAction::Set),
@@ -199,7 +207,8 @@ impl Options {
                 Arg::new("port")
                     .short('P')
                     .long("port")
-                    .help("Listening port")
+                    .help("Listening port (DEPRECATED: use --listen)")
+                    .conflicts_with("listen")
                     .value_parser(clap::value_parser!(u16))
                     .action(ArgAction::Set)
                     .default_value("3128"),
@@ -282,6 +291,14 @@ impl From<ArgMatches> for Options {
         #[cfg(not(feature = "negotiate"))]
         let authorization = Authorization::Basic(netrc_file);
 
+        let listen = if let Some(listen) = m.get_many::<SocketAddr>("listen") {
+            listen.cloned().collect()
+        } else {
+            let ip = *m.get_one::<IpAddr>("interface").unwrap();
+            let port = *m.get_one::<u16>("port").unwrap();
+            vec![SocketAddr::new(ip, port)]
+        };
+
         Self {
             log_level,
             pac_file: m
@@ -296,8 +313,7 @@ impl From<ArgMatches> for Options {
                 .map(|s| Duration::from_millis((*s * 1000.0) as u64))
                 .expect("default value for connect_timeout"),
             activate_socket: m.get_one::<String>("activate_socket").cloned(),
-            interface: *m.get_one::<IpAddr>("interface").unwrap(),
-            port: *m.get_one::<u16>("port").expect("default value for port"),
+            listen,
             graceful_shutdown_timeout: m
                 .get_one::<u64>("graceful_shutdown_timeout")
                 .map(|s| Duration::from_secs(*s))
@@ -419,20 +435,52 @@ mod tests {
     }
 
     #[test]
-    fn test_interface() {
-        let addr = String::from("0.0.0.0");
+    fn test_listen_none() {
+        let args = Options::parse_args(&["proxydetox".into()]);
+        assert_eq!(args.listen, vec!["127.0.0.1:3128".parse().unwrap()]);
+    }
+
+    #[test]
+    fn test_listen_one() {
+        let addr_str = "192.168.0.1:8080";
+        let addr = addr_str.parse::<SocketAddr>().unwrap();
+        let args = Options::parse_args(&["proxydetox".into(), "--listen".into(), addr_str.into()]);
+        assert_eq!(args.listen, vec![addr]);
+    }
+
+    #[test]
+    fn test_listen_many() {
+        let addr1_str = "192.168.0.1:8080";
+        let addr2_str = "10.0.0.1:3128";
+        let addr1 = addr1_str.parse::<SocketAddr>().unwrap();
+        let addr2 = addr2_str.parse::<SocketAddr>().unwrap();
         let args = Options::parse_args(&[
             "proxydetox".into(),
-            "--interface".into(),
-            addr.clone().into(),
+            "--listen".into(),
+            addr1_str.into(),
+            "--listen".into(),
+            addr2_str.into(),
         ]);
-        assert_eq!(args.interface, addr.parse::<IpAddr>().unwrap());
+        assert_eq!(args.listen, vec![addr1, addr2]);
+    }
+
+    #[test]
+    fn test_interface() {
+        let args =
+            Options::parse_args(&["proxydetox".into(), "--interface".into(), "0.0.0.0".into()]);
+        assert_eq!(
+            args.listen,
+            vec!["0.0.0.0:3128".parse::<SocketAddr>().unwrap()]
+        );
     }
 
     #[test]
     fn test_port() {
         let args = Options::parse_args(&["proxydetox".into(), "--port".into(), "8080".into()]);
-        assert_eq!(args.port, 8080);
+        assert_eq!(
+            args.listen,
+            vec!["127.0.0.1:8080".parse::<SocketAddr>().unwrap()]
+        );
     }
 
     #[cfg(feature = "negotiate")]
