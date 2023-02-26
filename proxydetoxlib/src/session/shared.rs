@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::Duration;
 
-use detox_net::HostAndPort;
+use detox_net::{HostAndPort, TcpKeepAlive};
 use http::Uri;
 use http::{Request, Response};
 use hyper::Body;
@@ -29,6 +29,7 @@ pub(crate) struct Shared {
     pub(super) always_use_connect: bool,
     pub(super) direct_fallback: bool,
     pub(super) connect_timeout: Duration,
+    pub(super) client_tcp_keepalive: TcpKeepAlive,
     pub(super) accesslog_tx: Sender<accesslog::Entry>,
 }
 
@@ -60,7 +61,10 @@ impl Shared {
                         Box::new(crate::auth::NoneAuthenticator)
                     }
                 };
-                let client = hyper::Client::builder().build(HttpProxyConnector::new(proxy.clone()));
+                let client = hyper::Client::builder().build(
+                    HttpProxyConnector::new(proxy.clone())
+                        .with_tcp_keepalive(self.client_tcp_keepalive.clone()),
+                );
                 let client = ProxyClient::new(client, auth);
                 proxies.insert(proxy.clone(), client.clone());
                 Ok(client)
@@ -141,7 +145,7 @@ impl Shared {
             (false, true, ProxyOrDirect::Proxy(ref proxy)) => self.proxy_connect(proxy, uri).await,
             (false, false, ProxyOrDirect::Proxy(ref proxy)) => self.proxy_client(proxy),
             (true, _, ProxyOrDirect::Direct) => {
-                let mut conn = Connect::new();
+                let mut conn = Connect::new().with_tcp_keepalive(self.client_tcp_keepalive.clone());
                 let handshake = conn.call(uri.clone()).await;
                 handshake
                     .map_err({

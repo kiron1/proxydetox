@@ -98,6 +98,7 @@ async fn run(config: &Options) -> Result<(), proxydetoxlib::Error> {
         .always_use_connect(config.always_use_connect)
         .connect_timeout(config.connect_timeout)
         .direct_fallback(config.direct_fallback)
+        .client_tcp_keepalive(config.client_tcp_keepalive.clone())
         .build();
 
     let server = if let Some(name) = &config.activate_socket {
@@ -115,6 +116,9 @@ async fn run(config: &Options) -> Result<(), proxydetoxlib::Error> {
     };
     let server: Vec<_> = server
         .into_iter()
+        .map(|s| s.tcp_keepalive(config.server_tcp_keepalive.time()))
+        .map(|s| s.tcp_keepalive_interval(config.server_tcp_keepalive.time()))
+        .map(|s| s.tcp_keepalive_retries(config.server_tcp_keepalive.retries()))
         .map({
             let s = session.clone();
             move |k| {

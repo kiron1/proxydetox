@@ -1,7 +1,7 @@
 #![allow(clippy::type_complexity)]
 
 use super::http_proxy_stream::HttpProxyStream;
-use detox_net::HostAndPort;
+use detox_net::{HostAndPort, TcpKeepAlive};
 use http::Uri;
 use hyper::service::Service;
 use paclib::Proxy;
@@ -28,17 +28,27 @@ pub enum Error {
 #[derive(Clone, Debug)]
 pub struct HttpProxyConnector {
     proxy: Proxy,
+    tcp_keepalive: TcpKeepAlive,
 }
 
 impl HttpProxyConnector {
     pub fn new(proxy: Proxy) -> Self {
-        Self { proxy }
+        Self {
+            proxy,
+            tcp_keepalive: Default::default(),
+        }
+    }
+
+    pub fn with_tcp_keepalive(mut self, keepalive: TcpKeepAlive) -> Self {
+        self.tcp_keepalive = keepalive;
+        self
     }
 
     async fn call_async(&mut self, _dst: Uri) -> std::result::Result<HttpProxyStream, Error> {
         let stream = TcpStream::connect(self.proxy.endpoint().to_pair())
             .await
             .map_err(|e| Error::ConnectError(self.proxy.endpoint().clone(), e))?;
+        self.tcp_keepalive.apply(&stream).ok();
         let local_addr = stream.local_addr().ok();
         let remote_addr = stream.peer_addr().ok();
         let stream = match self.proxy {

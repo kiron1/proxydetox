@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use detox_net::TcpKeepAlive;
 use tokio::sync::broadcast;
 
 use super::Session;
@@ -15,6 +16,7 @@ pub struct Builder {
     always_use_connect: bool,
     direct_fallback: bool,
     connect_timeout: Option<Duration>,
+    client_tcp_keepalive: TcpKeepAlive,
 }
 
 impl Builder {
@@ -45,7 +47,11 @@ impl Builder {
         self.connect_timeout = Some(duration);
         self
     }
-
+    /// TCP keep alive settings for client sockets.
+    pub fn client_tcp_keepalive(mut self, keepalive: TcpKeepAlive) -> Self {
+        self.client_tcp_keepalive = keepalive;
+        self
+    }
     pub fn build(self) -> Session {
         let pac_script = self
             .pac_script
@@ -71,6 +77,7 @@ impl Builder {
             always_use_connect: self.always_use_connect,
             direct_fallback: self.direct_fallback,
             connect_timeout: self.connect_timeout.unwrap_or(Duration::new(30, 0)),
+            client_tcp_keepalive: self.client_tcp_keepalive,
             accesslog_tx,
         }))
     }

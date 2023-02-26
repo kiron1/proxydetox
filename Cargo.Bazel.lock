@@ -1,5 +1,5 @@
 {
-  "checksum": "5b9a2313f1aa463b8d34426b4ca4e17b9920bd7d034a6aa3d618ec1021dae5e6",
+  "checksum": "acd9554b5b7adcace09bddc9d4ed9ed5dd429435109137ab9d6fea1b2b2a68ba",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -1711,6 +1711,10 @@
             {
               "id": "http 0.2.9",
               "target": "http"
+            },
+            {
+              "id": "socket2 0.4.7",
+              "target": "socket2"
             },
             {
               "id": "thiserror 1.0.38",

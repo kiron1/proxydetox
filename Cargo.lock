@@ -325,6 +325,7 @@ name = "detox_net"
 version = "0.1.0"
 dependencies = [
  "http",
+ "socket2",
  "thiserror",
  "tokio",
 ]
@@ -1130,6 +1131,7 @@ name = "proxydetox"
 version = "0.6.2"
 dependencies = [
  "clap 4.1.6",
+ "detox_net",
  "dirs",
  "futures-util",
  "http",
