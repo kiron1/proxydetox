@@ -29,9 +29,13 @@ jobs:
         with:
           crate: cargo-edit
 
-      - name: Bump version
+      - name: Bump version of proxydetox
         run: |
           cargo set-version -p proxydetox --bump ${{ github.event.inputs.release_kind }}
+
+      - name: Bump version of proxydetoxlib
+        run: |
+          cargo set-version -p proxydetoxlib --bump ${{ github.event.inputs.release_kind }}
 
       - name: Cargo update
         run: |
