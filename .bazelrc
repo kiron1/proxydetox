@@ -1,3 +1,5 @@
 build --flag_alias=features=//:features
 
+test --test_output=errors
+
 try-import %workspace%/user.bazelrc
