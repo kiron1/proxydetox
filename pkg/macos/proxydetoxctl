@@ -1,0 +1,29 @@
+#!/usr/bin/env sh
+
+case "${1:-status}" in
+  status)
+    launchctl list cc.colorto.proxydetox
+    if pid=$(pgrep -xid, proxydetox); then
+      ps -x -ouser,pid,%cpu,%mem,stat,start,time,command -p "${pid}"
+    fi
+    ;;
+  start)
+    launchctl kickstart -p  "gui/$(id -u)/cc.colorto.proxydetox"
+    ;;
+  restart)
+    launchctl kickstart -kp  "gui/$(id -u)/cc.colorto.proxydetox"
+    ;;
+  stop)
+    launchctl kill TERM  "gui/$(id -u)/cc.colorto.proxydetox"
+    ;;
+  enable)
+    launchctl bootstrap "gui/$(id -u)" "/Library/LaunchAgents/cc.colorto.proxydetox.plist"
+    ;;
+  disable)
+    launchctl bootout "gui/$(id -u)/cc.colorto.proxydetox"
+    ;;
+  *)
+    printf 'fatal error: invalid argument `%s'\''\n' "${1}" >&2
+    exit 1
+    ;;
+esac

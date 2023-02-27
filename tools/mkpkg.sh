@@ -26,8 +26,8 @@ root=$(
   cd "$(dirname "$0")/.."
   pwd -P
 )
-workdir=$(mktemp -dt proxydetox-pkgbuild)
-setproxy_helper=$(mktemp)
+workdir=$(/usr/bin/mktemp -dt proxydetox-pkgbuild)
+setproxy_helper=$(/usr/bin/mktemp)
 
 trap 'rm -rf "${workdir}" "${setproxy_helper}"' EXIT INT
 
@@ -38,6 +38,7 @@ cargo install \
   --features negotiate \
   ${target:+--target ${target}} \
   --no-track
+install -v -m 0755 "${root}/pkg/macos/proxydetoxctl" "${workdir}/${prefix}/bin/"
 swiftc -o "${setproxy_helper}" "${root}/pkg/macos/setproxy.swift"
 install -d "${workdir}/Library/LaunchAgents/"
 install -v -m 0644 "${root}/pkg/macos/${pkgid}.plist" "${workdir}/Library/LaunchAgents/"
