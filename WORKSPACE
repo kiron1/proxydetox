@@ -94,6 +94,27 @@ load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
 rust_bindgen_repositories()
 
 versioned_http_archive(
+    name = "io_bazel_rules_docker",
+    sha256 = "b1e80761a8a8243d03ebca8845e9cc1ba6c82ce7c5179ce2b295cd36f7e394bf",
+    urls = ["https://github.com/bazelbuild/rules_docker/releases/download/v{version}/rules_docker-v{version}.tar.gz"],
+    version = "0.25.0",
+)
+
+load(
+    "@io_bazel_rules_docker//repositories:repositories.bzl",
+    container_repositories = "repositories",
+)
+
+container_repositories()
+
+load(
+    "@io_bazel_rules_docker//rust:image.bzl",
+    rust_image_repositories = "repositories",
+)
+
+rust_image_repositories()
+
+versioned_http_archive(
     name = "rules_pkg",
     sha256 = "eea0f59c28a9241156a47d7a8e32db9122f3d50b505fae0f33de6ce4d9b61834",
     urls = [

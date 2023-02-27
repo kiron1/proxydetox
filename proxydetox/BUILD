@@ -1,6 +1,7 @@
+load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
+load("@io_bazel_rules_docker//rust:image.bzl", "rust_image")
 load("@rules_pkg//:pkg.bzl", "pkg_zip")
 load("@rules_rust//rust:defs.bzl", "rust_binary")
-load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
 
 rust_binary(
     name = "proxydetox",
@@ -20,6 +21,12 @@ rust_binary(
     deps = ["//proxydetoxlib"] + all_crate_deps(
         normal = True,
     ),
+)
+
+rust_image(
+    name = "proxydetox_image",
+    binary = "proxydetox",
+    tags = ["manual"],
 )
 
 pkg_zip(
