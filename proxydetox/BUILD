@@ -17,7 +17,10 @@ rust_binary(
         proc_macro = True,
     ),
     visibility = ["//visibility:public"],
-    deps = ["//proxydetoxlib"] + all_crate_deps(
+    deps = [
+        "//detox_net",
+        "//proxydetoxlib",
+    ] + all_crate_deps(
         normal = True,
     ),
 )
