@@ -1,5 +1,5 @@
 {
-  "checksum": "acd9554b5b7adcace09bddc9d4ed9ed5dd429435109137ab9d6fea1b2b2a68ba",
+  "checksum": "961b91526db13c5dd500c8e8e83067c933375bbe8e9ce0f255aaf359c243232b",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -1049,13 +1049,13 @@
       },
       "license": "MIT"
     },
-    "clap 4.1.6": {
+    "clap 4.1.7": {
       "name": "clap",
-      "version": "4.1.6",
+      "version": "4.1.7",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/clap/4.1.6/download",
-          "sha256": "ec0b0588d44d4d63a87dbd75c136c166bbfd9a86a31cb89e09906521c7d3f5e3"
+          "url": "https://crates.io/api/v1/crates/clap/4.1.7/download",
+          "sha256": "2f3061d6db6d8fcbbd4b05e057f2acace52e64e96b498c08c2d7a4e65addd340"
         }
       },
       "targets": [
@@ -1121,23 +1121,23 @@
         "proc_macro_deps": {
           "common": [
             {
-              "id": "clap_derive 4.1.0",
+              "id": "clap_derive 4.1.7",
               "target": "clap_derive"
             }
           ],
           "selects": {}
         },
-        "version": "4.1.6"
+        "version": "4.1.7"
       },
       "license": "MIT OR Apache-2.0"
     },
-    "clap_derive 4.1.0": {
+    "clap_derive 4.1.7": {
       "name": "clap_derive",
-      "version": "4.1.0",
+      "version": "4.1.7",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/clap_derive/4.1.0/download",
-          "sha256": "684a277d672e91966334af371f1a7b5833f9aa00b07c84e92fbce95e00208ce8"
+          "url": "https://crates.io/api/v1/crates/clap_derive/4.1.7/download",
+          "sha256": "34d122164198950ba84a918270a3bb3f7ededd25e15f7451673d986f55bd2667"
         }
       },
       "targets": [
@@ -1188,7 +1188,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "4.1.0"
+        "version": "4.1.7"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -1713,7 +1713,7 @@
               "target": "http"
             },
             {
-              "id": "socket2 0.4.7",
+              "id": "socket2 0.5.1",
               "target": "socket2"
             },
             {
@@ -1890,7 +1890,7 @@
         "deps": {
           "common": [
             {
-              "id": "clap 4.1.6",
+              "id": "clap 4.1.7",
               "target": "clap"
             },
             {
@@ -2979,13 +2979,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "h2 0.3.15": {
+    "h2 0.3.16": {
       "name": "h2",
-      "version": "0.3.15",
+      "version": "0.3.16",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/h2/0.3.15/download",
-          "sha256": "5f9f29bc9dda355256b2916cf526ab02ce0aeaaaf2bad60d65ef3f12f11dd0f4"
+          "url": "https://crates.io/api/v1/crates/h2/0.3.16/download",
+          "sha256": "5be7b54589b581f624f566bf5d8eb2bab1db736c51528720b6bd36b96b55924d"
         }
       },
       "targets": [
@@ -3054,7 +3054,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.3.15"
+        "version": "0.3.16"
       },
       "license": "MIT"
     },
@@ -3510,7 +3510,7 @@
               "target": "futures_util"
             },
             {
-              "id": "h2 0.3.15",
+              "id": "h2 0.3.16",
               "target": "h2"
             },
             {
@@ -5510,7 +5510,7 @@
         "deps": {
           "common": [
             {
-              "id": "clap 4.1.6",
+              "id": "clap 4.1.7",
               "target": "clap"
             },
             {
@@ -6085,7 +6085,7 @@
         "deps": {
           "common": [
             {
-              "id": "clap 4.1.6",
+              "id": "clap 4.1.7",
               "target": "clap"
             },
             {
@@ -7230,6 +7230,59 @@
         },
         "edition": "2018",
         "version": "0.4.7"
+      },
+      "license": "MIT OR Apache-2.0"
+    },
+    "socket2 0.5.1": {
+      "name": "socket2",
+      "version": "0.5.1",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/socket2/0.5.1/download",
+          "sha256": "bc8d618c6641ae355025c449427f9e96b98abf99a772be3cef6708d15c77147a"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "socket2",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "socket2",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": {
+          "common": [
+            "all"
+          ],
+          "selects": {}
+        },
+        "deps": {
+          "common": [],
+          "selects": {
+            "cfg(unix)": [
+              {
+                "id": "libc 0.2.139",
+                "target": "libc"
+              }
+            ],
+            "cfg(windows)": [
+              {
+                "id": "windows-sys 0.45.0",
+                "target": "windows_sys"
+              }
+            ]
+          }
+        },
+        "edition": "2021",
+        "version": "0.5.1"
       },
       "license": "MIT OR Apache-2.0"
     },
