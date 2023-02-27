@@ -12,17 +12,6 @@ use detox_net::TcpKeepAlive;
 use http::Uri;
 use tracing_subscriber::filter::LevelFilter;
 
-lazy_static::lazy_static! {
-    static ref VERSION: String = {
-        if let Some(hash) = option_env!("PROXYDETOX_BUILD_GIT_HASH") {
-            format!("{} ({})", env!("CARGO_PKG_VERSION"), hash)
-        } else {
-            env!("CARGO_PKG_VERSION").to_owned()
-        }
-    };
-
-    static ref VERSION_STR: &'static str = &VERSION;
-}
 #[derive(Debug, PartialEq, Eq)]
 pub enum Authorization {
     Basic(PathBuf),
@@ -147,7 +136,7 @@ impl Options {
 
     fn parse_args(args: &[OsString]) -> Self {
         let app = Command::new(env!("CARGO_PKG_NAME"))
-            .version(*VERSION_STR)
+            .version(*proxydetoxlib::VERSION_STR)
             .about("A small proxy to relieve the pain of some corporate proxies")
             .args_override_self(true);
 

@@ -197,15 +197,10 @@ impl PeerSession {
     }
 
     fn index_html(&self) -> Result<Response<Body>> {
-        let version = if let Some(hash) = option_env!("PROXYDETOX_BUILD_GIT_HASH") {
-            format!("{} ({})", env!("CARGO_PKG_VERSION"), hash)
-        } else {
-            env!("CARGO_PKG_VERSION").to_owned()
-        };
         let body = format!(
             "<!DOCTYPE html><html><h1>{}/{}</h1><h2>DNS Cache</h2><code>{:?}</code></html>",
             env!("CARGO_PKG_NAME"),
-            version,
+            *crate::VERSION_STR,
             self.shared.eval.lock().unwrap().cache()
         );
         let resp = Response::builder()

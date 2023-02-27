@@ -1,5 +1,5 @@
 {
-  "checksum": "acd9554b5b7adcace09bddc9d4ed9ed5dd429435109137ab9d6fea1b2b2a68ba",
+  "checksum": "db72ac00ae2322170a97acc37414556010d565303e98fac98d303d5f9dfa5626",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -6132,9 +6132,9 @@
       },
       "license": null
     },
-    "proxydetoxlib 0.6.1": {
+    "proxydetoxlib 0.6.2": {
       "name": "proxydetoxlib",
-      "version": "0.6.1",
+      "version": "0.6.2",
       "repository": null,
       "targets": [
         {
@@ -6220,7 +6220,7 @@
               "target": "netrc"
             },
             {
-              "id": "proxydetoxlib 0.6.1",
+              "id": "proxydetoxlib 0.6.2",
               "target": "build_script_build"
             },
             {
@@ -6269,7 +6269,7 @@
           ],
           "selects": {}
         },
-        "version": "0.6.1"
+        "version": "0.6.2"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -10724,7 +10724,7 @@
     "paclib 0.3.0": "paclib",
     "proxy_client 0.1.0": "proxy_client",
     "proxydetox 0.6.2": "proxydetox",
-    "proxydetoxlib 0.6.1": "proxydetoxlib"
+    "proxydetoxlib 0.6.2": "proxydetoxlib"
   },
   "conditions": {
     "aarch64-pc-windows-gnullvm": [],
