@@ -1,5 +1,5 @@
 {
-  "checksum": "db72ac00ae2322170a97acc37414556010d565303e98fac98d303d5f9dfa5626",
+  "checksum": "64cbc0def249b1a36d3071dec712fe8ff8f5a3cb8521f2c74e62668339732441",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -1049,13 +1049,13 @@
       },
       "license": "MIT"
     },
-    "clap 4.1.6": {
+    "clap 4.1.7": {
       "name": "clap",
-      "version": "4.1.6",
+      "version": "4.1.7",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/clap/4.1.6/download",
-          "sha256": "ec0b0588d44d4d63a87dbd75c136c166bbfd9a86a31cb89e09906521c7d3f5e3"
+          "url": "https://crates.io/api/v1/crates/clap/4.1.7/download",
+          "sha256": "2f3061d6db6d8fcbbd4b05e057f2acace52e64e96b498c08c2d7a4e65addd340"
         }
       },
       "targets": [
@@ -1121,23 +1121,23 @@
         "proc_macro_deps": {
           "common": [
             {
-              "id": "clap_derive 4.1.0",
+              "id": "clap_derive 4.1.7",
               "target": "clap_derive"
             }
           ],
           "selects": {}
         },
-        "version": "4.1.6"
+        "version": "4.1.7"
       },
       "license": "MIT OR Apache-2.0"
     },
-    "clap_derive 4.1.0": {
+    "clap_derive 4.1.7": {
       "name": "clap_derive",
-      "version": "4.1.0",
+      "version": "4.1.7",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/clap_derive/4.1.0/download",
-          "sha256": "684a277d672e91966334af371f1a7b5833f9aa00b07c84e92fbce95e00208ce8"
+          "url": "https://crates.io/api/v1/crates/clap_derive/4.1.7/download",
+          "sha256": "34d122164198950ba84a918270a3bb3f7ededd25e15f7451673d986f55bd2667"
         }
       },
       "targets": [
@@ -1188,7 +1188,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "4.1.0"
+        "version": "4.1.7"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -1890,7 +1890,7 @@
         "deps": {
           "common": [
             {
-              "id": "clap 4.1.6",
+              "id": "clap 4.1.7",
               "target": "clap"
             },
             {
@@ -2979,13 +2979,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "h2 0.3.15": {
+    "h2 0.3.16": {
       "name": "h2",
-      "version": "0.3.15",
+      "version": "0.3.16",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/h2/0.3.15/download",
-          "sha256": "5f9f29bc9dda355256b2916cf526ab02ce0aeaaaf2bad60d65ef3f12f11dd0f4"
+          "url": "https://crates.io/api/v1/crates/h2/0.3.16/download",
+          "sha256": "5be7b54589b581f624f566bf5d8eb2bab1db736c51528720b6bd36b96b55924d"
         }
       },
       "targets": [
@@ -3054,7 +3054,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.3.15"
+        "version": "0.3.16"
       },
       "license": "MIT"
     },
@@ -3510,7 +3510,7 @@
               "target": "futures_util"
             },
             {
-              "id": "h2 0.3.15",
+              "id": "h2 0.3.16",
               "target": "h2"
             },
             {
@@ -5510,7 +5510,7 @@
         "deps": {
           "common": [
             {
-              "id": "clap 4.1.6",
+              "id": "clap 4.1.7",
               "target": "clap"
             },
             {
@@ -6065,9 +6065,9 @@
       },
       "license": null
     },
-    "proxydetox 0.6.2": {
+    "proxydetox 0.6.3": {
       "name": "proxydetox",
-      "version": "0.6.2",
+      "version": "0.6.3",
       "repository": null,
       "targets": [],
       "library_target_name": null,
@@ -6085,7 +6085,7 @@
         "deps": {
           "common": [
             {
-              "id": "clap 4.1.6",
+              "id": "clap 4.1.7",
               "target": "clap"
             },
             {
@@ -6128,13 +6128,13 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.6.2"
+        "version": "0.6.3"
       },
       "license": null
     },
-    "proxydetoxlib 0.6.2": {
+    "proxydetoxlib 0.6.3": {
       "name": "proxydetoxlib",
-      "version": "0.6.2",
+      "version": "0.6.3",
       "repository": null,
       "targets": [
         {
@@ -6220,7 +6220,7 @@
               "target": "netrc"
             },
             {
-              "id": "proxydetoxlib 0.6.2",
+              "id": "proxydetoxlib 0.6.3",
               "target": "build_script_build"
             },
             {
@@ -6269,7 +6269,7 @@
           ],
           "selects": {}
         },
-        "version": "0.6.2"
+        "version": "0.6.3"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -10723,8 +10723,8 @@
     "paceval 0.1.0": "paceval",
     "paclib 0.3.0": "paclib",
     "proxy_client 0.1.0": "proxy_client",
-    "proxydetox 0.6.2": "proxydetox",
-    "proxydetoxlib 0.6.2": "proxydetoxlib"
+    "proxydetox 0.6.3": "proxydetox",
+    "proxydetoxlib 0.6.3": "proxydetoxlib"
   },
   "conditions": {
     "aarch64-pc-windows-gnullvm": [],

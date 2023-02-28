@@ -191,9 +191,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.1.6"
+version = "4.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec0b0588d44d4d63a87dbd75c136c166bbfd9a86a31cb89e09906521c7d3f5e3"
+checksum = "2f3061d6db6d8fcbbd4b05e057f2acace52e64e96b498c08c2d7a4e65addd340"
 dependencies = [
  "bitflags",
  "clap_derive",
@@ -206,9 +206,9 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "4.1.0"
+version = "4.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "684a277d672e91966334af371f1a7b5833f9aa00b07c84e92fbce95e00208ce8"
+checksum = "34d122164198950ba84a918270a3bb3f7ededd25e15f7451673d986f55bd2667"
 dependencies = [
  "heck",
  "proc-macro-error",
@@ -364,7 +364,7 @@ dependencies = [
 name = "dnsdetox"
 version = "0.1.0"
 dependencies = [
- "clap 4.1.6",
+ "clap 4.1.7",
  "dirs",
  "dns-parser",
  "env_logger 0.10.0",
@@ -560,9 +560,9 @@ checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
 
 [[package]]
 name = "h2"
-version = "0.3.15"
+version = "0.3.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f9f29bc9dda355256b2916cf526ab02ce0aeaaaf2bad60d65ef3f12f11dd0f4"
+checksum = "5be7b54589b581f624f566bf5d8eb2bab1db736c51528720b6bd36b96b55924d"
 dependencies = [
  "bytes",
  "fnv",
@@ -1015,7 +1015,7 @@ checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 name = "paceval"
 version = "0.1.0"
 dependencies = [
- "clap 4.1.6",
+ "clap 4.1.7",
  "http",
  "paclib",
 ]
@@ -1128,9 +1128,9 @@ dependencies = [
 
 [[package]]
 name = "proxydetox"
-version = "0.6.2"
+version = "0.6.3"
 dependencies = [
- "clap 4.1.6",
+ "clap 4.1.7",
  "detox_net",
  "dirs",
  "futures-util",
@@ -1146,7 +1146,7 @@ dependencies = [
 
 [[package]]
 name = "proxydetoxlib"
-version = "0.6.2"
+version = "0.6.3"
 dependencies = [
  "base64",
  "bytes",
