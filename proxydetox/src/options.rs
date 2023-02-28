@@ -145,6 +145,7 @@ impl Options {
             Arg::new("negotiate")
                 .short('n')
                 .long("negotiate")
+                .value_name("HOST")
                 .help("Enables Negotiate (SPNEGO) authentication")
                 .action(ArgAction::Append)
                 .num_args(0..=1),
@@ -154,6 +155,7 @@ impl Options {
             .long("netrc-file")
             .help("Path to a .netrc file to be used for basic authentication")
             .value_parser(is_file)
+            .value_name("PATH")
             .action(clap::ArgAction::Set);
         #[cfg(feature = "negotiate")]
         let netrc_arg = netrc_arg.conflicts_with("negotiate");
@@ -176,6 +178,7 @@ impl Options {
             .arg(
                  Arg::new("activate_socket")
                      .long("activate-socket")
+                     .value_name("NAME")
                      .help("Socket name create by the service manager which needs to be activated")
                      .action(clap::ArgAction::Set),
              )
@@ -183,6 +186,7 @@ impl Options {
                 Arg::new("listen")
                     .short('L')
                     .long("listen")
+                    .value_name("INTERFACE:PORT")
                     .help("Listening interface (e.g. 127.0.0.1:3128)")
                     .value_parser(clap::value_parser!(SocketAddr))
                     .action(ArgAction::Append)
@@ -194,6 +198,7 @@ impl Options {
                     .help("Interface to listen on for incoming connections (DEPRECATED: use --listen)")
                     .conflicts_with("listen")
                     .default_value("127.0.0.1")
+                    .value_name("INTERFACE")
                     .value_parser(is_ip)
                     .action(ArgAction::Set),
             )
@@ -203,6 +208,7 @@ impl Options {
                     .long("port")
                     .help("Listening port (DEPRECATED: use --listen)")
                     .conflicts_with("listen")
+                    .value_name("PORT")
                     .value_parser(clap::value_parser!(u16))
                     .action(ArgAction::Set)
                     .default_value("3128"),
@@ -211,6 +217,7 @@ impl Options {
                 Arg::new("pac_file")
                     .long("pac-file")
                     .short('p')
+                    .value_name("PATH_OR_URL")
                     .help(
                         "PAC file to be used to decide which upstream proxy to forward the request (local file path, http://, or https:// URI are accepted)",
                     )
@@ -223,6 +230,7 @@ impl Options {
                     .short('C')
                     .long("always-use-connect")
                     .help("Always use CONNECT method even for http:// resources")
+                    .value_name("SECONDS")
                     .action(ArgAction::SetTrue),
             )
             .arg(
@@ -236,6 +244,7 @@ impl Options {
                     .short('c')
                     .long("connect-timeout")
                     .help("Timeout to establish a connection in fraction seconds")
+                    .value_name("SECONDS")
                     .value_parser(clap::value_parser!(f64))
                     .action(ArgAction::Set)
                     .default_value("10"),
@@ -244,6 +253,7 @@ impl Options {
                 Arg::new("client_tcp_keepalive_time")
                     .long("client-tcp-keepalive-time")
                     .help("TCP keep alive setting for client sockets")
+                    .value_name("SECONDS")
                     .value_parser(clap::value_parser!(f64))
                     .action(ArgAction::Set)
             )
@@ -251,6 +261,7 @@ impl Options {
                 Arg::new("client_tcp_keepalive_interval")
                     .long("client-tcp-keepalive-interval")
                     .help("TCP keep alive setting for client sockets")
+                    .value_name("SECONDS")
                     .value_parser(clap::value_parser!(f64))
                     .action(ArgAction::Set)
             )
@@ -258,12 +269,14 @@ impl Options {
                 Arg::new("client_tcp_keepalive_retries")
                     .long("client-tcp-keepalive-retries")
                     .help("TCP keep alive setting for client sockets")
+                    .value_name("COUNT")
                     .value_parser(clap::value_parser!(u32))
                     .action(ArgAction::Set)
             )  .arg(
                 Arg::new("server_tcp_keepalive_time")
                     .long("server-tcp-keepalive-time")
                     .help("TCP keep alive setting for server sockets")
+                    .value_name("SECONDS")
                     .value_parser(clap::value_parser!(f64))
                     .action(ArgAction::Set)
             )
@@ -271,6 +284,7 @@ impl Options {
                 Arg::new("server_tcp_keepalive_interval")
                     .long("server-tcp-keepalive-interval")
                     .help("TCP keep alive setting for server sockets")
+                    .value_name("SECONDS")
                     .value_parser(clap::value_parser!(f64))
                     .action(ArgAction::Set)
             )
@@ -278,6 +292,7 @@ impl Options {
                 Arg::new("server_tcp_keepalive_retries")
                     .long("server-tcp-keepalive-retries")
                     .help("TCP keep alive setting for server sockets")
+                    .value_name("COUNT")
                     .value_parser(clap::value_parser!(u32))
                     .action(ArgAction::Set)
             )
@@ -285,6 +300,7 @@ impl Options {
                 Arg::new("graceful_shutdown_timeout")
                     .long("graceful-shutdown-timeout")
                     .help("Timeout to wait for a graceful shutdown")
+                    .value_name("SECONDS")
                     .value_parser(clap::value_parser!(u64))
                     .action(ArgAction::Set)
                     .default_value("30"),
