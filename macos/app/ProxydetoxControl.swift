@@ -1,5 +1,17 @@
 import Foundation
 
+private enum State {
+  case initial
+  case running(Process, Date)
+  case stopped(TimeInterval)
+  case error(Int, TimeInterval)
+}
+
+private enum DesiredState {
+  case running
+  case stopped
+}
+
 public class ProxydetoxControl {
   static let autostartKey = "Autostart"
   static let portKey = "Port"
@@ -14,6 +26,9 @@ public class ProxydetoxControl {
   // private var worker: Thread? = nil
   private var proxydetoxUrl: URL
   private var proxydetoxProcess: Process?
+
+  private var state: State = .initial
+  private var desiredState: DesiredState = .running
 
   init() {
     let path = Bundle.main.bundlePath as NSString
@@ -52,6 +67,31 @@ public class ProxydetoxControl {
       ProxydetoxControl.alwaysUseConnectKey: false,
       ProxydetoxControl.directFallbackKey: false,
     ])
+  }
+
+  func ensureDesiredState() {
+    switch (state, desiredState) {
+      case (.running, .initial):
+        start()
+      case (.running, .running(let proc)):
+        return
+      case (.running, .stopped(let dt)):
+        if dt > 10 {
+          start()
+        }
+      case (.running, .error(let rc, let dt)):
+        if dt > 10 {
+          start()
+        }
+      case (.stopped, .initial):
+        return
+      case (.stopped, .running(let proc)):
+        stop()
+      case (.stopped, .stopped(let dt)):
+        return
+      case (.stopped, .error(let rc, let dt)):
+        return
+    }
   }
 
   var isRunning: Bool {
