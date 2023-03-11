@@ -11,7 +11,7 @@ on:
 jobs:
   mkrelease:
     name: Create Release
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
@@ -34,11 +34,19 @@ jobs:
 
     strategy:
       matrix:
-        build: [linux, macos-aarch64, macos-x86_64, windows]
+        build:
+          - macos-aarch64
+          - macos-x86_64
+          - ubuntu-20.04
+          - ubuntu-22.04
+          - windows
         include:
-          - build: linux
+          - build: ubuntu-20.04
             os: ubuntu-20.04
-            mkcmd: ./tools/mkdeb.sh
+            mkcmd: ./tools/mkdeb.sh -d focal
+          - build: ubuntu-22.04
+            os: ubuntu-22.04
+            mkcmd: ./tools/mkdeb.sh -d jammy
           - build: macos-aarch64
             os: macos-latest
             mkcmd: ./tools/mkpkg.sh -a aarch64 -t aarch64-apple-darwin
@@ -68,17 +76,17 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Install Linux dependency
         run: sudo apt-get install libkrb5-dev
-        if: ${{ matrix.build == 'linux' }}
+        if: startswith(matrix.os, 'ubuntu')
       #  see https://github.com/rust-lang/rust-bindgen/issues/1797
       - name: Install Windows dependency (LLVM)
         uses: KyleMayes/install-llvm-action@v1.7.0
-        if: ${{ matrix.build == 'windows' }}
+        if: startswith(matrix.os, 'windows')
         with:
           version: "11.0"
           directory: ${{ runner.temp }}/llvm
       - name: Set LIBCLANG_PATH
         run: echo "LIBCLANG_PATH=$((gcm clang).source -replace "clang.exe")" >> $env:GITHUB_ENV
-        if: ${{ matrix.build == 'windows' }}
+        if: startswith(matrix.os, 'windows')
       - name: Build Release Package
         id: buildpkg
         run: ${{ matrix.mkcmd }}

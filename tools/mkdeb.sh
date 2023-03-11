@@ -2,10 +2,14 @@
 
 set -eu
 
+distname=linux
 features=
 no_default_features=
-while getopts ":f:n" o; do
+while getopts ":d:f:n" o; do
   case "${o}" in
+  d)
+    distname=${OPTARG}
+    ;;
   f)
     features=${features:+${features},}${OPTARG}
     ;;
@@ -44,7 +48,7 @@ sed -e "s|\${prefix}|${prefix}|" "${root}/debian/proxydetox.service" \
 version=$(sed -n 's/^version\s*=\s*"\([0-9.]*\)"/\1/p' "${root}/proxydetox/Cargo.toml")
 echo "version=${version}" >> "${GITHUB_OUTPUT:-/dev/stdout}"
 
-pkgfile=proxydetox-${version}-x86_64-linux.deb
+pkgfile=proxydetox-${version}-x86_64-${distname}.deb
 echo "pkgfile=${pkgfile}" >> "${GITHUB_OUTPUT:-/dev/stdout}"
 
 sed -e "s/\${version}/${version}/" "${root}/debian/control" >"${workdir}/DEBIAN/control"
@@ -53,7 +57,7 @@ for f in postinst postrm; do
   chmod 0755 "${workdir}/DEBIAN/${f}"
 done
 
-echo Building ${pkgfile}
+echo "Building ${pkgfile}"
 dpkg-deb --build "${workdir}" "${pkgfile}"
 
 dpkg --info "${pkgfile}"
