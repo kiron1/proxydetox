@@ -1,19 +1,14 @@
 use std::fmt;
 use std::fmt::{Error, Formatter};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub enum Value {
+    #[default]
     Undefined,
     Null,
     Boolean(bool),
     Number(f64),
     String(std::string::String),
-}
-
-impl Default for Value {
-    fn default() -> Self {
-        Value::Undefined
-    }
 }
 
 impl fmt::Display for Value {
