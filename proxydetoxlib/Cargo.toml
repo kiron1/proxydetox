@@ -14,7 +14,7 @@ bytes = "1.1"
 chrono = "0.4"
 cross-krb5 = { version = "0.3", default-features = false, optional = true }
 detox_net = { path = "../detox_net" }
-dirs = "4.0"
+dirs = "5.0"
 futures-util = { version = "0.3", default-features = false }
 http = "0.2"
 hyper = { version = "0.14", features = ["http1", "http2", "client", "server", "stream", "tcp"] }
