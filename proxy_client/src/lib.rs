@@ -2,7 +2,7 @@ pub mod http_connect_connector;
 pub mod http_connect_stream;
 pub mod http_proxy_connector;
 pub mod http_proxy_stream;
-mod stream;
+pub mod stream;
 
 use std::net::SocketAddr;
 
@@ -11,6 +11,9 @@ pub use http_proxy_stream::HttpProxyStream;
 
 pub use http_connect_connector::HttpConnectConnector;
 pub use http_connect_stream::HttpConnectStream;
+
+pub use stream::MaybeTlsStream;
+pub use stream::TlsStream;
 
 pub type Client = hyper::Client<HttpProxyConnector, hyper::Body>;
 

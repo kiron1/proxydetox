@@ -12,6 +12,7 @@ use proxydetoxlib::auth::AuthenticatorFactory;
 use proxydetoxlib::socket;
 use std::fs::File;
 use std::result::Result;
+use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 use tracing_subscriber::filter::EnvFilter;
 
@@ -19,7 +20,7 @@ use tracing_subscriber::filter::EnvFilter;
 #[no_mangle]
 pub extern "C" fn main() {
     let config = Options::load_without_rcfile();
-    if let Err(error) = run(&config) {
+    if let Err(error) = run(config) {
         tracing::error!(%error, "fatal error");
         write_error(&mut std::io::stderr(), error).ok();
         std::process::exit(1);
@@ -29,7 +30,7 @@ pub extern "C" fn main() {
 #[cfg(not(static_library))]
 fn main() {
     let config = Options::load();
-    if let Err(error) = run(&config) {
+    if let Err(error) = run(config) {
         tracing::error!(%error, "fatal error");
         write_error(&mut std::io::stderr(), error).ok();
         std::process::exit(1);
@@ -52,7 +53,7 @@ where
 }
 
 #[tokio::main]
-async fn run(config: &Options) -> Result<(), proxydetoxlib::Error> {
+async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
     let env_name = format!("{}_LOG", env!("CARGO_PKG_NAME").to_uppercase());
 
     let filter = if let Ok(filter) = EnvFilter::try_from_env(&env_name) {
@@ -87,16 +88,6 @@ async fn run(config: &Options) -> Result<(), proxydetoxlib::Error> {
         .with_env_filter(filter)
         .init();
 
-    let pac_script = if let Some(ref pac_file) = config.pac_file {
-        let pac_script = pac_file.contents().await;
-        if let Err(ref cause) = pac_script {
-            tracing::error!(%cause, "PAC file error, will use default PAC script");
-        }
-        pac_script.ok()
-    } else {
-        None
-    };
-
     let auth = match &config.authorization {
         #[cfg(feature = "negotiate")]
         Authorization::Negotiate(ref negotiate) => {
@@ -115,7 +106,7 @@ async fn run(config: &Options) -> Result<(), proxydetoxlib::Error> {
     };
 
     let session = proxydetoxlib::Session::builder()
-        .pac_script(pac_script)
+        .pac_file(config.pac_file.clone())
         .authenticator_factory(Some(auth.clone()))
         .always_use_connect(config.always_use_connect)
         .connect_timeout(config.connect_timeout)
@@ -209,23 +200,14 @@ async fn run(config: &Options) -> Result<(), proxydetoxlib::Error> {
         use tokio::signal::unix::{signal, SignalKind};
         let mut sighup = signal(SignalKind::hangup())?;
         let mut sigusr1 = signal(SignalKind::user_defined1())?;
-        let pac_file = config.pac_file.clone();
+        let config = config.clone();
         tokio::spawn(async move {
             loop {
                 tokio::select! {
                     _ = sighup.recv() => {
-                        let pac_script = if let Some(ref pac_file) = pac_file {
-                            let pac_script = pac_file.contents().await;
-                            if let Err(ref cause) = pac_script {
-                                tracing::error!(%cause, "PAC file error, will use default PAC script");
-                            }
-                            pac_script.ok()
-                        } else {
-                            None
-                        };
-                        session.set_pac_script(pac_script).await.ok();
+                        session.pac_file(&config.pac_file).await.ok();
                     },
-                    _ = sigusr1.recv() => { session.set_pac_script(None).await.ok();},
+                    _ = sigusr1.recv() => { session.pac_file(&None).await.ok();},
                 }
             }
         });

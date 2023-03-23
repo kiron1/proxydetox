@@ -103,7 +103,10 @@ impl Builder {
             .map(AuthenticatorFactory::basic);
 
         let session = proxydetoxlib::Session::builder()
-            .pac_script(self.pac_script)
+            .pac_script(
+                self.pac_script
+                    .unwrap_or_else(|| proxydetoxlib::DEFAULT_PAC_SCRIPT.to_string()),
+            )
             .authenticator_factory(auth)
             .always_use_connect(self.always_use_connect)
             .build();

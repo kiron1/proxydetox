@@ -6,7 +6,6 @@ pub mod net;
 pub mod session;
 pub mod socket;
 
-pub use crate::net::http_file;
 pub use crate::session::Session;
 pub use hyper::Server;
 

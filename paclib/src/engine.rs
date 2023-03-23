@@ -62,7 +62,7 @@ impl<'a> Engine<'a> {
         let pac_script = pac_script.unwrap_or(crate::DEFAULT_PAC_SCRIPT);
         self.js
             .eval(Source::from_bytes(pac_script))
-            .map_err(|_| PacScriptError)?;
+            .map_err(|e| PacScriptError::InternalError(e.to_string()))?;
         Ok(())
     }
 
@@ -71,22 +71,31 @@ impl<'a> Engine<'a> {
         let host = uri.host().ok_or(FindProxyError::NoHost)?;
 
         let start = Instant::now();
-        let result = self.js.eval(Source::from_bytes(&format!(
-            "FindProxyForURL(\"{}\", \"{}\")",
-            &uri.to_string(),
-            host
-        )));
+        let find_proxy_fn = self
+            .js
+            .global_object()
+            .get("FindProxyForURL", &mut self.js)
+            .map_err(|e| FindProxyError::InternalError(e.to_string()))?;
+        let proxy = match find_proxy_fn {
+            JsValue::Object(find_proxy_fn) => {
+                let uri = JsValue::from(uri.to_string());
+                let host = JsValue::from(host);
+                find_proxy_fn
+                    .call(&JsValue::Null, &[uri, host], &mut self.js)
+                    .map_err(|e| FindProxyError::InternalError(e.to_string()))
+            }
+            _ => Err(FindProxyError::InvalidResult)?,
+        };
         tracing::Span::current().record("duration", debug(&start.elapsed()));
+        let proxy = proxy?;
 
-        match &result {
-            Ok(JsValue::String(proxies)) => proxies
+        match &proxy {
+            JsValue::String(proxies) => proxies
                 .to_std_string()
                 .unwrap_or_default()
                 .parse::<Proxies>()
                 .map_err(|_| FindProxyError::InvalidResult),
-
-            Ok(_value) => Err(FindProxyError::InvalidResult),
-            Err(_cause) => Err(FindProxyError::InternalError),
+            _ => Err(FindProxyError::InvalidResult),
         }
     }
 }
@@ -113,7 +122,7 @@ fn alert(_this: &JsValue, args: &[JsValue], _ctx: &mut Context) -> JsResult<JsVa
 }
 
 fn dns_resolve(_this: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue> {
-    let global = ctx.global_object().clone();
+    let global = ctx.global_object();
     let dns_cache = global.get("_dnsCache", ctx).expect("_dnsCache");
     let dns_cache = dns_cache.as_object();
     let mut dns_cache = dns_cache

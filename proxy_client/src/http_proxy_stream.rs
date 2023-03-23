@@ -1,4 +1,5 @@
-use crate::{stream::MaybeTlsStream, HttpProxyInfo};
+use crate::HttpProxyInfo;
+use crate::MaybeTlsStream;
 use hyper::client::connect::{Connected, Connection};
 use std::{
     net::SocketAddr,

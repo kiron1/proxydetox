@@ -3,16 +3,20 @@ pub mod peer;
 pub mod shared;
 
 use std::fmt::Write;
+use std::fs::read_to_string;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{self, Poll};
+use std::time::Duration;
 
+use detox_net::PathOrUri;
 use http::header::CONTENT_TYPE;
 use http::Response;
 use http::Uri;
 use hyper::Body;
 use paclib::ProxyOrDirect;
+use tokio::time::timeout;
 use tower::Service;
 use tracing_futures::Instrument;
 
@@ -73,12 +77,35 @@ impl Session {
         Default::default()
     }
 
-    pub async fn set_pac_script(
+    pub async fn pac_file(
         &self,
-        pac_script: Option<String>,
+        uri: &Option<PathOrUri>,
     ) -> std::result::Result<(), paclib::PacScriptError> {
         tracing::info!("update PAC script");
-        self.0.eval.set_pac_script(pac_script).await
+        let pac = if let Some(uri) = uri {
+            let pac = match uri {
+                PathOrUri::Path(p) => read_to_string(p)?,
+                PathOrUri::Uri(u) => {
+                    let pac = timeout(
+                        Duration::from_secs(30),
+                        crate::net::http_file(u.clone(), (*self.0.tls_config).clone()),
+                    )
+                    .await;
+                    let pac = match pac {
+                        Ok(pac) => pac,
+                        Err(_) => Err(std::io::Error::new(
+                            std::io::ErrorKind::Other,
+                            format!("timeout loading '{}'", &u),
+                        )),
+                    };
+                    pac?
+                }
+            };
+            Some(pac)
+        } else {
+            None
+        };
+        self.0.eval.set_pac_script(pac).await
     }
 }
 

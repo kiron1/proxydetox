@@ -11,7 +11,7 @@ pub use crate::proxy::ProxyOrDirect;
 
 const DEFAULT_PAC_SCRIPT: &str = "function FindProxyForURL(url, host) { return \"DIRECT\"; }";
 
-#[derive(thiserror::Error, Debug, PartialEq, Eq, Clone)]
+#[derive(thiserror::Error, Debug)]
 pub enum CreateEvaluatorError {
     #[error("failed to evaluate PAC: {0}")]
     EvalPacFile(
@@ -21,16 +21,25 @@ pub enum CreateEvaluatorError {
     ),
 }
 
-#[derive(thiserror::Error, Debug, PartialEq, Eq, Clone)]
+#[derive(thiserror::Error, Debug)]
 #[error("Invalid PAC script")]
-pub struct PacScriptError;
+pub enum PacScriptError {
+    #[error("internal error: {0}")]
+    InternalError(String),
+    #[error("I/O error: {0}")]
+    Io(
+        #[from]
+        #[source]
+        std::io::Error,
+    ),
+}
 
-#[derive(thiserror::Error, Debug, PartialEq, Eq, Clone)]
+#[derive(thiserror::Error, Debug)]
 pub enum FindProxyError {
     #[error("no host in URL")]
     NoHost,
     #[error("invalid result from PAC script")]
     InvalidResult,
-    #[error("internal error when processing PAC script")]
-    InternalError,
+    #[error("internal error when processing PAC script: {0}")]
+    InternalError(String),
 }

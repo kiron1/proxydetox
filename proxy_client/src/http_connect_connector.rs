@@ -1,11 +1,12 @@
-use crate::{stream::MaybeTlsStream, HttpConnectStream};
+use crate::HttpConnectStream;
+use crate::MaybeTlsStream;
 use detox_net::{HostAndPort, TcpKeepAlive};
 use http::{header::HOST, Request, StatusCode};
 use hyper::{body::Bytes, client::conn, Body};
 use paclib::Proxy;
 use std::{future::Future, io::Cursor, pin::Pin};
 use tokio::{io::AsyncReadExt, net::TcpStream};
-use tokio_native_tls::{native_tls, TlsConnector};
+use tokio_rustls::TlsConnector;
 use tower::ServiceExt;
 
 #[derive(thiserror::Error, Debug)]
@@ -37,11 +38,7 @@ pub enum Error {
     #[error("error connecting to {0}")]
     ConnectError(HostAndPort, #[source] std::io::Error),
     #[error("TLS error")]
-    TlsError(
-        #[from]
-        #[source]
-        tokio_native_tls::native_tls::Error,
-    ),
+    TlsError(#[source] std::io::Error),
     #[error("internal error: {0}")]
     JoinError(
         #[from]
@@ -52,16 +49,18 @@ pub enum Error {
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct HttpConnectConnector {
     proxy: Proxy,
+    tls: TlsConnector,
     tcp_keepalive: TcpKeepAlive,
 }
 
 impl HttpConnectConnector {
-    pub fn new(proxy: Proxy) -> Self {
+    pub fn new(proxy: Proxy, tls: TlsConnector) -> Self {
         Self {
             proxy,
+            tls,
             tcp_keepalive: Default::default(),
         }
     }
@@ -81,10 +80,10 @@ impl HttpConnectConnector {
         let stream: MaybeTlsStream<TcpStream> = match self.proxy {
             Proxy::Http(_) => stream.into(),
             Proxy::Https(_) => {
-                let tls: TlsConnector = native_tls::TlsConnector::new()
-                    .map(Into::into)
-                    .unwrap_or_else(|e| panic!("HttpProxyConnector::new() failure: {}", e));
-                let tls = tls.connect(self.proxy.host(), stream).await?;
+                let domain = rustls::ServerName::try_from(self.proxy.host()).map_err(|_| {
+                    std::io::Error::new(std::io::ErrorKind::InvalidInput, "invalid domain name")
+                })?;
+                let tls = self.tls.connect(domain, stream).await?;
                 tls.into()
             }
         };
@@ -159,5 +158,14 @@ impl hyper::service::Service<http::Uri> for HttpConnectConnector {
         let fut = async move { this.call_async(dst).await };
 
         Box::pin(fut)
+    }
+}
+
+impl std::fmt::Debug for HttpConnectConnector {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("HttpConnectConnector")
+            .field("proxy", &self.proxy)
+            .field("tcp_keepalive", &self.tcp_keepalive)
+            .finish()
     }
 }

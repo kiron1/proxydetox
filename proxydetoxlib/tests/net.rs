@@ -7,7 +7,7 @@ use std::sync::{
 
 use http::{header::LOCATION, Response, StatusCode};
 use hyper::Body;
-use proxydetoxlib::http_file;
+use proxydetoxlib::net::http_file;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn http_file_too_many_redirects() {
@@ -20,7 +20,11 @@ async fn http_file_too_many_redirects() {
             .unwrap()
     });
 
-    let file = http_file(http1.uri().path_and_query("/text1.html").build().unwrap()).await;
+    let file = http_file(
+        http1.uri().path_and_query("/text1.html").build().unwrap(),
+        default_tls_config(),
+    )
+    .await;
 
     assert!(file.is_err());
 
@@ -73,9 +77,12 @@ async fn http_file_redirect() {
             .to_owned(),
     );
 
-    let file = http_file(http1.uri().path_and_query("/").build().unwrap())
-        .await
-        .unwrap();
+    let file = http_file(
+        http1.uri().path_and_query("/").build().unwrap(),
+        default_tls_config(),
+    )
+    .await
+    .unwrap();
 
     assert_eq!(file, "Hello World!");
 
@@ -92,11 +99,21 @@ async fn http_file_ok() {
             .unwrap()
     });
 
-    let file = http_file(http1.uri().path_and_query("/text1.html").build().unwrap())
-        .await
-        .unwrap();
+    let file = http_file(
+        http1.uri().path_and_query("/text1.html").build().unwrap(),
+        default_tls_config(),
+    )
+    .await
+    .unwrap();
 
     assert_eq!(file, "Hello World!");
 
     http1.shutdown().await;
+}
+
+fn default_tls_config() -> rustls::ClientConfig {
+    rustls::ClientConfig::builder()
+        .with_safe_defaults()
+        .with_root_certificates(rustls::RootCertStore::empty())
+        .with_no_client_auth()
 }

@@ -11,7 +11,7 @@ use std::{
     task::{self, Poll},
 };
 use tokio::net::TcpStream;
-use tokio_native_tls::{native_tls, TlsConnector};
+use tokio_rustls::TlsConnector;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -21,20 +21,22 @@ pub enum Error {
     TlsError(
         #[from]
         #[source]
-        tokio_native_tls::native_tls::Error,
+        std::io::Error,
     ),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct HttpProxyConnector {
     proxy: Proxy,
+    tls: TlsConnector,
     tcp_keepalive: TcpKeepAlive,
 }
 
 impl HttpProxyConnector {
-    pub fn new(proxy: Proxy) -> Self {
+    pub fn new(proxy: Proxy, tls: TlsConnector) -> Self {
         Self {
             proxy,
+            tls,
             tcp_keepalive: Default::default(),
         }
     }
@@ -54,10 +56,10 @@ impl HttpProxyConnector {
         let stream = match self.proxy {
             Proxy::Http(_) => stream.into(),
             Proxy::Https(_) => {
-                let tls: TlsConnector = native_tls::TlsConnector::new()
-                    .map(Into::into)
-                    .unwrap_or_else(|e| panic!("HttpProxyConnector::new() failure: {}", e));
-                let tls = tls.connect(self.proxy.host(), stream).await?;
+                let domain = rustls::ServerName::try_from(self.proxy.host()).map_err(|_| {
+                    std::io::Error::new(std::io::ErrorKind::InvalidInput, "invalid domain name")
+                })?;
+                let tls = self.tls.connect(domain, stream).await?;
                 tls.into()
             }
         };
@@ -83,5 +85,14 @@ impl Service<Uri> for HttpProxyConnector {
     fn call(&mut self, dst: Uri) -> Self::Future {
         let mut this = self.clone();
         Box::pin(async move { this.call_async(dst).await })
+    }
+}
+
+impl std::fmt::Debug for HttpProxyConnector {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("HttpProxyConnector")
+            .field("proxy", &self.proxy)
+            .field("tcp_keepalive", &self.tcp_keepalive)
+            .finish()
     }
 }
