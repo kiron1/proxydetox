@@ -1,11 +1,13 @@
 use hyper::body::Buf;
 use hyper::{body::Bytes, Body};
-use hyper_tls::HttpsConnector;
+use hyper_rustls::HttpsConnector;
 use paclib::Proxy;
 use proxy_client::HttpConnectConnector;
 use std::io::Read;
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::timeout;
+use tokio_rustls::TlsConnector;
 
 pub struct Client {
     remote_addr: http::Uri,
@@ -15,8 +17,13 @@ pub struct Client {
 
 impl Client {
     pub fn new(remote_uri: http::Uri, proxy: Proxy) -> Self {
-        let http_proxy = HttpConnectConnector::new(proxy);
-        let https = HttpsConnector::new_with_connector(http_proxy);
+        let tls_config = default_tls_config();
+        let http_proxy = HttpConnectConnector::new(proxy, TlsConnector::from(tls_config));
+        let https = hyper_rustls::HttpsConnectorBuilder::new()
+            .with_native_roots()
+            .https_only()
+            .enable_http1()
+            .wrap_connector(http_proxy);
         let client = hyper::Client::builder().build::<_, hyper::Body>(https);
         let timeout = Duration::from_millis(1500);
 
@@ -48,4 +55,18 @@ pub async fn read_to_end(res: http::Response<Body>) -> std::io::Result<Vec<u8>> 
     let mut data = Vec::new();
     body.reader().read_to_end(&mut data)?;
     Ok(data)
+}
+
+fn default_tls_config() -> Arc<rustls::ClientConfig> {
+    let mut roots = rustls::RootCertStore::empty();
+    for cert in rustls_native_certs::load_native_certs().expect("load platform certs") {
+        roots.add(&rustls::Certificate(cert.0)).unwrap();
+    }
+
+    let config = rustls::ClientConfig::builder()
+        .with_safe_defaults()
+        .with_root_certificates(roots)
+        .with_no_client_auth();
+
+    Arc::new(config)
 }

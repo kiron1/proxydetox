@@ -110,7 +110,8 @@ impl PeerSession {
             Ok((mut client, proxy)) => (client.call(req).await, proxy),
             Err(cause) => {
                 tracing::error!(%cause, "HTTP upstream error");
-                access.error(None, &cause);
+                let entry = access.error(None, &cause);
+                self.shared.accesslog_tx.send(entry).ok();
                 return Err(cause);
             }
         };
@@ -133,7 +134,7 @@ impl PeerSession {
                 access.error(Some(proxy.clone()), cause)
             }
         };
-        let _ = self.shared.accesslog_tx.send(entry);
+        self.shared.accesslog_tx.send(entry).ok();
 
         res.and_then(|res| {
             if res.status() == http::StatusCode::PROXY_AUTHENTICATION_REQUIRED {

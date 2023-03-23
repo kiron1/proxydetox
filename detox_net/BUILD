@@ -8,6 +8,7 @@ rust_library(
         "src/keepalive.rs",
         "src/lib.rs",
         "src/metered.rs",
+        "src/path_or_uri.rs",
     ],
     aliases = aliases(),
     proc_macro_deps = all_crate_deps(

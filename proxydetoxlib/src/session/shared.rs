@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use detox_net::{HostAndPort, TcpKeepAlive};
@@ -10,6 +10,7 @@ use paclib::ProxyOrDirect;
 use proxy_client::HttpProxyConnector;
 use tokio::sync::broadcast::Sender;
 use tokio::time::timeout;
+use tokio_rustls::TlsConnector;
 use tower::{util::BoxService, Service, ServiceExt};
 use tracing_attributes::instrument;
 
@@ -28,6 +29,7 @@ pub(crate) struct Shared {
     pub(super) auth: AuthenticatorFactory,
     pub(super) always_use_connect: bool,
     pub(super) direct_fallback: bool,
+    pub(super) tls_config: Arc<rustls::ClientConfig>,
     pub(super) connect_timeout: Duration,
     pub(super) client_tcp_keepalive: TcpKeepAlive,
     pub(super) accesslog_tx: Sender<accesslog::Entry>,
@@ -46,6 +48,7 @@ impl Shared {
 
     pub(super) fn proxy_for(&self, proxy: &Proxy) -> Result<ProxyClient> {
         let mut proxies = self.proxy_clients.lock().unwrap();
+        let tls_config = self.tls_config.clone();
         match proxies.get(proxy) {
             Some(proxy) => Ok(proxy.clone()),
             None => {
@@ -59,7 +62,7 @@ impl Shared {
                     }
                 };
                 let client = hyper::Client::builder().build(
-                    HttpProxyConnector::new(proxy.clone())
+                    HttpProxyConnector::new(proxy.clone(), TlsConnector::from(tls_config))
                         .with_tcp_keepalive(self.client_tcp_keepalive.clone()),
                 );
                 let client = ProxyClient::new(client, auth);

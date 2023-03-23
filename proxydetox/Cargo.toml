@@ -21,3 +21,6 @@ tokio = { version = "1", features = ["rt-multi-thread", "net", "macros", "sync",
 tokio-util = "0.7"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tokio-rustls =  "0.24"
+rustls-pemfile = "1.0"
+rustls = "0.21"

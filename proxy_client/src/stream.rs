@@ -5,13 +5,13 @@ use std::task::{Context, Poll};
 
 use hyper::client::connect::{Connected, Connection};
 use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
-use tokio_native_tls::TlsStream;
+pub use tokio_rustls::client::TlsStream;
 
 /// Either a Plain or a TLS stream.
 #[derive(Debug)]
 pub enum MaybeTlsStream<T> {
     Plain(T),
-    Tls(TlsStream<T>),
+    Tls(Box<TlsStream<T>>),
 }
 
 impl<T> From<T> for MaybeTlsStream<T> {
@@ -22,7 +22,7 @@ impl<T> From<T> for MaybeTlsStream<T> {
 
 impl<T> From<TlsStream<T>> for MaybeTlsStream<T> {
     fn from(inner: TlsStream<T>) -> Self {
-        MaybeTlsStream::Tls(inner)
+        MaybeTlsStream::Tls(Box::new(inner))
     }
 }
 
@@ -92,7 +92,7 @@ impl<T: AsyncRead + AsyncWrite + Connection + Unpin> Connection for MaybeTlsStre
     fn connected(&self) -> Connected {
         match self {
             MaybeTlsStream::Plain(s) => s.connected(),
-            MaybeTlsStream::Tls(s) => s.get_ref().get_ref().get_ref().connected(),
+            MaybeTlsStream::Tls(s) => s.get_ref().0.connected(),
         }
     }
 }

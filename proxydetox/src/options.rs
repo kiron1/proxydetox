@@ -3,13 +3,12 @@ use std::{
     fs::read_to_string,
     net::{IpAddr, SocketAddr},
     path::{Path, PathBuf},
-    str::FromStr,
+    sync::Arc,
     time::Duration,
 };
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
-use detox_net::TcpKeepAlive;
-use http::Uri;
+use detox_net::{PathOrUri, TcpKeepAlive};
 use tracing_subscriber::filter::LevelFilter;
 
 lazy_static::lazy_static! {
@@ -23,45 +22,6 @@ pub enum Authorization {
     Basic(PathBuf),
     #[allow(dead_code)]
     Negotiate(Vec<String>),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum PathOrUri {
-    Path(PathBuf),
-    Uri(Uri),
-}
-
-impl PathOrUri {
-    pub async fn contents(&self) -> std::io::Result<String> {
-        match *self {
-            PathOrUri::Path(ref p) => read_to_string(p),
-            PathOrUri::Uri(ref u) => proxydetoxlib::http_file(u.clone()).await,
-        }
-    }
-}
-
-impl FromStr for PathOrUri {
-    type Err = http::uri::InvalidUri;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.starts_with("http://") {
-            Ok(Self::from(s.parse::<Uri>()?))
-        } else {
-            Ok(Self::from(PathBuf::from(s)))
-        }
-    }
-}
-
-impl From<PathBuf> for PathOrUri {
-    fn from(path: PathBuf) -> Self {
-        Self::Path(path)
-    }
-}
-
-impl From<Uri> for PathOrUri {
-    fn from(uri: Uri) -> Self {
-        Self::Uri(uri)
-    }
 }
 
 #[derive(Debug)]
@@ -91,13 +51,13 @@ fn is_file(v: &str) -> Result<PathBuf, String> {
 }
 
 fn is_file_or_http_uri(v: &str) -> Result<PathOrUri, String> {
-    if (v.starts_with("http://") | v.starts_with("https://")) & v.parse::<Uri>().is_ok() {
-        Ok(PathOrUri::Uri(v.parse::<Uri>().unwrap()))
-    } else if Path::new(&v).is_file() {
-        Ok(PathOrUri::Path(PathBuf::from(v)))
-    } else {
-        Err(format!("path '{}' is not a file nor a http URI", &v))
+    let p = v.parse::<PathOrUri>().map_err(|e| e.to_string())?;
+    if let PathOrUri::Path(ref p) = p {
+        if !p.is_file() {
+            return Err(format!("path '{}' does not exist or is not a file", &v));
+        }
     }
+    Ok(p)
 }
 
 fn is_ip(v: &str) -> Result<IpAddr, String> {
@@ -133,7 +93,7 @@ fn which_pac_file() -> Option<PathBuf> {
 
 impl Options {
     #[allow(dead_code)]
-    pub fn load() -> Self {
+    pub fn load() -> Arc<Self> {
         let mut args = Vec::new();
         args.extend(std::env::args_os().take(1));
         if !*NORC {
@@ -144,14 +104,14 @@ impl Options {
     }
 
     #[allow(dead_code)]
-    pub fn load_without_rcfile() -> Self {
+    pub fn load_without_rcfile() -> Arc<Self> {
         let mut args = Vec::new();
         args.extend(std::env::args_os().take(1));
         args.extend(std::env::args_os().skip(1));
         Self::parse_args(&args)
     }
 
-    fn parse_args(args: &[OsString]) -> Self {
+    fn parse_args(args: &[OsString]) -> Arc<Self> {
         let app = Command::new(env!("CARGO_PKG_NAME"))
             .version(*proxydetoxlib::VERSION_STR)
             .about("A small proxy to relieve the pain of some corporate proxies")
@@ -324,7 +284,7 @@ impl Options {
             );
 
         let matches = app.get_matches_from(args);
-        matches.into()
+        Arc::new(matches.into())
     }
 }
 
@@ -393,7 +353,7 @@ impl From<ArgMatches> for Options {
             pac_file: m
                 .get_one::<PathOrUri>("pac_file")
                 .cloned()
-                .or_else(|| which_pac_file().map(PathOrUri::from)),
+                .or_else(|| which_pac_file().map(PathOrUri::Path)),
             authorization,
             always_use_connect: m.contains_id("always_use_connect"),
             direct_fallback: m.contains_id("direct_fallback"),
