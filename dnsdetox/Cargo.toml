@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.1", features = ["env"] }
-dirs = "4.0"
+dirs = "5.0"
 dns-parser = "0.8"
 env_logger = "0.10"
 futures-util = { version = "0.3", default-features = false }
