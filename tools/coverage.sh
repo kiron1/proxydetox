@@ -17,11 +17,9 @@ trap 'rm -rf ${profrawdir}' EXIT
 export LLVM_PROFILE_FILE="${profrawdir}/proxydetox-%p-%m.profraw"
 export RUSTFLAGS="-C instrument-coverage"
 
-for p in duktape paclib proxy_client proxydetox; do
-  cargo clean -p $p
-  cargo build -p $p
-  cargo test -p $p
-done
+cargo clean
+cargo build
+cargo test
 
 grcov "${profrawdir}" \
   --binary-path ./target/debug/ \
@@ -31,6 +29,4 @@ grcov "${profrawdir}" \
   --ignore '*/build.rs' \
   --ignore '*/src/main.rs' \
   --ignore '*/tests/*' \
-  --ignore '*-sys-*' \
-  --ignore 'duktape-sys/*' \
   --ignore-not-existing

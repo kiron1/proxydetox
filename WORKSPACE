@@ -74,8 +74,6 @@ crates_repository(
         "//:Cargo.toml",
         "//detox_net:Cargo.toml",
         "//dnsdetox:Cargo.toml",
-        "//duktape:Cargo.toml",
-        "//duktape-sys:Cargo.toml",
         "//paceval:Cargo.toml",
         "//paclib:Cargo.toml",
         "//proxy_client:Cargo.toml",

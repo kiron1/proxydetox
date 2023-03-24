@@ -1,64 +1,78 @@
-use crate::DNS_CACHE_NAME;
-use duktape::{ContextRef, Stack};
-use std::collections::HashMap;
+use std::{collections::HashMap, time::UNIX_EPOCH};
 
-pub type DnsMap = HashMap<String, (Option<String>, std::time::Instant)>;
+use boa_engine::class::Class;
+use boa_gc::{Finalize, Trace};
+use tracing::instrument;
 
-#[derive(Debug)]
+pub type DnsMap = HashMap<String, (Option<String>, u64)>;
+
+#[derive(Default, Debug, Trace, Finalize)]
 pub struct DnsCache {
     map: DnsMap,
-    last_cleanup: std::time::Instant,
-}
-
-impl Default for DnsCache {
-    fn default() -> Self {
-        Self {
-            map: Default::default(),
-            last_cleanup: std::time::Instant::now(),
-        }
-    }
+    cleanup_ttl: u64,
 }
 
 impl DnsCache {
+    #[instrument(skip(self))]
     pub fn lookup(&mut self, host: &str) -> Option<String> {
-        let now = std::time::Instant::now();
-        let ttl = now + std::time::Duration::from_secs(15 * 60);
+        let now = std::time::SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        let ttl = now + std::time::Duration::from_secs(5 * 60).as_secs();
 
         let resolve_and_insert = |map: &mut DnsMap, host: &str| -> Option<String> {
-            log::debug!("resolve_and_insert {:?}", host);
-
             let addr = resolve(host);
             map.insert(host.into(), (addr.clone(), ttl));
             addr
         };
-        log::debug!("lookup {}", host);
 
         let result = if let Some(result) = self.map.get(host) {
-            log::debug!("cache {:?}", result);
-
-            if result.1 >= ttl {
-                resolve_and_insert(&mut self.map, host)
+            if result.1 < now {
+                let addr = resolve_and_insert(&mut self.map, host);
+                tracing::trace!(?addr, "expired");
+                addr
             } else {
-                result.0.clone()
+                let addr = result.0.clone();
+                tracing::trace!(?addr, "hit");
+                addr
             }
         } else {
-            resolve_and_insert(&mut self.map, host)
+            let addr = resolve_and_insert(&mut self.map, host);
+            tracing::trace!(?addr, "miss");
+            addr
         };
 
-        if self.last_cleanup > ttl {
-            self.cleanup(&now);
-            self.last_cleanup = ttl;
+        if self.cleanup_ttl < now {
+            self.cleanup(now);
+            self.cleanup_ttl = ttl;
         };
 
         result
     }
 
-    fn cleanup(&mut self, now: &std::time::Instant) {
-        self.map.retain(|_, v| v.1 > *now);
+    fn cleanup(&mut self, now: u64) {
+        self.map.retain(|_, v| v.1 > now);
     }
 
     pub fn map(&self) -> DnsMap {
         self.map.clone()
+    }
+}
+
+impl Class for DnsCache {
+    const NAME: &'static str = "_DnsCache";
+
+    fn constructor(
+        _this: &boa_engine::JsValue,
+        _args: &[boa_engine::JsValue],
+        _context: &mut boa_engine::Context,
+    ) -> boa_engine::JsResult<Self> {
+        Ok(Default::default())
+    }
+
+    fn init(_class: &mut boa_engine::class::ClassBuilder<'_>) -> boa_engine::JsResult<()> {
+        Ok(())
     }
 }
 
@@ -77,43 +91,4 @@ pub(crate) fn resolve(host: &str) -> Option<String> {
     } else {
         None
     }
-}
-
-/// # Safety
-///
-/// This function is a duktape callback.
-pub unsafe extern "C" fn dns_resolve(ctx: *mut duktape_sys::duk_context) -> i32 {
-    let mut ctx = ContextRef::from(ctx);
-    ctx.require_stack(4);
-
-    // resolve the host name using the dns cache
-    let value = if ctx.get_global_string(DNS_CACHE_NAME).is_ok() {
-        if let Ok(dns_cache) = ctx.pop_ptr::<DnsCache>() {
-            if let Ok(host) = ctx.get_string(0) {
-                let addr = dns_cache.as_mut().and_then(|d| d.lookup(&host));
-                log::debug!("resolved {} to {:?}", host, addr);
-                addr
-            } else {
-                log::error!("failed to convert host to string");
-                None
-            }
-        } else {
-            log::error!("failed to get DnsCache");
-            None
-        }
-    } else {
-        log::error!("failed to get DnsCache ({}) from global", DNS_CACHE_NAME);
-        None
-    };
-
-    if let Some(value) = value {
-        if ctx.push_string(&value).is_err() {
-            ctx.push_null();
-        }
-    } else {
-        ctx.push_null();
-    }
-
-    // number return values from this JavaScript function (will be consumed from top of stack)
-    1
 }

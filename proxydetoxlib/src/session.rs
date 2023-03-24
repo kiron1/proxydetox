@@ -73,13 +73,12 @@ impl Session {
         Default::default()
     }
 
-    pub fn set_pac_script(
+    pub async fn set_pac_script(
         &self,
-        pac_script: Option<&str>,
-    ) -> std::result::Result<(), paclib::evaluator::PacScriptError> {
+        pac_script: Option<String>,
+    ) -> std::result::Result<(), paclib::PacScriptError> {
         tracing::info!("update PAC script");
-        let mut eval = self.0.eval.lock().unwrap();
-        eval.set_pac_script(pac_script)
+        self.0.eval.set_pac_script(pac_script).await
     }
 }
 

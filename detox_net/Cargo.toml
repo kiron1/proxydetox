@@ -10,3 +10,6 @@ http = "0.2"
 socket2 = "0.4"
 thiserror = "1.0"
 tokio = "1"
+
+[lib]
+doctest = false
