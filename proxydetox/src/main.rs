@@ -65,6 +65,16 @@ async fn run(config: &Options) -> Result<(), proxydetoxlib::Error> {
                     .expect("directive"),
             )
             .add_directive(
+                format!("proxydetoxlib={0}", config.log_level)
+                    .parse()
+                    .expect("directive"),
+            )
+            .add_directive(
+                format!("paclib={0}", config.log_level)
+                    .parse()
+                    .expect("directive"),
+            )
+            .add_directive(
                 format!("proxy_client={0}", config.log_level)
                     .parse()
                     .expect("directive"),
@@ -213,9 +223,9 @@ async fn run(config: &Options) -> Result<(), proxydetoxlib::Error> {
                         } else {
                             None
                         };
-                        session.set_pac_script(pac_script.as_deref()).ok();
+                        session.set_pac_script(pac_script).await.ok();
                     },
-                    _ = sigusr1.recv() => { session.set_pac_script(None).ok();},
+                    _ = sigusr1.recv() => { session.set_pac_script(None).await.ok();},
                 }
             }
         });

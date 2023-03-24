@@ -14,28 +14,6 @@ install the the mingw GNU cross compiler:
 sudo pkgin install mingw-w64-x86_64-gcc mingw-w64-x86_64-winpthreads-8.0.0
 ```
 
-# build.rs of duktape-sys
-
-## bindgen
-
-Help `bindgen` to pick up the right header files:
-
-```sh
-export BINDGEN_EXTRA_CLANG_ARGS="--sysroot /opt/pkg/cross/x86_64-w64-mingw32/mingw/"
-```
-
-## cc
-
-Help `cc` to find the right cross compiler:
-
-```sh
-export CC=/opt/pkg/cross/x86_64-w64-mingw32/bin/x86_64-w64-mingw32-gcc
-export CROSS_COMPILE=x86_64-w64-mingw32-gcc-
-```
-
-The [`CROSS_COMPILE`](https://github.com/alexcrichton/cc-rs/blob/master/src/lib.rs#L2347)
-variable is used in the `cc` crate.
-
 # Cargo configuration
 
 File `~/.cargo/config.toml`:

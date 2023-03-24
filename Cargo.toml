@@ -2,8 +2,14 @@
 members = [
     "detox_net",
     "dnsdetox",
-    "duktape",
-    "duktape-sys",
+    "paceval",
+    "paclib",
+    "proxy_client",
+    "proxydetox",
+    "proxydetoxlib",
+]
+default-members = [
+    "detox_net",
     "paceval",
     "paclib",
     "proxy_client",

@@ -22,7 +22,7 @@ use crate::connect::Connect;
 use paclib::proxy::Proxy;
 
 pub(crate) struct Shared {
-    pub(super) eval: Mutex<paclib::Evaluator>,
+    pub(super) eval: paclib::Evaluator,
     pub(super) direct_client: Mutex<crate::client::Direct>,
     pub(super) proxy_clients: Mutex<HashMap<Proxy, ProxyClient>>,
     pub(super) auth: AuthenticatorFactory,
@@ -34,17 +34,14 @@ pub(crate) struct Shared {
 }
 
 impl Shared {
-    pub(super) fn find_proxy(&self, uri: &Uri) -> paclib::Proxies {
-        tokio::task::block_in_place(move || {
-            self.eval
-                .lock()
-                .unwrap()
-                .find_proxy(uri)
-                .unwrap_or_else(|cause| {
-                    tracing::error!(%cause, %uri, "failed to find_proxy");
-                    paclib::Proxies::direct()
-                })
-        })
+    pub(super) async fn find_proxy(&self, uri: Uri) -> paclib::Proxies {
+        self.eval
+            .find_proxy(uri.clone())
+            .await
+            .unwrap_or_else(|cause| {
+                tracing::error!(%cause, %uri, "failed to find_proxy");
+                paclib::Proxies::direct()
+            })
     }
 
     pub(super) fn proxy_for(&self, proxy: &Proxy) -> Result<ProxyClient> {

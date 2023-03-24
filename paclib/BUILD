@@ -5,6 +5,7 @@ rust_library(
     name = "paclib",
     srcs = [
         "src/dns.rs",
+        "src/engine.rs",
         "src/evaluator.rs",
         "src/lib.rs",
         "src/proxy.rs",
@@ -19,8 +20,6 @@ rust_library(
     visibility = ["//visibility:public"],
     deps = [
         "//detox_net",
-        "//duktape",
-        "//duktape-sys",
     ] + all_crate_deps(
         normal = True,
     ),

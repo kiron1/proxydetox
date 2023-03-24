@@ -1,6 +1,6 @@
 use clap::Parser;
 use http::Uri;
-use paclib::Evaluator;
+use paclib::Engine;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
@@ -25,7 +25,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         contents
     };
 
-    let mut pac = Evaluator::with_pac_script(&pac_content)?;
+    let mut pac = Engine::with_pac_script(&pac_content)?;
 
     for url in opt.urls {
         let uri = url.parse::<Uri>()?;

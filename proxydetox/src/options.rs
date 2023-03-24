@@ -14,7 +14,7 @@ use tracing_subscriber::filter::LevelFilter;
 
 lazy_static::lazy_static! {
     static ref NORC: bool = {
-        std::env::var(concat!(env!("CARGO_PKG_NAME"), "_NORC")).map(|s| !s.is_empty()).unwrap_or(false)
+        std::env::var(concat!(env!("CARGO_PKG_NAME"), "_NORC").to_uppercase()).map(|s| !s.is_empty()).unwrap_or(false)
     };
 }
 
@@ -317,10 +317,10 @@ impl Options {
                 Arg::new("graceful_shutdown_timeout")
                     .long("graceful-shutdown-timeout")
                     .help("Timeout to wait for a graceful shutdown")
-                    .value_name("SECONDS")
+                    .default_value("30")
                     .value_parser(clap::value_parser!(u64))
                     .action(ArgAction::Set)
-                    .default_value("30"),
+                    .value_name("SECONDS"),
             );
 
         let matches = app.get_matches_from(args);

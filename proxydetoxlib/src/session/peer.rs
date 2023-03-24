@@ -91,7 +91,7 @@ impl PeerSession {
         remove_hop_by_hop_headers(req.headers_mut());
 
         let proxies = {
-            let mut proxies = self.shared.find_proxy(req.uri());
+            let mut proxies = self.shared.find_proxy(req.uri().clone()).await;
             if self.shared.direct_fallback {
                 // If the returned list of proxies does not contain a `DIRECT`, add one as fall back
                 // option in case all connections attempts fail.
@@ -198,10 +198,9 @@ impl PeerSession {
 
     fn index_html(&self) -> Result<Response<Body>> {
         let body = format!(
-            "<!DOCTYPE html><html><h1>{}/{}</h1><h2>DNS Cache</h2><code>{:?}</code></html>",
+            "<!DOCTYPE html><html><body><h1>{}/{}</h1></body></html>",
             env!("CARGO_PKG_NAME"),
             *crate::VERSION_STR,
-            self.shared.eval.lock().unwrap().cache()
         );
         let resp = Response::builder()
             .header(CONTENT_TYPE, HeaderValue::from_static("text/html"))

@@ -44,4 +44,11 @@ pub enum Error {
         #[source]
         crate::auth::netrc::Error,
     ),
+
+    #[error("PAC script error: {0}")]
+    PacScript(
+        #[from]
+        #[source]
+        paclib::PacScriptError,
+    ),
 }

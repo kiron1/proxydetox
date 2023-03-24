@@ -6,15 +6,17 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+boa_engine = "0.16"
+boa_gc = "0.16"
+detox_net = { path = "../detox_net" }
+gc = { version = "0.4", features = ["derive"] }
+gethostname = "0.4"
 http = "0.2"
-log = "0.4"
+lazy_static = "1.4"
 regex = "1.5"
 thiserror = "1.0"
-lazy_static = "1.4"
-detox_net = { path = "../detox_net" }
-duktape = { path = "../duktape" }
-duktape-sys = { path = "../duktape-sys" }
-gethostname = "0.4"
+tokio = { version = "1", features = ["sync"] }
+tracing = "0.1"
 
 [lib]
 doctest = false
