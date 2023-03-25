@@ -60,6 +60,8 @@ jobs:
           target: aarch64-apple-darwin
           profile: minimal
       - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.os }}
       - name: Install Linux dependency
         run: sudo apt-get install libkrb5-dev
         if: startswith(matrix.os, 'ubuntu')
