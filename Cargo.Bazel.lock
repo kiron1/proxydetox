@@ -1,5 +1,5 @@
 {
-  "checksum": "60429360253184070ebf6e2395cb87a15bb09b713756644ddcfb368c4a687ced",
+  "checksum": "1b734000d76d6df3ffbf8e53117a864a1c15cd130b0c3333428908e232d48338",
   "crates": {
     "aho-corasick 0.7.20": {
       "name": "aho-corasick",
@@ -405,7 +405,7 @@
               "target": "quote"
             },
             {
-              "id": "regex 1.7.2",
+              "id": "regex 1.7.3",
               "target": "regex"
             },
             {
@@ -521,7 +521,7 @@
               "target": "quote"
             },
             {
-              "id": "regex 1.7.2",
+              "id": "regex 1.7.3",
               "target": "regex"
             },
             {
@@ -1179,7 +1179,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 2.0.8",
+              "id": "syn 2.0.9",
               "target": "syn"
             }
           ],
@@ -1560,7 +1560,7 @@
               "target": "scratch"
             },
             {
-              "id": "syn 2.0.8",
+              "id": "syn 2.0.9",
               "target": "syn"
             }
           ],
@@ -1637,7 +1637,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 2.0.8",
+              "id": "syn 2.0.9",
               "target": "syn"
             }
           ],
@@ -2089,7 +2089,7 @@
               "target": "log"
             },
             {
-              "id": "regex 1.7.2",
+              "id": "regex 1.7.3",
               "target": "regex"
             },
             {
@@ -2154,7 +2154,7 @@
               "target": "log"
             },
             {
-              "id": "regex 1.7.2",
+              "id": "regex 1.7.3",
               "target": "regex"
             },
             {
@@ -2993,7 +2993,7 @@
               "target": "http"
             },
             {
-              "id": "indexmap 1.9.2",
+              "id": "indexmap 1.9.3",
               "target": "indexmap"
             },
             {
@@ -3723,13 +3723,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "indexmap 1.9.2": {
+    "indexmap 1.9.3": {
       "name": "indexmap",
-      "version": "1.9.2",
+      "version": "1.9.3",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/indexmap/1.9.2/download",
-          "sha256": "1885e79c1fc4b10f0e172c475f458b7f7b93061064d98c3293e98c5ba0c8b399"
+          "url": "https://crates.io/api/v1/crates/indexmap/1.9.3/download",
+          "sha256": "bd070e393353796e801d209ad339e89596eb4c8d430d18ede6a1cced8fafbd99"
         }
       },
       "targets": [
@@ -3770,14 +3770,14 @@
               "target": "hashbrown"
             },
             {
-              "id": "indexmap 1.9.2",
+              "id": "indexmap 1.9.3",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2021",
-        "version": "1.9.2"
+        "version": "1.9.3"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -5533,7 +5533,7 @@
               "target": "log"
             },
             {
-              "id": "regex 1.7.2",
+              "id": "regex 1.7.3",
               "target": "regex"
             },
             {
@@ -6266,13 +6266,13 @@
       },
       "license": "MIT"
     },
-    "regex 1.7.2": {
+    "regex 1.7.3": {
       "name": "regex",
-      "version": "1.7.2",
+      "version": "1.7.3",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/regex/1.7.2/download",
-          "sha256": "cce168fea28d3e05f158bda4576cf0c844d5045bc2cc3620fa0292ed5bb5814c"
+          "url": "https://crates.io/api/v1/crates/regex/1.7.3/download",
+          "sha256": "8b1f693b24f6ac912f4893ef08244d70b6067480d2f1a46e950c9691e6749d1d"
         }
       },
       "targets": [
@@ -6331,7 +6331,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "1.7.2"
+        "version": "1.7.3"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -7182,13 +7182,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "syn 2.0.8": {
+    "syn 2.0.9": {
       "name": "syn",
-      "version": "2.0.8",
+      "version": "2.0.9",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/syn/2.0.8/download",
-          "sha256": "bcc02725fd69ab9f26eab07fad303e2497fad6fb9eba4f96c4d1687bdf704ad9"
+          "url": "https://crates.io/api/v1/crates/syn/2.0.9/download",
+          "sha256": "0da4a3c17e109f700685ec577c0f85efd9b19bcf15c913985f14dc1ac01775aa"
         }
       },
       "targets": [
@@ -7238,7 +7238,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "2.0.8"
+        "version": "2.0.9"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -7482,7 +7482,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 2.0.8",
+              "id": "syn 2.0.9",
               "target": "syn"
             }
           ],
@@ -8424,7 +8424,7 @@
               "target": "once_cell"
             },
             {
-              "id": "regex 1.7.2",
+              "id": "regex 1.7.3",
               "target": "regex"
             },
             {
@@ -10631,6 +10631,7 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-pc-windows-msvc",
       "armv7-linux-androideabi",
@@ -10646,6 +10647,7 @@
       "wasm32-wasi",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
+      "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-pc-windows-msvc",
       "x86_64-unknown-freebsd"
@@ -10662,6 +10664,7 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
@@ -10676,6 +10679,7 @@
       "wasm32-wasi",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
+      "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-unknown-freebsd",
       "x86_64-unknown-linux-gnu"
@@ -10685,6 +10689,7 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-pc-windows-msvc",
       "aarch64-unknown-linux-gnu",
@@ -10702,12 +10707,14 @@
       "s390x-unknown-linux-gnu",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
+      "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-pc-windows-msvc",
       "x86_64-unknown-freebsd",
       "x86_64-unknown-linux-gnu"
     ],
     "cfg(not(any(target_os = \"windows\", target_os = \"macos\", target_os = \"ios\")))": [
+      "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
@@ -10722,6 +10729,7 @@
       "s390x-unknown-linux-gnu",
       "wasm32-unknown-unknown",
       "wasm32-wasi",
+      "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-unknown-freebsd",
       "x86_64-unknown-linux-gnu"
@@ -10730,6 +10738,7 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
@@ -10746,6 +10755,7 @@
       "wasm32-wasi",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
+      "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-unknown-freebsd",
       "x86_64-unknown-linux-gnu"
@@ -10754,6 +10764,7 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
@@ -10771,6 +10782,7 @@
       "wasm32-wasi",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
+      "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-unknown-freebsd",
       "x86_64-unknown-linux-gnu"
@@ -10779,6 +10791,7 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-pc-windows-msvc",
       "aarch64-unknown-linux-gnu",
@@ -10798,6 +10811,7 @@
       "wasm32-wasi",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
+      "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-pc-windows-msvc",
       "x86_64-unknown-freebsd",
@@ -10835,6 +10849,7 @@
       "aarch64-apple-darwin",
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
+      "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
       "arm-unknown-linux-gnueabi",
@@ -10848,6 +10863,7 @@
       "s390x-unknown-linux-gnu",
       "x86_64-apple-darwin",
       "x86_64-apple-ios",
+      "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-unknown-freebsd",
       "x86_64-unknown-linux-gnu"
