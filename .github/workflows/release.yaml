@@ -81,7 +81,7 @@ jobs:
         if: startswith(matrix.os, 'ubuntu')
       #  see https://github.com/rust-lang/rust-bindgen/issues/1797
       - name: Install Windows dependency (LLVM)
-        uses: KyleMayes/install-llvm-action@v1.7.0
+        uses: KyleMayes/install-llvm-action@v1.8.0
         if: startswith(matrix.os, 'windows')
         with:
           version: "11.0"
