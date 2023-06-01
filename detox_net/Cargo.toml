@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 http = "0.2"
-socket2 = "0.4"
+socket2 = { version = "0.5", features = ["all"] }
 thiserror = "1.0"
 tokio = "1"
 
