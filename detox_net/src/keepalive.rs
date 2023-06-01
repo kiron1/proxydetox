@@ -1,9 +1,9 @@
 use std::time::Duration;
 
 #[cfg(unix)]
-use std::os::unix::io::AsRawFd as AsRaw;
+use std::os::unix::io::AsFd;
 #[cfg(windows)]
-use std::os::windows::io::AsRawSocket as AsRaw;
+use std::os::windows::io::AsSocket as AsFd;
 
 #[derive(Clone, Debug, Default)]
 pub struct TcpKeepAlive {
@@ -44,7 +44,7 @@ impl TcpKeepAlive {
         self.retries
     }
 
-    pub fn apply<T: AsRaw>(&self, socket: &T) -> std::io::Result<()> {
+    pub fn apply<T: AsFd>(&self, socket: &T) -> std::io::Result<()> {
         let mut ka = socket2::TcpKeepalive::new();
         if let Some(t) = self.time {
             ka = ka.with_time(t);
