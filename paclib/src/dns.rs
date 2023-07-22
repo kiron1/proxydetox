@@ -71,7 +71,7 @@ impl Class for DnsCache {
         Ok(Default::default())
     }
 
-    fn init(_class: &mut boa_engine::class::ClassBuilder<'_>) -> boa_engine::JsResult<()> {
+    fn init(_class: &mut boa_engine::class::ClassBuilder) -> boa_engine::JsResult<()> {
         Ok(())
     }
 }
