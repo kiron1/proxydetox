@@ -1,4 +1,4 @@
-use boa_engine::{Context, JsResult, JsString, JsValue};
+use boa_engine::{Context, JsResult, JsString, JsValue, NativeFunction, Source};
 use http::Uri;
 use std::result::Result;
 use std::time::Instant;
@@ -10,28 +10,43 @@ use crate::{FindProxyError, PacScriptError};
 
 const PAC_UTILS: &str = include_str!("pac_utils.js");
 
-pub struct Engine {
-    js: Context,
+pub struct Engine<'a> {
+    js: Context<'a>,
 }
 
-impl Engine {
+impl<'a> Engine<'a> {
     pub fn new() -> Self {
         let mut js = Context::default();
 
         js.register_global_class::<DnsCache>().unwrap();
-        js.register_global_builtin_function("alert", 1, alert);
-        js.register_global_builtin_function("dnsResolve", 1, dns_resolve);
-        js.register_global_builtin_function("myIpAddress", 0, my_ip_address);
+        js.register_global_builtin_callable("alert", 1, NativeFunction::from_fn_ptr(alert))
+            .expect("register_global_property");
+        js.register_global_builtin_callable(
+            "dnsResolve",
+            1,
+            NativeFunction::from_fn_ptr(dns_resolve),
+        )
+        .expect("register_global_property");
+        js.register_global_builtin_callable(
+            "myIpAddress",
+            0,
+            NativeFunction::from_fn_ptr(my_ip_address),
+        )
+        .expect("register_global_property");
 
-        let dns_cache = js.eval("new _DnsCache();").expect("new DnsCache()");
+        let dns_cache = js
+            .eval(Source::from_bytes("new _DnsCache();"))
+            .expect("new DnsCache()");
         js.register_global_property(
             "_dnsCache",
             dns_cache,
             boa_engine::property::Attribute::all(),
-        );
+        )
+        .expect("register_global_property");
 
-        js.eval(PAC_UTILS).expect("eval pac_utils.js");
-        js.eval(crate::DEFAULT_PAC_SCRIPT)
+        js.eval(Source::from_bytes(PAC_UTILS))
+            .expect("eval pac_utils.js");
+        js.eval(Source::from_bytes(crate::DEFAULT_PAC_SCRIPT))
             .expect("eval default PAC script");
 
         Self { js }
@@ -45,7 +60,9 @@ impl Engine {
 
     pub fn set_pac_script(&mut self, pac_script: Option<&str>) -> Result<(), PacScriptError> {
         let pac_script = pac_script.unwrap_or(crate::DEFAULT_PAC_SCRIPT);
-        self.js.eval(pac_script).map_err(|_| PacScriptError)?;
+        self.js
+            .eval(Source::from_bytes(pac_script))
+            .map_err(|_| PacScriptError)?;
         Ok(())
     }
 
@@ -54,16 +71,17 @@ impl Engine {
         let host = uri.host().ok_or(FindProxyError::NoHost)?;
 
         let start = Instant::now();
-        let result = self.js.eval(&format!(
+        let result = self.js.eval(Source::from_bytes(&format!(
             "FindProxyForURL(\"{}\", \"{}\")",
             &uri.to_string(),
             host
-        ));
+        )));
         tracing::Span::current().record("duration", debug(&start.elapsed()));
 
         match &result {
             Ok(JsValue::String(proxies)) => proxies
-                .as_str()
+                .to_std_string()
+                .unwrap_or_default()
                 .parse::<Proxies>()
                 .map_err(|_| FindProxyError::InvalidResult),
 
@@ -73,7 +91,7 @@ impl Engine {
     }
 }
 
-impl Default for Engine {
+impl<'a> Default for Engine<'a> {
     fn default() -> Self {
         Self::new()
     }
@@ -83,7 +101,11 @@ fn alert(_this: &JsValue, args: &[JsValue], _ctx: &mut Context) -> JsResult<JsVa
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Proxy_servers_and_tunneling/Proxy_Auto-Configuration_PAC_file#alert
     // https://developer.mozilla.org/en-US/docs/Web/API/Window/alert
     if let Some(message) = args.get(0) {
-        println!("{}", &message.as_string().cloned().unwrap_or_default())
+        let message = message
+            .as_string()
+            .map(|s| s.to_std_string_escaped())
+            .unwrap_or_default();
+        println!("{}", &message)
     } else {
         println!();
     }
@@ -103,7 +125,7 @@ fn dns_resolve(_this: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult
 
     let value = if let Some(host) = args.get(0) {
         if let Ok(host) = host.to_string(ctx) {
-            let resolved = dns_cache.lookup(host.as_str());
+            let resolved = dns_cache.lookup(&host.to_std_string_escaped());
             match resolved {
                 Some(ip) => JsValue::from(JsString::from(ip)),
                 None => JsValue::undefined(),
