@@ -4,12 +4,12 @@ load("@//bazel:http.bzl", "versioned_http_archive")
 
 versioned_http_archive(
     name = "build_bazel_rules_apple",
-    sha256 = "43737f28a578d8d8d7ab7df2fb80225a6b23b9af9655fcdc66ae38eb2abcf2ed",
+    sha256 = "8ac4c7997d863f3c4347ba996e831b5ec8f7af885ee8d4fe36f1c3c8f0092b2c",
     urls = [
         "https://mirror.bazel.build/github.com/bazelbuild/rules_apple/releases/download/{version}/rules_apple.{version}.tar.gz",
         "https://github.com/bazelbuild/rules_apple/releases/download/{version}/rules_apple.{version}.tar.gz",
     ],
-    version = "2.0.0",
+    version = "2.5.0",
 )
 
 load(
@@ -42,20 +42,19 @@ apple_support_dependencies()
 
 versioned_http_archive(
     name = "rules_rust",
-    sha256 = "b4e622a36904b5dd2d2211e40008fc473421c8b51c9efca746ab2ecf11dca08e",
+    sha256 = "4a9cb4fda6ccd5b5ec393b2e944822a62e050c7c06f1ea41607f14c4fdec57a2",
     urls = [
         "https://mirror.bazel.build/github.com/bazelbuild/rules_rust/releases/download/{version}/rules_rust-v{version}.tar.gz",
         "https://github.com/bazelbuild/rules_rust/releases/download/{version}/rules_rust-v{version}.tar.gz",
     ],
-    version = "0.19.1",
+    version = "0.25.1",
 )
 
-load("@rules_rust//rust:repositories.bzl", "rust_repositories")
+load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
 
-rust_repositories(
-    edition = "2021",
-    # version = "1.67.0",
-)
+rules_rust_dependencies()
+
+rust_register_toolchains(edition = "2021")
 
 load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencies")
 
@@ -86,18 +85,24 @@ load("@crate_index//:defs.bzl", "crate_repositories")
 
 crate_repositories()
 
-load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_repositories")
+load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_dependencies", "rust_bindgen_register_toolchains")
 
-rust_bindgen_repositories()
+rust_bindgen_dependencies()
+
+rust_bindgen_register_toolchains()
+
+load("@rules_rust//bindgen:transitive_repositories.bzl", "rust_bindgen_transitive_dependencies")
+
+rust_bindgen_transitive_dependencies()
 
 versioned_http_archive(
     name = "rules_pkg",
-    sha256 = "eea0f59c28a9241156a47d7a8e32db9122f3d50b505fae0f33de6ce4d9b61834",
+    sha256 = "8f9ee2dc10c1ae514ee599a8b42ed99fa262b757058f65ad3c384289ff70c4b8",
     urls = [
         "https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/{version}/rules_pkg-{version}.tar.gz",
         "https://github.com/bazelbuild/rules_pkg/releases/download/{version}/rules_pkg-{version}.tar.gz",
     ],
-    version = "0.8.1",
+    version = "0.9.1",
 )
 
 load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
