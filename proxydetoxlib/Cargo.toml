@@ -6,13 +6,12 @@ homepage = "https://proxydetox.colorto.cc/"
 
 [features]
 default = ["negotiate"]
-negotiate = ["cross-krb5"]
+negotiate = ["dep:spnego"]
 
 [dependencies]
 base64 = "0.21"
 bytes = "1.1"
 chrono = "0.4"
-cross-krb5 = { version = "0.3", default-features = false, optional = true }
 detox_net = { path = "../detox_net" }
 dirs = "5.0"
 futures-util = { version = "0.3", default-features = false }
@@ -21,6 +20,7 @@ hyper = { version = "0.14", features = ["http1", "http2", "client", "server", "s
 hyper-tls = "0.5"
 lazy_static = "1.4"
 libc = "0.2"
+spnego = { path = "../spnego", optional = true }
 netrc = { git = "https://github.com/kiron1/netrc-rs", branch = "modernize" }
 paclib = { path = "../paclib" }
 proxy_client = { path = "../proxy_client" }
