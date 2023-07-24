@@ -78,6 +78,7 @@ crates_repository(
         "//proxy_client:Cargo.toml",
         "//proxydetox:Cargo.toml",
         "//proxydetoxlib:Cargo.toml",
+        "//spnego:Cargo.toml",
     ],
 )
 

@@ -5,8 +5,6 @@ use http::{
 };
 use std::result::Result;
 
-use cross_krb5::{ClientCtx, InitiateFlags};
-
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("Failed to create context: {0}")]
@@ -17,13 +15,14 @@ pub enum Error {
 
 #[derive(Debug, Clone)]
 pub struct NegotiateAuthenticator {
-    target_principal: String,
+    proxy_fqdn: String,
 }
 
 impl NegotiateAuthenticator {
     pub fn new(proxy_fqdn: &str) -> Result<Self, Error> {
-        let target_principal = format!("HTTP/{proxy_fqdn}");
-        Ok(Self { target_principal })
+        Ok(Self {
+            proxy_fqdn: proxy_fqdn.to_owned(),
+        })
     }
 }
 
@@ -35,17 +34,23 @@ impl super::Authenticator for NegotiateAuthenticator {
         let mut headers = hyper::HeaderMap::new();
         // let challenge = last_headers.map(|h| server_token(&h)).flatten();
         // let challenge = challenge.as_deref();
-        let client_ctx = ClientCtx::new(InitiateFlags::empty(), None, &self.target_principal, None);
+        let client_ctx = spnego::Context::new("HTTP", &self.proxy_fqdn);
 
         match client_ctx {
-            Ok((_pending, token)) => {
-                let b64token = base64::engine::general_purpose::STANDARD.encode(&*token);
-                let auth_str = format!("Negotiate {b64token}");
-                headers.append(
-                    PROXY_AUTHORIZATION,
-                    HeaderValue::from_str(&auth_str).expect("valid header value"),
-                );
-            }
+            Ok(mut cx) => match cx.step(None) {
+                Ok(Some(token)) => {
+                    let b64token = base64::engine::general_purpose::STANDARD.encode(&*token);
+                    let auth_str = format!("Negotiate {b64token}");
+                    headers.append(
+                        PROXY_AUTHORIZATION,
+                        HeaderValue::from_str(&auth_str).expect("valid header value"),
+                    );
+                }
+                Ok(None) => {}
+                Err(cause) => {
+                    return Err(cause.into());
+                }
+            },
             Err(cause) => {
                 return Err(cause.into());
             }

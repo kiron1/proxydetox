@@ -1,9 +1,9 @@
 #[cfg(feature = "negotiate")]
-pub mod kerberos;
+pub mod negotiate;
 pub mod netrc;
 
 #[cfg(feature = "negotiate")]
-use self::kerberos::NegotiateAuthenticator;
+use self::negotiate::NegotiateAuthenticator;
 use self::netrc::BasicAuthenticator;
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;

@@ -6,7 +6,7 @@ rust_library(
     srcs = [
         "src/accesslog.rs",
         "src/auth.rs",
-        "src/auth/kerberos.rs",
+        "src/auth/negotiate.rs",
         "src/auth/netrc.rs",
         "src/client.rs",
         "src/client/direct.rs",
@@ -37,5 +37,6 @@ rust_library(
         "//detox_net",
         "//paclib",
         "//proxy_client",
+        "//spnego",
     ] + all_crate_deps(normal = True),
 )
