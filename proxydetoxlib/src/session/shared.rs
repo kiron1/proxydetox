@@ -92,7 +92,7 @@ impl Shared {
         let conn = match conn {
             Ok(conn) => conn,
             // Timeout condition
-            Err(_) => return Err(Error::ConnectTimeout(proxy.clone())),
+            Err(_) => return Err(Error::ConnectTimeout(proxy.clone(), uri.clone())),
         };
         conn.map_err({
             let proxy = proxy.clone();

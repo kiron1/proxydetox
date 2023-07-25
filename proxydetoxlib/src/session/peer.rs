@@ -108,7 +108,11 @@ impl PeerSession {
 
         let (mut res, proxy) = match conn {
             Ok((mut client, proxy)) => (client.call(req).await, proxy),
-            Err(e) => return Err(e),
+            Err(cause) => {
+                tracing::error!(%cause, "HTTP upstream error");
+                access.error(None, &cause);
+                return Err(cause);
+            }
         };
 
         if let Ok(ref mut res) = res {
@@ -126,7 +130,7 @@ impl PeerSession {
             ),
             Err(cause) => {
                 tracing::error!(%cause, "HTTP upstream error");
-                access.error(proxy.clone(), cause)
+                access.error(Some(proxy.clone()), cause)
             }
         };
         let _ = self.shared.accesslog_tx.send(entry);
