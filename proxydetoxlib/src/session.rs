@@ -31,8 +31,8 @@ pub enum Error {
         #[from]
         detox_net::host_and_port::Error,
     ),
-    #[error("timeout when connecting to {0}")]
-    ConnectTimeout(Proxy),
+    #[error("timeout when connecting to {1} via proxy {0}")]
+    ConnectTimeout(Proxy, Uri),
     #[error("upstream error reaching {2} via {1}: {0}")]
     Upstream(#[source] crate::client::Error, Proxy, Uri),
     #[error("error creating client for {1}: {0}")]

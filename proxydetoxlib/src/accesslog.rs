@@ -22,7 +22,7 @@ pub struct Entry {
     uri: http::Uri,
     version: http::Version,
     user_agent: Option<String>,
-    proxy: ProxyOrDirect,
+    proxy: Option<ProxyOrDirect>,
     response: Response,
     duration: Duration,
 }
@@ -50,13 +50,13 @@ impl EntryBegin {
             uri: self.uri,
             version: self.version,
             user_agent: self.user_agent,
-            proxy,
+            proxy: Some(proxy),
             response: Response::Success { status_code, bytes },
             duration: Local::now() - self.timestamp,
         }
     }
 
-    pub fn error(self, proxy: ProxyOrDirect, error: &impl std::error::Error) -> Entry {
+    pub fn error(self, proxy: Option<ProxyOrDirect>, error: &impl std::error::Error) -> Entry {
         Entry {
             timestamp: self.timestamp,
             peer_addr: self.peer_addr,
@@ -94,10 +94,18 @@ impl std::fmt::Display for Entry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{} {} \"{}\" \"{} {} {:?}\" {:.3}s",
+            "{} {} ",
             self.timestamp.to_rfc3339_opts(SecondsFormat::Secs, false),
-            self.peer_addr,
-            self.proxy,
+            self.peer_addr
+        )?;
+        if let Some(proxy) = &self.proxy {
+            proxy.fmt(f)?;
+        } else {
+            f.write_char('-')?;
+        }
+        write!(
+            f,
+            " \"{} {} {:?}\" {:.3}s",
             self.method,
             self.uri,
             self.version,
@@ -105,7 +113,7 @@ impl std::fmt::Display for Entry {
         )?;
         match self.response {
             Response::Success { status_code, bytes } => {
-                write!(f, " {status_code}")?;
+                write!(f, " {}", status_code.as_u16())?;
                 if let Some(bytes) = bytes {
                     write!(f, " {bytes}b")?;
                 } else {
@@ -153,7 +161,7 @@ mod tests {
         assert!(entry.contains("localhost:8080"));
         assert!(entry.contains("HTTP/1.1"));
         assert!(entry.contains("\"curl/7.79.1\""));
-        assert!(entry.contains("OK"));
+        assert!(entry.contains("200"));
         assert!(entry.contains("4096b"));
         assert!(!entry.contains(" - "));
     }
@@ -198,7 +206,7 @@ mod tests {
             Some("curl/7.79.1".to_string()),
         );
         let entry = entry.error(
-            ProxyOrDirect::Direct,
+            Some(ProxyOrDirect::Direct),
             &std::io::Error::new(std::io::ErrorKind::Other, "ERROR"),
         );
         let entry = entry.to_string();
