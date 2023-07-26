@@ -1,5 +1,5 @@
 {
-  "checksum": "fbfd679642fcb54fef0e13a26d16d78186100f79dd2f2229f2fbeecf61ad3b92",
+  "checksum": "17e16e030f8a6fb52822c78b21d540e7dd9be2aa569dffb9d3c47649116c6f9b",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -7652,9 +7652,9 @@
       },
       "license": null
     },
-    "proxydetox 0.7.0": {
+    "proxydetox 0.7.1": {
       "name": "proxydetox",
-      "version": "0.7.0",
+      "version": "0.7.1",
       "repository": null,
       "targets": [],
       "library_target_name": null,
@@ -7715,13 +7715,13 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.7.0"
+        "version": "0.7.1"
       },
       "license": null
     },
-    "proxydetoxlib 0.7.0": {
+    "proxydetoxlib 0.7.1": {
       "name": "proxydetoxlib",
-      "version": "0.7.0",
+      "version": "0.7.1",
       "repository": null,
       "targets": [
         {
@@ -7802,7 +7802,7 @@
               "target": "netrc"
             },
             {
-              "id": "proxydetoxlib 0.7.0",
+              "id": "proxydetoxlib 0.7.1",
               "target": "build_script_build"
             },
             {
@@ -7851,7 +7851,7 @@
           ],
           "selects": {}
         },
-        "version": "0.7.0"
+        "version": "0.7.1"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -13354,8 +13354,8 @@
     "paceval 0.1.0": "paceval",
     "paclib 0.3.0": "paclib",
     "proxy_client 0.1.0": "proxy_client",
-    "proxydetox 0.7.0": "proxydetox",
-    "proxydetoxlib 0.7.0": "proxydetoxlib",
+    "proxydetox 0.7.1": "proxydetox",
+    "proxydetoxlib 0.7.1": "proxydetoxlib",
     "spnego 0.1.0": "spnego"
   },
   "conditions": {
