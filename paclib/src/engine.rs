@@ -141,12 +141,9 @@ fn dns_resolve(_this: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult
 }
 
 fn my_ip_address(_this: &JsValue, _args: &[JsValue], _ctx: &mut Context) -> JsResult<JsValue> {
-    let hostname = gethostname::gethostname();
-    let ip = hostname
-        .into_string()
-        .map(|h| crate::dns::resolve(&h))
+    let ip = default_net::get_default_interface()
         .ok()
-        .flatten()
+        .and_then(|i| i.ipv4.get(0).map(|i| i.addr.to_string()))
         .unwrap_or_else(|| String::from("127.0.0.1"));
     Ok(JsValue::from(JsString::from(ip)))
 }
