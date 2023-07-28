@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+bazel build --config=ci -c opt //pkg
+bazel build --config=ci -c opt //tools:toml_get
+
+OUTPUT_PATH=$(bazel info output_path)
+PKG_FILE=$(bazel cquery --config=ci -c opt --output=files //pkg)
+FILE=$(basename "${PKG_FILE}")
+VERSION=$(bazel run --config=ci -c opt //tools:toml_get -- "$(pwd)/proxydetox/Cargo.toml" package version)
+
+install -vm 644 "${OUTPUT_PATH}/${PKG_FILE/#bazel-out\//}" "${FILE}"
