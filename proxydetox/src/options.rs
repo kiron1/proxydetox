@@ -432,17 +432,26 @@ pub fn portable_dir(path: impl AsRef<Path>) -> PathBuf {
 mod tests {
     use super::*;
 
+    fn example_pac() -> String {
+        let mut p = if let Ok(runfiles_dir) = std::env::var("RUNFILES_DIR") {
+            let mut p = PathBuf::from(runfiles_dir);
+            p.push("proxydetox"); // Bazel workspace name
+            p
+        } else {
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .parent()
+                .unwrap()
+                .to_owned()
+        };
+        p.push("paceval");
+        p.push("example.pac");
+        p.into_os_string().into_string().expect("example.pac")
+    }
+
     #[test]
     fn test_is_file() {
-        let mut example_pac = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .unwrap()
-            .to_owned();
-        example_pac.push("paceval");
-        example_pac.push("example.pac");
-        let example_pac = example_pac.to_str().unwrap().to_owned();
-
-        assert!(is_file(&example_pac).is_ok());
+        let pac_file = example_pac();
+        assert!(is_file(&pac_file).is_ok());
         assert!(is_file("/does/not/exist").is_err());
     }
 
@@ -462,19 +471,16 @@ mod tests {
 
     #[test]
     fn test_pac_file_path() {
-        let mut example_pac = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .unwrap()
-            .to_owned();
-        example_pac.push("paceval");
-        example_pac.push("example.pac");
-        let example_pac = example_pac.to_str().unwrap().to_owned();
+        let pac_file = example_pac();
         let args = Options::parse_args(&[
             "proxydetox".into(),
             "--pac-file".into(),
-            example_pac.clone().into(),
+            pac_file.clone().into(),
         ]);
-        assert_eq!(args.pac_file, example_pac.parse().ok());
+        assert_eq!(
+            args.pac_file,
+            Some(PathOrUri::Path(PathBuf::from(&pac_file)))
+        );
     }
 
     #[test]

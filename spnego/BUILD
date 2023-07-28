@@ -1,4 +1,4 @@
-load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
 
 rust_library(
@@ -16,4 +16,9 @@ rust_library(
     deps = all_crate_deps(
         normal = True,
     ),
+)
+
+rust_test(
+    name = "spnego_test",
+    crate = ":spnego",
 )

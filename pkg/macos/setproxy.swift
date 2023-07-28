@@ -1,4 +1,6 @@
-#!/usr/bin/env swift
+//
+// Utility to set system proxy configurations
+//
 
 import Foundation
 import SystemConfiguration
@@ -156,7 +158,7 @@ func createProxySettingsDictionary(port: UInt16) -> NSDictionary {
   return proxySettings as NSDictionary
 }
 
-func main(_ args: [String]) throws {
+func run(_ args: [String]) throws {
   let arguments = try Arguments.parse(args).get()
   let authFlags: AuthorizationFlags = [.extendRights, .interactionAllowed, .preAuthorize]
   let authToken = try AuthorizationToken.acquire(flags: authFlags).get()
@@ -193,8 +195,13 @@ func main(_ args: [String]) throws {
   }
 }
 
-do {
-  try main(CommandLine.arguments)
-} catch {
-  print("fatal error: \(error.localizedDescription)")
+@main
+struct App {
+  static func main() {
+    do {
+      try run(CommandLine.arguments)
+    } catch {
+      print("fatal error: \(error.localizedDescription)")
+    }
+  }
 }

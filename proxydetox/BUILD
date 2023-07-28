@@ -1,7 +1,8 @@
 load("@build_bazel_rules_apple//apple:macos.bzl", "macos_command_line_application")
-load("@rules_pkg//:pkg.bzl", "pkg_zip")
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_static_library")
 load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_static_library", "rust_test")
+
+exports_files(["Cargo.toml"])
 
 rust_binary(
     name = "proxydetox",
@@ -26,6 +27,28 @@ rust_binary(
     ),
 )
 
+rust_test(
+    name = "proxydetox_test",
+    srcs = [
+        "src/options.rs",
+    ],
+    aliases = aliases(),
+    crate_features = select({
+        "//:enable_negotiate": ["negotiate"],
+        "//conditions:default": [],
+    }),
+    data = ["//paceval:example.pac"],
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
+    deps = [
+        "//proxydetoxlib",
+        "//detox_net",
+    ] + all_crate_deps(
+        normal = True,
+    ),
+)
+
 rust_static_library(
     name = "proxydetoxlib_main",
     srcs = [
@@ -45,7 +68,6 @@ rust_static_library(
         "--cfg",
         "static_library",
     ],
-    visibility = ["//visibility:public"],
     deps = [
         "//proxydetoxlib",
         "//detox_net",
@@ -76,10 +98,4 @@ macos_command_line_application(
     deps = [
         ":proxydetoxlib_main",
     ],
-)
-
-pkg_zip(
-    name = "proxydetox.zip",
-    srcs = [":proxydetox"],
-    tags = ["manual"],
 )

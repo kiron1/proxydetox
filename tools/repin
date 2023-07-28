@@ -3,4 +3,4 @@
 set -eu
 
 cargo update
-bazel sync --repo_env=CARGO_BAZEL_REPIN=1 --only=crate_index
+bazel sync --repo_env=CARGO_BAZEL_REPIN=1 --only=crate_index --only=crate_index_tools
