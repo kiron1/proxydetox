@@ -61,6 +61,8 @@ macos_command_line_application(
     linkopts = [
         "-framework",
         "Security",
+        "-framework",
+        "SystemConfiguration",
     ] + select({
         "//:enable_negotiate": [
             "-framework",
