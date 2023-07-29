@@ -1178,7 +1178,8 @@ dependencies = [
 [[package]]
 name = "netrc"
 version = "0.4.1"
-source = "git+https://github.com/kiron1/netrc-rs?branch=modernize#82aa95f8d43b480f9ddb1695f0e4d73d6e168cb5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c9a91b326434fca226707ed8ec1fd22d4e1c96801abdf10c412afdc7d97116e0"
 
 [[package]]
 name = "nom"
