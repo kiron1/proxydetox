@@ -21,7 +21,7 @@ hyper-rustls = "0.24"
 lazy_static = "1.4"
 libc = "0.2"
 spnego = { path = "../spnego", optional = true }
-netrc = { git = "https://github.com/kiron1/netrc-rs", branch = "modernize" }
+netrc = { version = "0.4" }
 paclib = { path = "../paclib" }
 proxy_client = { path = "../proxy_client" }
 rustls = "0.21"
