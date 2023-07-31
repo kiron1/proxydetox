@@ -6,9 +6,9 @@ exports_files(
 )
 
 string_flag(
-     name = "version",
-     build_setting_default = "0",
-     visibility = ["//visibility:public"],
+    name = "version",
+    build_setting_default = "0",
+    visibility = ["//visibility:public"],
 )
 
 string_list_flag(
@@ -37,4 +37,18 @@ platform(
         "@platforms//cpu:arm64",
         "@platforms//os:macos",
     ],
+)
+
+sh_binary(
+    name = "current_version",
+    srcs = ["//tools:toml_get"],
+    args = [
+        "-f$(location //:Cargo.toml)",
+        "-nversion",
+        "workspace",
+        "package",
+        "version",
+    ],
+    data = ["//:Cargo.toml"],
+    visibility = ["//visibility:public"],
 )

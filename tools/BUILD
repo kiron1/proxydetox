@@ -6,5 +6,8 @@ rust_binary(
         "toml_get.rs",
     ],
     visibility = ["//visibility:public"],
-    deps = ["@crate_index_tools//:toml"],
+    deps = [
+        "@crate_index_tools//:clap",
+        "@crate_index_tools//:toml",
+    ],
 )

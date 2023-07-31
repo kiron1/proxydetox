@@ -125,7 +125,17 @@ crates_repository(
     # Generate with:
     # CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index_tools
     lockfile = "//:Cargo.Bazel.tools.lock",
-    packages = {"toml": crate.spec(version = "0.7.6")},
+    packages = {
+        "clap": crate.spec(
+            default_features = False,
+            features = [
+                "std",
+                "derive",
+            ],
+            version = "4.3",
+        ),
+        "toml": crate.spec(version = "0.7.6"),
+    },
 )
 
 load("@crate_index_tools//:defs.bzl", crate_repositories_tools = "crate_repositories")

@@ -32,7 +32,7 @@ genrule(
     name = "version",
     srcs = ["//proxydetox:Cargo.toml"],
     outs = ["version.txt"],
-    cmd = "./$(location //tools:toml_get) $(location //proxydetox:Cargo.toml) package version > \"$@\"",
+    cmd = "$(location //tools:toml_get) -f $(location //proxydetox:Cargo.toml) package version > \"$@\"",
     tools = ["//tools:toml_get"],
-    visibility = ["//visibility:public"],
+    visibility = ["//pkg:__subpackages__"],
 )
