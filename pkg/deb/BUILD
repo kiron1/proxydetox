@@ -32,7 +32,6 @@ pkg_deb(
     data = ":data",
     depends = [
         "libc6 (>= 2.17)",
-        "libssl1.1 (>= 1.1.1)",
     ] + select({
         "//:enable_negotiate": ["libgssapi-krb5-2 (>= 1.17)"],
         "//conditions:default": [],
