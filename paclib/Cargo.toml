@@ -8,9 +8,9 @@ edition = "2021"
 [dependencies]
 boa_engine = "0.17"
 boa_gc = "0.17"
-default-net = { version = "0.16" }
+default-net = { version = "0.17" }
 detox_net = { path = "../detox_net" }
-gc = { version = "0.4", features = ["derive"] }
+gc = { version = "0.5", features = ["derive"] }
 http = "0.2"
 lazy_static = "1.4"
 regex = "1.5"
