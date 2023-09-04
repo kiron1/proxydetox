@@ -9,7 +9,7 @@ default = ["negotiate"]
 negotiate = ["proxydetoxlib/negotiate"]
 
 [dependencies]
-clap = "4.1"
+clap = "4.4"
 detox_net = { path = "../detox_net" }
 dirs = "5.0"
 futures-util = "0.3"
