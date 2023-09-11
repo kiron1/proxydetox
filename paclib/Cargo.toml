@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-boa_engine = "0.17"
+boa_engine = { version = "0.17", features = ["annex-b"] }
 boa_gc = "0.17"
 default-net = { version = "0.17" }
 detox_net = { path = "../detox_net" }
