@@ -1534,7 +1534,7 @@ dependencies = [
 
 [[package]]
 name = "proxydetox"
-version = "0.7.2"
+version = "0.7.3"
 dependencies = [
  "clap",
  "detox_net",
@@ -1555,7 +1555,7 @@ dependencies = [
 
 [[package]]
 name = "proxydetoxlib"
-version = "0.7.2"
+version = "0.7.3"
 dependencies = [
  "base64",
  "bytes",
