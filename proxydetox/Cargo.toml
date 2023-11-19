@@ -9,18 +9,18 @@ default = ["negotiate"]
 negotiate = ["proxydetoxlib/negotiate"]
 
 [dependencies]
-clap = "4.1"
-detox_net = { path = "../detox_net" }
-dirs = "5.0"
-futures-util = "0.3"
-http = "0.2"
-hyper = { version = "0.14", features = ["http1", "http2", "client", "server", "stream", "tcp"] }
-lazy_static = "1.4"
-proxydetoxlib = { path = "../proxydetoxlib" }
-tokio = { version = "1", features = ["rt-multi-thread", "net", "macros", "sync", "signal"] }
-tokio-util = "0.7"
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-tokio-rustls =  "0.24"
-rustls-pemfile = "1.0"
-rustls = "0.21"
+clap.workspace = true
+detox_net.workspace = true
+dirs.workspace = true
+futures-util.workspace = true
+http.workspace = true
+hyper.workspace = true
+lazy_static.workspace = true
+proxydetoxlib.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tokio-rustls.workspace = true
+rustls-pemfile.workspace = true
+rustls.workspace = true
