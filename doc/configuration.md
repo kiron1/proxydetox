@@ -105,4 +105,3 @@ The full list of configuration options can be retrieved with:
 ```sh
 proxydetox --help
 ```
-
