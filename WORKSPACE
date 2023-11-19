@@ -41,11 +41,11 @@ apple_support_dependencies()
 
 versioned_http_archive(
     name = "rules_rust",
-    sha256 = "9ecd0f2144f0a24e6bc71ebcc50a1ee5128cedeceb32187004532c9710cb2334",
+    sha256 = "36ab8f9facae745c9c9c1b33d225623d976e78f2cc3f729b7973d8c20934ab95",
     urls = [
         "https://github.com/bazelbuild/rules_rust/releases/download/{version}/rules_rust-v{version}.tar.gz",
     ],
-    version = "0.29.1",
+    version = "0.31.0",
 )
 
 load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
