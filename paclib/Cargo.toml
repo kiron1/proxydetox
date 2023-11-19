@@ -6,17 +6,17 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-boa_engine = { version = "0.17", features = ["annex-b"] }
-boa_gc = "0.17"
-default-net = { version = "0.17" }
-detox_net = { path = "../detox_net" }
-gc = { version = "0.5", features = ["derive"] }
-http = "0.2"
-lazy_static = "1.4"
-regex = "1.5"
-thiserror = "1.0"
-tokio = { version = "1", features = ["sync"] }
-tracing = "0.1"
+boa_engine.workspace = true
+boa_gc.workspace = true
+default-net.workspace = true
+detox_net.workspace = true
+gc.workspace = true
+http.workspace = true
+lazy_static.workspace = true
+regex.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
 
 [lib]
 doctest = false

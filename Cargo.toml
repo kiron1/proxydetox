@@ -18,3 +18,43 @@ default-members = [
     "proxydetoxlib",
     "spnego",
 ]
+
+[workspace.dependencies]
+base64 = "0.21"
+boa_engine = { version = "0.17", features = ["annex-b"] }
+boa_gc = "0.17"
+bytes = "1.1"
+chrono = "0.4"
+clap = { version = "4.1", features = ["derive"] }
+default-net = { version = "0.17" }
+detox_net = { path = "detox_net" }
+dirs = "5.0"
+#futures-util = "0.3"
+futures-util = { version = "0.3", default-features = false }
+gc = { version = "0.5", features = ["derive"] }
+http = "0.2"
+hyper = { version = "0.14", features = ["http1", "http2", "client", "server", "stream", "tcp"] }
+hyper-rustls = "0.24"
+lazy_static = "1.4"
+libc = "0.2"
+netrc = { version = "0.4" }
+paclib = { path = "paclib" }
+proxy_client = { path = "proxy_client" }
+proxydetoxlib = { path = "proxydetoxlib" }
+regex = "1.5"
+rustls = "0.21"
+rustls-native-certs = "0.6"
+rustls-pemfile = "1.0"
+socket2 = { version = "0.5", features = ["all"] }
+spnego = { path = "spnego" }
+thiserror = "1.0"
+tokio = { version = "1", features = ["rt-multi-thread", "net", "macros", "sync", "signal"] }
+tokio-rustls = "0.24"
+tokio-stream = { version = "0.1", features = ["sync"] }
+tokio-util = "0.7"
+tower = { version = "0.4", features = ["util"] }
+tracing = "0.1"
+tracing-attributes = "0.1"
+tracing-futures = "0.2"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+webpki-roots = "0.22"

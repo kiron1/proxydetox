@@ -6,16 +6,16 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-detox_net = { path = "../detox_net" }
-http = "0.2"
-hyper = { version = "0.14", features = ["http1", "http2", "client", "server", "tcp"] }
-hyper-rustls = "0.24"
-paclib = { path = "../paclib" }
-rustls = "0.21"
-tokio = { version = "1", features = ["rt-multi-thread", "net", "macros", "sync"] }
-tokio-rustls = "0.24"
-thiserror = "1.0"
-tower = { version = "0.4", features = ["util"] }
+detox_net.workspace = true
+http.workspace = true
+hyper.workspace = true
+hyper-rustls.workspace = true
+paclib.workspace = true
+rustls.workspace = true
+tokio.workspace = true
+tokio-rustls.workspace = true
+thiserror.workspace = true
+tower.workspace = true
 
 [lib]
 doctest = false
