@@ -40,7 +40,7 @@ pub enum Error {
     #[error("upstream error reaching {2} via {1}: {0}")]
     Upstream(#[source] crate::client::Error, Proxy, Uri),
     #[error("error creating client for {1}: {0}")]
-    MakeClient(#[source] hyper::Error, Uri),
+    MakeClient(#[source] crate::client::direct::Error, Uri),
     #[error("error creating proxy for {1}: {0}")]
     MakeProxyClient(#[source] crate::client::Error, Proxy),
     #[error("client error: {0}")]

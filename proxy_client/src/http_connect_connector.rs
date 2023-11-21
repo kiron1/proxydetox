@@ -7,7 +7,6 @@ use paclib::Proxy;
 use std::{future::Future, io::Cursor, pin::Pin};
 use tokio::{io::AsyncReadExt, net::TcpStream};
 use tokio_rustls::TlsConnector;
-use tower::ServiceExt;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -88,7 +87,7 @@ impl HttpConnectConnector {
             }
         };
 
-        let (mut request_sender, connection) = conn::handshake(stream).await?;
+        let (mut request_sender, connection) = conn::http1::handshake(stream).await?;
 
         // spawn a task to poll the connection and drive the HTTP state
         let task = tokio::spawn(async move {

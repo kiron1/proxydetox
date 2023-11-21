@@ -197,7 +197,7 @@ async fn upgrade_upstream(
     // Upgrade connection to parent proxy
     match hyper::upgrade::on(upstream_response).await {
         Ok(parent_upgraded) => {
-            let (mut request_sender, connection) = conn::handshake(parent_upgraded).await?;
+            let (mut request_sender, connection) = conn::http1::handshake(parent_upgraded).await?;
             // spawn a client which uses the established CONNECT stream
             tokio::spawn(async move {
                 if let Err(cause) = connection.await {
