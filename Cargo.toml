@@ -47,7 +47,8 @@ dirs = "5.0"
 futures-util = { version = "0.3", default-features = false }
 gc = { version = "0.5", features = ["derive"] }
 http = "0.2"
-hyper = { version = "0.14", features = ["http1", "http2", "client", "server", "stream", "tcp"] }
+# hyper = { version = "0.14", features = ["http1", "http2", "client", "server", "stream", "tcp", "deprecated", "backports"] }
+hyper = { version = "0.14", features = ["http1", "client", "server", "stream", "runtime", "tcp", "deprecated", "backports"] }
 hyper-rustls = "0.24"
 lazy_static = "1.4"
 libc = "0.2"
@@ -62,7 +63,7 @@ rustls-pemfile = "1.0"
 socket2 = { version = "0.5", features = ["all"] }
 spnego = { path = "spnego" }
 thiserror = "1.0"
-tokio = { version = "1", features = ["rt-multi-thread", "net", "macros", "sync", "signal"] }
+tokio = { version = "1", features = ["io-util", "rt-multi-thread", "net", "macros", "sync", "signal"] }
 tokio-rustls = "0.24"
 tokio-stream = { version = "0.1", features = ["sync"] }
 tokio-util = "0.7"
@@ -72,3 +73,6 @@ tracing-attributes = "0.1"
 tracing-futures = "0.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 webpki-roots = "0.22"
+
+[patch.crates-io]
+hyper = { git = "https://github.com/kiron1/hyper", rev = "b7118433fc8e7f984f6fc3d3b0d794b9bdd517b5" }
