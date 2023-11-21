@@ -1,35 +1,83 @@
 use std::future::Future;
 use std::pin::Pin;
 
+use detox_net::{HostAndPort, TcpKeepAlive};
 use http::{Request, Uri};
-use hyper::Body;
+use tokio::net::TcpStream;
 
-type ClientService =
-    hyper::client::service::Connect<hyper::client::connect::HttpConnector, Body, Uri>;
-type HyperSendRequest = hyper::client::conn::SendRequest<Body>;
+type HyperSendRequest = hyper::client::conn::http1::SendRequest<hyper::body::Body>;
 
-pub struct Direct(ClientService);
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("invalid URI: {0}")]
+    InvalidUri(
+        #[from]
+        #[source]
+        detox_net::host_and_port::Error,
+    ),
+    #[error("HTTP error: {0}")]
+    Hyper(
+        #[from]
+        #[source]
+        hyper::Error,
+    ),
+    #[error("TCP connect to {1} error: {0}")]
+    ConnectError(#[source] tokio::io::Error, HostAndPort),
+}
+
+#[derive(Default)]
+pub struct Direct {
+    tcp_keepalive: TcpKeepAlive,
+}
 
 impl Direct {
     pub fn new() -> Self {
-        Default::default()
+        Self::default()
     }
-}
 
-impl Default for Direct {
-    fn default() -> Self {
-        let client = hyper::client::service::Connect::new(
-            hyper::client::connect::HttpConnector::new(),
-            hyper::client::conn::Builder::new(),
-        );
-
-        Self(client)
+    pub fn with_tcp_keepalive(mut self, keepalive: TcpKeepAlive) -> Self {
+        self.tcp_keepalive = keepalive;
+        self
     }
 }
 
 impl tower::Service<Uri> for Direct {
     type Response = SendRequest;
-    type Error = <ClientService as tower::Service<Uri>>::Error;
+    type Error = Error;
+    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
+
+    fn poll_ready(
+        &mut self,
+        _cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<std::result::Result<(), Self::Error>> {
+        std::task::Poll::Ready(Ok(()))
+    }
+
+    fn call(&mut self, dst: Uri) -> Self::Future {
+        let tcp_keepalive = self.tcp_keepalive.clone();
+        let res = async move {
+            let host = HostAndPort::try_from_uri(&dst)?;
+            let stream = TcpStream::connect(host.to_pair())
+                .await
+                .map_err(|e| Error::ConnectError(e, host.clone()))?;
+            tcp_keepalive.apply(&stream).ok();
+            let (send_request, connection) = hyper::client::conn::http1::handshake(stream).await?;
+            tokio::spawn(async move {
+                if let Err(cause) = connection.await {
+                    tracing::error!(%cause, %host, "error in direct connection");
+                }
+            });
+            Ok(SendRequest(send_request))
+        };
+        Box::pin(res)
+    }
+}
+
+pub struct SendRequest(HyperSendRequest);
+
+impl tower::Service<Request<hyper::body::Body>> for SendRequest {
+    type Response = hyper::Response<hyper::body::Body>;
+    type Error = hyper::Error;
     type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
 
     fn poll_ready(
@@ -39,31 +87,7 @@ impl tower::Service<Uri> for Direct {
         self.0.poll_ready(cx)
     }
 
-    fn call(&mut self, dst: Uri) -> Self::Future {
-        let send_request = self.0.call(dst);
-        let res = async move {
-            let send_request = send_request.await?;
-            Ok(SendRequest(send_request))
-        };
-        Box::pin(res)
-    }
-}
-
-pub struct SendRequest(HyperSendRequest);
-
-impl tower::Service<Request<Body>> for SendRequest {
-    type Response = <HyperSendRequest as tower::Service<Request<Body>>>::Response;
-    type Error = <HyperSendRequest as tower::Service<Request<Body>>>::Error;
-    type Future = <HyperSendRequest as tower::Service<Request<Body>>>::Future;
-
-    fn poll_ready(
-        &mut self,
-        cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<std::result::Result<(), Self::Error>> {
-        self.0.poll_ready(cx)
-    }
-
-    fn call(&mut self, mut req: Request<Body>) -> Self::Future {
+    fn call(&mut self, mut req: Request<hyper::body::Body>) -> Self::Future {
         if req.method() != http::Method::CONNECT {
             // strip the authority part of the request URI, since direct clients will only send
             // the path and query in the requst URI part.
@@ -77,6 +101,6 @@ impl tower::Service<Request<Body>> for SendRequest {
                 .build()
                 .expect("request with valid URI expected");
         }
-        self.0.send_request(req)
+        Box::pin(self.0.send_request(req))
     }
 }

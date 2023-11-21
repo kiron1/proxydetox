@@ -46,7 +46,7 @@ impl Environment {
     pub(crate) async fn send(&self, request: http::Request<Body>) -> http::Response<Body> {
         let stream = TcpStream::connect(self.proxy_addr()).await.unwrap();
         let (mut request_sender, connection) =
-            hyper::client::conn::handshake(stream).await.unwrap();
+            hyper::client::conn::http1::handshake(stream).await.unwrap();
 
         // spawn a task to poll the connection and drive the HTTP state
         let _task = tokio::spawn(async move {
@@ -63,7 +63,7 @@ impl Environment {
         let stream = TcpStream::connect(self.proxy_addr()).await.unwrap();
         stream.set_nodelay(true).unwrap();
         let (mut request_sender, connection) =
-            hyper::client::conn::handshake(stream).await.unwrap();
+            hyper::client::conn::http1::handshake(stream).await.unwrap();
 
         // spawn a task to poll the connection and drive the HTTP state
         let parts = tokio::spawn(async move { connection.without_shutdown().await.unwrap() });

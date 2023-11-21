@@ -1,5 +1,5 @@
 {
-  "checksum": "6a302cea84421356114edab9977867a12166830e215474ddcc18ec7893fc9ebd",
+  "checksum": "83b7794a3ccc6001d31d1f93e509b84a1c63c908cafe0d96a815ab558f36414b",
   "crates": {
     "addr2line 0.21.0": {
       "name": "addr2line",
@@ -609,14 +609,14 @@
       ],
       "license_file": "LICENSE-APACHE"
     },
-    "anyhow 1.0.85": {
+    "anyhow 1.0.86": {
       "name": "anyhow",
-      "version": "1.0.85",
+      "version": "1.0.86",
       "package_url": "https://github.com/dtolnay/anyhow",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/anyhow/1.0.85/download",
-          "sha256": "27a4bd113ab6da4cd0f521068a6e2ee1065eab54107266a11835d02c8ec86a37"
+          "url": "https://static.crates.io/crates/anyhow/1.0.86/download",
+          "sha256": "b3d1d046238990b9cf5bcde22a3fb3584ee5cf65fb2765f454ed428c7a0063da"
         }
       },
       "targets": [
@@ -660,14 +660,14 @@
         "deps": {
           "common": [
             {
-              "id": "anyhow 1.0.85",
+              "id": "anyhow 1.0.86",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2018",
-        "version": "1.0.85"
+        "version": "1.0.86"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -3348,7 +3348,7 @@
               "target": "http"
             },
             {
-              "id": "hyper 0.14.28",
+              "id": "hyper 0.14.27",
               "target": "hyper"
             },
             {
@@ -3774,6 +3774,12 @@
         "compile_data_glob": [
           "**"
         ],
+        "crate_features": {
+          "common": [
+            "std"
+          ],
+          "selects": {}
+        },
         "deps": {
           "common": [],
           "selects": {
@@ -4424,93 +4430,6 @@
       ],
       "license_file": "LICENSE-APACHE"
     },
-    "h2 0.3.26": {
-      "name": "h2",
-      "version": "0.3.26",
-      "package_url": "https://github.com/hyperium/h2",
-      "repository": {
-        "Http": {
-          "url": "https://static.crates.io/crates/h2/0.3.26/download",
-          "sha256": "81fe527a889e1532da5c525686d96d4c2e74cdd345badf8dfef9f6b39dd5f5e8"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "h2",
-            "crate_root": "src/lib.rs",
-            "srcs": {
-              "allow_empty": false,
-              "include": [
-                "**/*.rs"
-              ]
-            }
-          }
-        }
-      ],
-      "library_target_name": "h2",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "bytes 1.6.0",
-              "target": "bytes"
-            },
-            {
-              "id": "fnv 1.0.7",
-              "target": "fnv"
-            },
-            {
-              "id": "futures-core 0.3.30",
-              "target": "futures_core"
-            },
-            {
-              "id": "futures-sink 0.3.30",
-              "target": "futures_sink"
-            },
-            {
-              "id": "futures-util 0.3.30",
-              "target": "futures_util"
-            },
-            {
-              "id": "http 0.2.12",
-              "target": "http"
-            },
-            {
-              "id": "indexmap 2.2.6",
-              "target": "indexmap"
-            },
-            {
-              "id": "slab 0.4.9",
-              "target": "slab"
-            },
-            {
-              "id": "tokio 1.37.0",
-              "target": "tokio"
-            },
-            {
-              "id": "tokio-util 0.7.11",
-              "target": "tokio_util"
-            },
-            {
-              "id": "tracing 0.1.40",
-              "target": "tracing"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2018",
-        "version": "0.3.26"
-      },
-      "license": "MIT",
-      "license_ids": [
-        "MIT"
-      ],
-      "license_file": "LICENSE"
-    },
     "hashbrown 0.13.2": {
       "name": "hashbrown",
       "version": "0.13.2",
@@ -5002,14 +4921,16 @@
       ],
       "license_file": "LICENSE-APACHE"
     },
-    "hyper 0.14.28": {
+    "hyper 0.14.27": {
       "name": "hyper",
-      "version": "0.14.28",
+      "version": "0.14.27",
       "package_url": "https://github.com/hyperium/hyper",
       "repository": {
-        "Http": {
-          "url": "https://static.crates.io/crates/hyper/0.14.28/download",
-          "sha256": "bf96e135eb83a2a8ddf766e426a841d8ddd7449d5f00d34ea02b41d2f19eef80"
+        "Git": {
+          "remote": "https://github.com/kiron1/hyper",
+          "commitish": {
+            "Rev": "b7118433fc8e7f984f6fc3d3b0d794b9bdd517b5"
+          }
         }
       },
       "targets": [
@@ -5033,11 +4954,11 @@
         ],
         "crate_features": {
           "common": [
+            "backports",
             "client",
             "default",
-            "h2",
+            "deprecated",
             "http1",
-            "http2",
             "runtime",
             "server",
             "socket2",
@@ -5063,10 +4984,6 @@
             {
               "id": "futures-util 0.3.30",
               "target": "futures_util"
-            },
-            {
-              "id": "h2 0.3.26",
-              "target": "h2"
             },
             {
               "id": "http 0.2.12",
@@ -5116,7 +5033,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.14.28"
+        "version": "0.14.27"
       },
       "license": "MIT",
       "license_ids": [
@@ -5178,7 +5095,7 @@
               "target": "http"
             },
             {
-              "id": "hyper 0.14.28",
+              "id": "hyper 0.14.27",
               "target": "hyper"
             },
             {
@@ -6401,7 +6318,80 @@
             "default",
             "std"
           ],
-          "selects": {}
+          "selects": {
+            "aarch64-apple-darwin": [
+              "extra_traits"
+            ],
+            "aarch64-apple-ios": [
+              "extra_traits"
+            ],
+            "aarch64-apple-ios-sim": [
+              "extra_traits"
+            ],
+            "aarch64-fuchsia": [
+              "extra_traits"
+            ],
+            "aarch64-linux-android": [
+              "extra_traits"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "extra_traits"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "extra_traits"
+            ],
+            "aarch64-unknown-nto-qnx710": [
+              "extra_traits"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "extra_traits"
+            ],
+            "armv7-linux-androideabi": [
+              "extra_traits"
+            ],
+            "armv7-unknown-linux-gnueabi": [
+              "extra_traits"
+            ],
+            "i686-apple-darwin": [
+              "extra_traits"
+            ],
+            "i686-linux-android": [
+              "extra_traits"
+            ],
+            "i686-unknown-freebsd": [
+              "extra_traits"
+            ],
+            "i686-unknown-linux-gnu": [
+              "extra_traits"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "extra_traits"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "extra_traits"
+            ],
+            "x86_64-apple-darwin": [
+              "extra_traits"
+            ],
+            "x86_64-apple-ios": [
+              "extra_traits"
+            ],
+            "x86_64-fuchsia": [
+              "extra_traits"
+            ],
+            "x86_64-linux-android": [
+              "extra_traits"
+            ],
+            "x86_64-unknown-freebsd": [
+              "extra_traits"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "extra_traits"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "extra_traits"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -6699,16 +6689,6 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": {
-          "common": [
-            "elf",
-            "errno",
-            "general",
-            "ioctl",
-            "no_std"
-          ],
-          "selects": {}
-        },
         "edition": "2021",
         "version": "0.4.14"
       },
@@ -7222,7 +7202,7 @@
         "deps": {
           "common": [
             {
-              "id": "anyhow 1.0.85",
+              "id": "anyhow 1.0.86",
               "target": "anyhow"
             },
             {
@@ -7277,7 +7257,7 @@
         "deps": {
           "common": [
             {
-              "id": "anyhow 1.0.85",
+              "id": "anyhow 1.0.86",
               "target": "anyhow"
             },
             {
@@ -7344,7 +7324,7 @@
         "deps": {
           "common": [
             {
-              "id": "anyhow 1.0.85",
+              "id": "anyhow 1.0.86",
               "target": "anyhow"
             },
             {
@@ -9363,7 +9343,7 @@
               "target": "http"
             },
             {
-              "id": "hyper 0.14.28",
+              "id": "hyper 0.14.27",
               "target": "hyper"
             },
             {
@@ -9437,7 +9417,7 @@
               "target": "http"
             },
             {
-              "id": "hyper 0.14.28",
+              "id": "hyper 0.14.27",
               "target": "hyper"
             },
             {
@@ -9552,7 +9532,7 @@
               "target": "http"
             },
             {
-              "id": "hyper 0.14.28",
+              "id": "hyper 0.14.27",
               "target": "hyper"
             },
             {
@@ -11771,86 +11751,6 @@
       ],
       "license_file": null
     },
-    "slab 0.4.9": {
-      "name": "slab",
-      "version": "0.4.9",
-      "package_url": "https://github.com/tokio-rs/slab",
-      "repository": {
-        "Http": {
-          "url": "https://static.crates.io/crates/slab/0.4.9/download",
-          "sha256": "8f92a496fb766b417c996b9c5e57daf2f7ad3b0bebe1ccfca4856390e3d3bb67"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "slab",
-            "crate_root": "src/lib.rs",
-            "srcs": {
-              "allow_empty": false,
-              "include": [
-                "**/*.rs"
-              ]
-            }
-          }
-        },
-        {
-          "BuildScript": {
-            "crate_name": "build_script_build",
-            "crate_root": "build.rs",
-            "srcs": {
-              "allow_empty": false,
-              "include": [
-                "**/*.rs"
-              ]
-            }
-          }
-        }
-      ],
-      "library_target_name": "slab",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "crate_features": {
-          "common": [
-            "default",
-            "std"
-          ],
-          "selects": {}
-        },
-        "deps": {
-          "common": [
-            {
-              "id": "slab 0.4.9",
-              "target": "build_script_build"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2018",
-        "version": "0.4.9"
-      },
-      "build_script_attrs": {
-        "data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "autocfg 1.3.0",
-              "target": "autocfg"
-            }
-          ],
-          "selects": {}
-        }
-      },
-      "license": "MIT",
-      "license_ids": [
-        "MIT"
-      ],
-      "license_file": "LICENSE"
-    },
     "smallvec 1.13.2": {
       "name": "smallvec",
       "version": "1.13.2",
@@ -13307,9 +13207,7 @@
         ],
         "crate_features": {
           "common": [
-            "codec",
-            "default",
-            "io"
+            "default"
           ],
           "selects": {}
         },
@@ -17938,7 +17836,7 @@
     "futures-util 0.3.30",
     "gc 0.5.0",
     "http 0.2.12",
-    "hyper 0.14.28",
+    "hyper 0.14.27",
     "hyper-rustls 0.24.2",
     "lazy_static 1.4.0",
     "libc 0.2.155",
