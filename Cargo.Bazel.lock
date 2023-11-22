@@ -1,5 +1,5 @@
 {
-  "checksum": "2835bcc443622c12bf46dd57459e6855fc0b52858e3099b867b47a647f1db5eb",
+  "checksum": "e302a457b3af788bf6dce8fd8332f60f03bab15bbcf6417fd44d7f5f229bee16",
   "crates": {
     "addr2line 0.21.0": {
       "name": "addr2line",
@@ -29,7 +29,7 @@
         "deps": {
           "common": [
             {
-              "id": "gimli 0.28.0",
+              "id": "gimli 0.28.1",
               "target": "gimli"
             }
           ],
@@ -3648,13 +3648,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "gimli 0.28.0": {
+    "gimli 0.28.1": {
       "name": "gimli",
-      "version": "0.28.0",
+      "version": "0.28.1",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/gimli/0.28.0/download",
-          "sha256": "6fb8d784f27acf97159b40fc4db5ecd8aa23b9ad5ef69cdd136d3bc80665f0c0"
+          "url": "https://crates.io/api/v1/crates/gimli/0.28.1/download",
+          "sha256": "4271d37baee1b8c7e4b708028c57d816cf9d2434acb33a549475f78c181f6253"
         }
       },
       "targets": [
@@ -3674,7 +3674,7 @@
           "**"
         ],
         "edition": "2018",
-        "version": "0.28.0"
+        "version": "0.28.1"
       },
       "license": "MIT OR Apache-2.0"
     },
