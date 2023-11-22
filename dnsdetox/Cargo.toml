@@ -6,22 +6,22 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "4.1", features = ["env"] }
-dirs = "5.0"
+clap.workspace = true
+dirs.workspace = true
 dns-parser = "0.8"
 env_logger = "0.10"
-futures-util = { version = "0.3", default-features = false }
-http = "0.2"
-hyper = { version = "0.14", features = ["http1", "http2", "client", "stream", "tcp"] }
-hyper-rustls = "0.24"
+futures-util.workspace = true
+http.workspace = true
+hyper.workspace = true
+hyper-rustls.workspace = true
 log = "0.4"
-paclib = { path = "../paclib" }
-proxy_client = { path = "../proxy_client" }
-rustls = "0.21"
-rustls-native-certs = "0.6"
-thiserror = "1.0"
-tokio = { version = "1", features = ["rt-multi-thread", "net", "macros", "sync", "signal"] }
-tokio-rustls =  "0.24"
+paclib.workspace = true
+proxy_client.workspace = true
+rustls.workspace = true
+rustls-native-certs.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tokio-rustls.workspace = true
 
 [lib]
 doctest = false
