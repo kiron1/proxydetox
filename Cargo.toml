@@ -32,7 +32,7 @@ dirs = "5.0"
 #futures-util = "0.3"
 futures-util = { version = "0.3", default-features = false }
 gc = { version = "0.5", features = ["derive"] }
-http = "0.2"
+http = "1.0"
 hyper = { version = "0.14", features = ["http1", "http2", "client", "server", "stream", "tcp"] }
 hyper-rustls = "0.24"
 lazy_static = "1.4"
