@@ -26,19 +26,25 @@ pub enum Error {
         #[source]
         http::Error,
     ),
-    #[error("HTTP connection error: {0}")]
-    HttpConnection(
+    #[error("HTTP connection/protocoll error: {0}")]
+    Hyper(
         #[from]
         #[source]
         hyper::Error,
     ),
-    #[error("HTTP CONNECT error: {0}")]
-    HttpConnect(
+    #[error("HTTP connection error: {0}")]
+    HttpConnection(
         #[from]
         #[source]
-        proxy_client::http_connect_connector::Error,
+        detox_hyper::conn::Error,
     ),
-    #[error("internal error: {0}")]
+    #[error("Invalid endpoint: {0}")]
+    Endpoint(
+        #[from]
+        #[source]
+        detox_net::host_and_port::Error,
+    ),
+    #[error("Internal error: {0}")]
     JoinError(
         #[from]
         #[source]

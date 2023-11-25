@@ -478,13 +478,56 @@ dependencies = [
 ]
 
 [[package]]
+name = "detox_auth"
+version = "0.0.1"
+dependencies = [
+ "base64",
+ "http 1.0.0",
+ "hyper 1.1.0",
+ "netrc",
+ "spnego",
+ "thiserror",
+]
+
+[[package]]
+name = "detox_futures"
+version = "0.0.1"
+dependencies = [
+ "tokio",
+]
+
+[[package]]
+name = "detox_hyper"
+version = "0.0.1"
+dependencies = [
+ "bytes",
+ "detox_auth",
+ "detox_net",
+ "futures-util",
+ "http 1.0.0",
+ "http-body 1.0.0",
+ "http-body-util",
+ "hyper 1.1.0",
+ "hyper-rustls",
+ "hyper-util",
+ "paclib",
+ "pin-project",
+ "rustls",
+ "thiserror",
+ "tokio",
+ "tokio-rustls",
+]
+
+[[package]]
 name = "detox_net"
 version = "0.1.2"
 dependencies = [
- "http",
+ "http 1.0.0",
  "socket2",
  "thiserror",
  "tokio",
+ "tokio-rustls",
+ "tracing",
 ]
 
 [[package]]
@@ -545,16 +588,20 @@ name = "dnsdetox"
 version = "0.1.2"
 dependencies = [
  "clap",
+ "detox_auth",
+ "detox_hyper",
+ "detox_net",
  "dirs",
  "dns-parser",
  "env_logger",
  "futures-util",
- "http",
- "hyper",
+ "http 1.0.0",
+ "http-body 1.0.0",
+ "http-body-util",
+ "hyper 1.1.0",
  "hyper-rustls",
  "log",
  "paclib",
- "proxy_client",
  "rustls",
  "rustls-native-certs",
  "thiserror",
@@ -746,13 +793,47 @@ dependencies = [
 ]
 
 [[package]]
+name = "http"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b32afd38673a8016f7c9ae69e5af41a58f81b1d31689040f2f1959594ce194ea"
+dependencies = [
+ "bytes",
+ "fnv",
+ "itoa",
+]
+
+[[package]]
 name = "http-body"
 version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ceab25649e9960c0311ea418d17bee82c0dcec1bd053b5f9a66e265a693bed2"
 dependencies = [
  "bytes",
- "http",
+ "http 0.2.11",
+ "pin-project-lite",
+]
+
+[[package]]
+name = "http-body"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1cac85db508abc24a2e48553ba12a996e87244a0395ce011e62b37158745d643"
+dependencies = [
+ "bytes",
+ "http 1.0.0",
+]
+
+[[package]]
+name = "http-body-util"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "41cb79eb393015dadd30fc252023adb0b2400a0caee0fa2a077e6e21a551e840"
+dependencies = [
+ "bytes",
+ "futures-util",
+ "http 1.0.0",
+ "http-body 1.0.0",
  "pin-project-lite",
 ]
 
@@ -783,8 +864,8 @@ dependencies = [
  "futures-channel",
  "futures-core",
  "futures-util",
- "http",
- "http-body",
+ "http 0.2.11",
+ "http-body 0.4.6",
  "httparse",
  "httpdate",
  "itoa",
@@ -797,19 +878,56 @@ dependencies = [
 ]
 
 [[package]]
+name = "hyper"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb5aa53871fc917b1a9ed87b683a5d86db645e23acb32c2e0785a353e522fb75"
+dependencies = [
+ "bytes",
+ "futures-channel",
+ "futures-util",
+ "http 1.0.0",
+ "http-body 1.0.0",
+ "httparse",
+ "httpdate",
+ "itoa",
+ "pin-project-lite",
+ "tokio",
+ "want",
+]
+
+[[package]]
 name = "hyper-rustls"
 version = "0.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec3efd23720e2049821a693cbc7e65ea87c72f1c58ff2f9522ff332b1491e590"
 dependencies = [
  "futures-util",
- "http",
- "hyper",
+ "http 0.2.11",
+ "hyper 0.14.27",
  "log",
  "rustls",
  "rustls-native-certs",
  "tokio",
  "tokio-rustls",
+]
+
+[[package]]
+name = "hyper-util"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bdea9aac0dbe5a9240d68cfd9501e2db94222c6dc06843e06640b9e07f0fdc67"
+dependencies = [
+ "bytes",
+ "futures-channel",
+ "futures-util",
+ "http 1.0.0",
+ "http-body 1.0.0",
+ "hyper 1.1.0",
+ "pin-project-lite",
+ "socket2",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -1307,7 +1425,7 @@ name = "paceval"
 version = "0.1.2"
 dependencies = [
  "clap",
- "http",
+ "http 1.0.0",
  "paclib",
 ]
 
@@ -1320,7 +1438,7 @@ dependencies = [
  "default-net",
  "detox_net",
  "gc",
- "http",
+ "http 1.0.0",
  "lazy_static",
  "regex",
  "thiserror",
@@ -1476,37 +1594,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "proxy_client"
-version = "0.1.2"
-dependencies = [
- "detox_net",
- "http",
- "hyper",
- "hyper-rustls",
- "paclib",
- "rustls",
- "thiserror",
- "tokio",
- "tokio-rustls",
- "tower",
-]
-
-[[package]]
 name = "proxydetox"
 version = "0.7.5"
 dependencies = [
  "clap",
+ "detox_auth",
  "detox_net",
  "dirs",
  "futures-util",
- "http",
- "hyper",
+ "http 1.0.0",
+ "hyper 1.1.0",
+ "hyper-util",
  "lazy_static",
  "proxydetoxlib",
  "rustls",
  "rustls-pemfile",
  "tokio",
  "tokio-rustls",
+ "tokio-stream",
  "tokio-util",
  "tracing",
  "tracing-subscriber",
@@ -1516,29 +1621,29 @@ dependencies = [
 name = "proxydetoxlib"
 version = "0.7.5"
 dependencies = [
- "base64",
  "bytes",
  "chrono",
+ "detox_auth",
+ "detox_futures",
+ "detox_hyper",
  "detox_net",
  "dirs",
  "futures-util",
- "http",
- "hyper",
- "hyper-rustls",
+ "http 1.0.0",
+ "http-body-util",
+ "hyper 1.1.0",
+ "hyper-util",
  "lazy_static",
  "libc",
- "netrc",
  "paclib",
- "proxy_client",
  "rustls",
  "rustls-native-certs",
  "rustls-pemfile",
- "spnego",
  "thiserror",
  "tokio",
  "tokio-rustls",
  "tokio-stream",
- "tower",
+ "tokio-util",
  "tracing",
  "tracing-attributes",
  "tracing-futures",
@@ -2132,27 +2237,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tower"
-version = "0.4.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8fa9be0de6cf49e536ce1851f987bd21a43b771b09473c3549a6c853db37c1c"
-dependencies = [
- "futures-core",
- "futures-util",
- "pin-project",
- "pin-project-lite",
- "tower-layer",
- "tower-service",
- "tracing",
-]
-
-[[package]]
-name = "tower-layer"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c20c8dbed6283a09604c3e69b4b7eeb54e298b8a600d4d5ecb5ad39de609f1d0"
-
-[[package]]
 name = "tower-service"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2164,7 +2248,6 @@ version = "0.1.40"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3523ab5a71916ccf420eebdf5521fcef02141234bbc0b8a49f2fdc4544364ef"
 dependencies = [
- "log",
  "pin-project-lite",
  "tracing-attributes",
  "tracing-core",

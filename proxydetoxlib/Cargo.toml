@@ -6,31 +6,31 @@ homepage.workspace = true
 
 [features]
 default = ["negotiate"]
-negotiate = ["dep:spnego"]
+negotiate = ["detox_auth/negotiate"]
 
 [dependencies]
-base64.workspace = true
 bytes.workspace = true
 chrono.workspace = true
+detox_auth = { workspace = true, optional = true }
+detox_futures.workspace = true
+detox_hyper.workspace = true
 detox_net.workspace = true
 dirs.workspace = true
 futures-util.workspace = true
 http.workspace = true
+http-body-util.workspace = true
 hyper.workspace = true
-hyper-rustls.workspace = true
+hyper-util.workspace = true
 lazy_static.workspace = true
 libc.workspace = true
-spnego = { workspace = true, optional = true }
-netrc.workspace = true
 paclib.workspace = true
-proxy_client.workspace = true
 rustls.workspace = true
 rustls-pemfile.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 tokio-rustls.workspace = true
 tokio-stream.workspace = true
-tower.workspace = true
+tokio-util.workspace = true
 tracing.workspace = true
 tracing-attributes.workspace = true
 tracing-futures.workspace = true

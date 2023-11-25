@@ -5,15 +5,17 @@
 
 mod options;
 
-use futures_util::stream::{FuturesUnordered, StreamExt};
+use detox_auth::netrc;
+use detox_auth::AuthenticatorFactory;
+use futures_util::future;
+use futures_util::stream;
 use options::{Authorization, Options};
-use proxydetoxlib::auth::netrc;
-use proxydetoxlib::auth::AuthenticatorFactory;
+use proxydetoxlib::server::Proxy;
 use proxydetoxlib::socket;
 use std::fs::File;
 use std::result::Result;
 use std::sync::Arc;
-use tokio_util::sync::CancellationToken;
+use tokio_stream::wrappers::TcpListenerStream;
 use tracing_subscriber::filter::EnvFilter;
 
 #[cfg(static_library)]
@@ -61,6 +63,21 @@ async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
     } else {
         EnvFilter::default()
             .add_directive(
+                format!("detox_auth={0}", config.log_level)
+                    .parse()
+                    .expect("directive"),
+            )
+            .add_directive(
+                format!("detox_hyper={0}", config.log_level)
+                    .parse()
+                    .expect("directive"),
+            )
+            .add_directive(
+                format!("detox_net={0}", config.log_level)
+                    .parse()
+                    .expect("directive"),
+            )
+            .add_directive(
                 format!("proxydetox={0}", config.log_level)
                     .parse()
                     .expect("directive"),
@@ -104,131 +121,134 @@ async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
             AuthenticatorFactory::basic(store)
         }
     };
+    tracing::debug!(%auth, "authorization");
 
-    let session = proxydetoxlib::Session::builder()
+    let context = proxydetoxlib::Context::builder()
         .pac_file(config.pac_file.clone())
-        .authenticator_factory(Some(auth.clone()))
+        .authenticator_factory(Some(auth))
         .always_use_connect(config.always_use_connect)
         .connect_timeout(config.connect_timeout)
         .direct_fallback(config.direct_fallback)
         .client_tcp_keepalive(config.client_tcp_keepalive.clone())
         .build();
 
-    let server = if let Some(name) = &config.activate_socket {
+    let listeners = if let Some(name) = &config.activate_socket {
         socket::activate_socket(name)?
             .take()
             .into_iter()
-            .map(hyper::Server::from_tcp)
+            .map(|s: std::net::TcpListener| {
+                s.set_nonblocking(true).expect("nonblocking");
+                s
+            })
+            .map(tokio::net::TcpListener::from_std)
             .collect::<Result<Vec<_>, _>>()?
     } else {
-        config
-            .listen
-            .iter()
-            .map(hyper::Server::try_bind)
+        future::join_all(config.listen.iter().map(tokio::net::TcpListener::bind))
+            .await
+            .into_iter()
             .collect::<Result<Vec<_>, _>>()?
     };
-    let server: Vec<_> = server
+
+    let addrs = listeners
+        .iter()
+        .map(|k| k.local_addr())
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let listeners = listeners
         .into_iter()
-        .map(|s| s.tcp_keepalive(config.server_tcp_keepalive.time()))
-        .map(|s| s.tcp_keepalive_interval(config.server_tcp_keepalive.time()))
-        .map(|s| s.tcp_keepalive_retries(config.server_tcp_keepalive.retries()))
-        .map({
-            let s = session.clone();
-            move |k| {
-                let s = s.clone();
-                k.serve(s)
-            }
-        })
-        .collect();
+        .map(TcpListenerStream::new)
+        .collect::<Vec<_>>();
 
-    let addrs: Vec<_> = server.iter().map(|k| k.local_addr()).collect();
-    let shutdown_token = CancellationToken::new();
-    let server: FuturesUnordered<_> = server
-        .into_iter()
-        .map({
-            let shutdown = shutdown_token.clone();
-            move |k| {
-                let shutdown = shutdown.clone();
-                k.with_graceful_shutdown(async move { shutdown.cancelled().await })
-            }
-        })
-        .collect();
+    let listeners = stream::select_all(listeners);
+    let (server, control) = Proxy::new(listeners, context.clone());
 
-    let timeout_token = CancellationToken::new();
+    tracing::info!(listening=?addrs, pac_file=?config.pac_file, "starting");
 
-    #[cfg(unix)]
-    {
-        use tokio::signal::unix::{signal, SignalKind};
-        let graceful_shutdown_timeout = config.graceful_shutdown_timeout;
-        let mut sigint = signal(SignalKind::interrupt())?;
-        let mut sigterm = signal(SignalKind::terminate())?;
-        tokio::spawn({
-            let timeout_token = timeout_token.clone();
-            let shutdown_token = shutdown_token.clone();
-            async move {
-                tokio::select! {
-                    _ = sigint.recv() => {},
-                    _ = sigterm.recv() => {},
-                }
-                tracing::info!("triggering graceful shutdown");
-                shutdown_token.cancel();
-                tokio::time::sleep(graceful_shutdown_timeout).await;
-                tracing::info!("graceful shutdown timeout");
-                timeout_token.cancel();
-            }
-        });
-    }
-    #[cfg(not(unix))]
-    {
-        let graceful_shutdown_timeout = config.graceful_shutdown_timeout;
-        tokio::spawn({
-            let timeout_token = timeout_token.clone();
-            let shutdown_token = shutdown_token.clone();
-            async move {
-                tokio::signal::ctrl_c().await.expect("ctrl_c event");
-                tracing::info!("triggering graceful shutdown");
-                shutdown_token.cancel();
-                tokio::time::sleep(graceful_shutdown_timeout).await;
-                tracing::info!("graceful shutdown timeout");
-                timeout_token.cancel();
-            }
-        });
-    }
-
-    #[cfg(unix)]
-    {
-        use tokio::signal::unix::{signal, SignalKind};
-        let mut sighup = signal(SignalKind::hangup())?;
-        let mut sigusr1 = signal(SignalKind::user_defined1())?;
-        let config = config.clone();
-        tokio::spawn(async move {
-            loop {
-                tokio::select! {
-                    _ = sighup.recv() => {
-                        session.pac_file(&config.pac_file).await.ok();
-                    },
-                    _ = sigusr1.recv() => { session.pac_file(&None).await.ok();},
-                }
-            }
-        });
-    }
-
-    tracing::info!(listening=?addrs, authenticator=%auth, pac_file=?config.pac_file, "starting");
-    tokio::pin!(server);
-    tokio::pin!(timeout_token);
-    loop {
+    // let server = std::pin::pin!(server);
+    let server = tokio::spawn({
+        let mut server = server;
+        async move { server.run().await }
+    });
+    while !control.is_shutdown() {
         tokio::select! {
-            s = server.next() => {
-                if let Some(s) = s{
-                    if let Err(cause) = s {
-                        tracing::error!(%cause, "fatal server error");
-                    }
-                } else {
-                    break;
-                }
+            _ = reload_trigger() => {
+                context.load_pac_file(&config.pac_file).await?;
             },
-            _ = timeout_token.cancelled() => break,
+            _ = direct_mode_trigger() => {
+                context.load_pac_file(&None).await?;
+            },
+            _ = shutdown_trigger() => {
+                tracing::info!("shutdown requested");
+                control.shutdown();
+                break;
+            }
         }
     }
+
+    let wait = control
+        .wait_with_timeout(config.graceful_shutdown_timeout)
+        .await;
+
+    if let Err(cause) = server.await {
+        tracing::warn!(%cause, "clean shutdown failed")
+    }
+
+    match wait {
+        Ok(_) => tracing::info!("shutdown completed"),
+        Err(cause) => tracing::warn!(%cause, "clean shutdown failed"),
+    }
+
     Ok(())
+}
+
+#[cfg(unix)]
+async fn reload_trigger() {
+    use tokio::signal::unix::{signal, SignalKind};
+    let sighup = signal(SignalKind::hangup());
+    if let Ok(mut sighup) = sighup {
+        sighup.recv().await;
+    } else {
+        future::pending::<Option<()>>().await;
+    }
+}
+
+#[cfg(not(unix))]
+async fn reload_trigger() {
+    future::pending().await
+}
+
+#[cfg(unix)]
+async fn direct_mode_trigger() {
+    use tokio::signal::unix::{signal, SignalKind};
+    let sigusr1 = signal(SignalKind::user_defined1());
+    if let Ok(mut sigusr1) = sigusr1 {
+        sigusr1.recv().await;
+    } else {
+        future::pending::<Option<()>>().await;
+    }
+}
+
+#[cfg(not(unix))]
+async fn direct_mode_trigger() {
+    future::pending().await
+}
+
+#[cfg(unix)]
+async fn shutdown_trigger() {
+    use tokio::signal::unix::{signal, SignalKind};
+    let signals = vec![
+        signal(SignalKind::interrupt()),
+        signal(SignalKind::terminate()),
+    ];
+    let signals = signals
+        .into_iter()
+        .filter_map(Result::ok)
+        .map(|mut s| Box::pin(async move { s.recv().await }))
+        .collect::<Vec<_>>();
+    let _ = future::select_all(signals).await;
+}
+
+#[cfg(not(unix))]
+async fn shutdown_trigger() {
+    tokio::signal::ctrl_c().await.expect("ctrl_c event");
 }

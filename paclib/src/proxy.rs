@@ -46,10 +46,23 @@ impl Proxies {
     }
 }
 
+impl IntoIterator for Proxies {
+    type Item = ProxyOrDirect;
+
+    type IntoIter = std::vec::IntoIter<ProxyOrDirect>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
 impl fmt::Display for Proxies {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for el in &self.0 {
-            write!(f, "{el};")?;
+        for (i, el) in self.0.iter().enumerate() {
+            if i != 0 {
+                f.write_str("; ")?;
+            }
+            el.fmt(f)?;
         }
         Ok(())
     }
@@ -122,7 +135,7 @@ impl fmt::Display for Proxy {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Self::Http(ref endpoint) => {
-                f.write_str("PROXY ")?;
+                f.write_str("HTTP ")?;
                 f.write_str(&endpoint.to_string())
             }
             Self::Https(ref endpoint) => {

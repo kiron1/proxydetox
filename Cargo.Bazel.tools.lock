@@ -1,5 +1,5 @@
 {
-  "checksum": "c50af686d2da91cb758c4d78c41f5fac044f4d70dee7c9ad66be28c1bd867db9",
+  "checksum": "ef3ee0f5eba6e8137483d6388c99bbe1855dc291974319d65cc987bfb0c43d84",
   "crates": {
     "anstyle 1.0.4": {
       "name": "anstyle",
@@ -180,7 +180,7 @@
               "target": "heck"
             },
             {
-              "id": "proc-macro2 1.0.70",
+              "id": "proc-macro2 1.0.71",
               "target": "proc_macro2"
             },
             {
@@ -188,7 +188,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 2.0.41",
+              "id": "syn 2.0.42",
               "target": "syn"
             }
           ],
@@ -449,13 +449,13 @@
       },
       "license": "Unlicense OR MIT"
     },
-    "proc-macro2 1.0.70": {
+    "proc-macro2 1.0.71": {
       "name": "proc-macro2",
-      "version": "1.0.70",
+      "version": "1.0.71",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/proc-macro2/1.0.70/download",
-          "sha256": "39278fbbf5fb4f646ce651690877f89d1c5811a3d4acb27700c1cb3cdb78fd3b"
+          "url": "https://crates.io/api/v1/crates/proc-macro2/1.0.71/download",
+          "sha256": "75cb1540fadbd5b8fbccc4dddad2734eba435053f725621c070711a14bb5f4b8"
         }
       },
       "targets": [
@@ -493,7 +493,7 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.70",
+              "id": "proc-macro2 1.0.71",
               "target": "build_script_build"
             },
             {
@@ -504,7 +504,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "1.0.70"
+        "version": "1.0.71"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -548,7 +548,7 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.70",
+              "id": "proc-macro2 1.0.71",
               "target": "proc_macro2"
             }
           ],
@@ -658,7 +658,7 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.70",
+              "id": "proc-macro2 1.0.71",
               "target": "proc_macro2"
             },
             {
@@ -666,7 +666,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 2.0.41",
+              "id": "syn 2.0.42",
               "target": "syn"
             }
           ],
@@ -677,13 +677,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "serde_spanned 0.6.4": {
+    "serde_spanned 0.6.5": {
       "name": "serde_spanned",
-      "version": "0.6.4",
+      "version": "0.6.5",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/serde_spanned/0.6.4/download",
-          "sha256": "12022b835073e5b11e90a14f86838ceb1c8fb0325b72416845c487ac0fa95e80"
+          "url": "https://crates.io/api/v1/crates/serde_spanned/0.6.5/download",
+          "sha256": "eb3622f419d1296904700073ea6cc23ad690adbd66f13ea683df73298736f0c1"
         }
       },
       "targets": [
@@ -718,17 +718,17 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.6.4"
+        "version": "0.6.5"
       },
       "license": "MIT OR Apache-2.0"
     },
-    "syn 2.0.41": {
+    "syn 2.0.42": {
       "name": "syn",
-      "version": "2.0.41",
+      "version": "2.0.42",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/syn/2.0.41/download",
-          "sha256": "44c8b28c477cc3bf0e7966561e3460130e1255f7a1cf71931075f1c5e7a7e269"
+          "url": "https://crates.io/api/v1/crates/syn/2.0.42/download",
+          "sha256": "5b7d0a2c048d661a1a59fcd7355baa232f7ed34e0ee4df2eef3c1c1c0d3852d8"
         }
       },
       "targets": [
@@ -763,7 +763,7 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.70",
+              "id": "proc-macro2 1.0.71",
               "target": "proc_macro2"
             },
             {
@@ -778,7 +778,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "2.0.41"
+        "version": "2.0.42"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -822,7 +822,7 @@
               "target": "serde"
             },
             {
-              "id": "serde_spanned 0.6.4",
+              "id": "serde_spanned 0.6.5",
               "target": "serde_spanned"
             },
             {
@@ -929,7 +929,7 @@
               "target": "serde"
             },
             {
-              "id": "serde_spanned 0.6.4",
+              "id": "serde_spanned 0.6.5",
               "target": "serde_spanned"
             },
             {
@@ -937,7 +937,7 @@
               "target": "toml_datetime"
             },
             {
-              "id": "winnow 0.5.28",
+              "id": "winnow 0.5.30",
               "target": "winnow"
             }
           ],
@@ -978,13 +978,13 @@
       },
       "license": "(MIT OR Apache-2.0) AND Unicode-DFS-2016"
     },
-    "winnow 0.5.28": {
+    "winnow 0.5.30": {
       "name": "winnow",
-      "version": "0.5.28",
+      "version": "0.5.30",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/winnow/0.5.28/download",
-          "sha256": "6c830786f7720c2fd27a1a0e27a709dbd3c4d009b56d098fc742d4f4eab91fe2"
+          "url": "https://crates.io/api/v1/crates/winnow/0.5.30/download",
+          "sha256": "9b5c3db89721d50d0e2a673f5043fc4722f76dcc352d7b1ab8b8288bed4ed2c5"
         }
       },
       "targets": [
@@ -1012,7 +1012,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.5.28"
+        "version": "0.5.30"
       },
       "license": "MIT"
     }

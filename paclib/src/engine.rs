@@ -67,7 +67,7 @@ impl<'a> Engine<'a> {
         Ok(())
     }
 
-    #[instrument(level = "debug", skip(self), ret, fields(duration))]
+    #[instrument(level = "debug", skip(self), err, ret(Display), fields(duration))]
     pub fn find_proxy(&mut self, uri: &Uri) -> Result<Proxies, FindProxyError> {
         let host = uri.host().ok_or(FindProxyError::NoHost)?;
 
@@ -85,18 +85,24 @@ impl<'a> Engine<'a> {
                     .call(&JsValue::Null, &[uri, host], &mut self.js)
                     .map_err(|e| FindProxyError::InternalError(e.to_string()))
             }
-            _ => Err(FindProxyError::InvalidResult)?,
+            _ => Err(FindProxyError::FindProxyForURLMissing)?,
         };
         tracing::Span::current().record("duration", debug(&start.elapsed()));
-        let proxy = proxy?;
 
+        let proxy = proxy?;
         match &proxy {
-            JsValue::String(proxies) => proxies
-                .to_std_string()
-                .unwrap_or_default()
-                .parse::<Proxies>()
-                .map_err(|_| FindProxyError::InvalidResult),
-            _ => Err(FindProxyError::InvalidResult),
+            JsValue::String(proxies) => {
+                let proxies = proxies
+                    .to_std_string()
+                    .map_err(|_| FindProxyError::EmptyResult)?;
+                proxies
+                    .parse::<Proxies>()
+                    .map_err(|_| FindProxyError::InvalidResult(proxies))
+            }
+            _ => Err(FindProxyError::InvalidResultType(format!(
+                "{:?}",
+                proxy.get_type()
+            ))),
         }
     }
 }
