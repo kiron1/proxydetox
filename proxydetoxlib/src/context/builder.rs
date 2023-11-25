@@ -1,13 +1,10 @@
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
-
+use super::Context;
+use detox_auth::AuthenticatorFactory;
 use detox_net::{PathOrUri, TcpKeepAlive};
-use tokio::sync::broadcast;
-
-use super::Session;
-use super::Shared;
-use crate::auth::AuthenticatorFactory;
 use paclib::Evaluator;
+use std::sync::Arc;
+use std::time::Duration;
+use tokio::sync::broadcast;
 
 #[derive(Debug, Default)]
 pub struct Builder {
@@ -72,7 +69,7 @@ impl Builder {
         self
     }
 
-    pub fn build(self) -> Session {
+    pub fn build(self) -> Arc<Context> {
         let auth = self.auth.unwrap_or(AuthenticatorFactory::None);
         let eval = if let Some(pac) = self.pac_script {
             Evaluator::with_pac_script(&pac).unwrap_or_default()
@@ -91,31 +88,32 @@ impl Builder {
                 }
             }
         });
-        let session = Session(Arc::new(Shared {
+        let context = Context {
             eval,
-            direct_client: Mutex::new(Default::default()),
-            proxy_clients: Default::default(),
             auth,
             always_use_connect: self.always_use_connect,
+            race_connect: false, // TODO: make it a config option
+            parallel_connect: 1, // TODO: make it a config option
             direct_fallback: self.direct_fallback,
             tls_config,
             connect_timeout: self.connect_timeout.unwrap_or(Duration::new(30, 0)),
             client_tcp_keepalive: self.client_tcp_keepalive,
             accesslog_tx,
-        }));
+        };
+        let context = Arc::new(context);
 
         if self.pac_file.is_some() {
             tokio::spawn({
-                let session = session.clone();
+                let context = context.clone();
                 async move {
-                    if let Err(cause) = session.pac_file(&self.pac_file).await {
+                    if let Err(cause) = context.load_pac_file(&self.pac_file).await {
                         tracing::error!(%cause, "failed to load PAC from URI");
                     }
                 }
             });
         }
 
-        session
+        context
     }
 }
 

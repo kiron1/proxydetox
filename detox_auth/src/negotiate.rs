@@ -27,10 +27,7 @@ impl NegotiateAuthenticator {
 }
 
 impl super::Authenticator for NegotiateAuthenticator {
-    fn step(
-        &self,
-        _last_headers: Option<hyper::HeaderMap>,
-    ) -> crate::auth::Result<hyper::HeaderMap> {
+    fn step(&self, _last_headers: Option<hyper::HeaderMap>) -> crate::Result<hyper::HeaderMap> {
         let mut headers = hyper::HeaderMap::new();
         // let challenge = last_headers.map(|h| server_token(&h)).flatten();
         // let challenge = challenge.as_deref();

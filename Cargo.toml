@@ -8,25 +8,22 @@ strip = true
 [workspace]
 resolver = "2"
 members = [
+    "detox_auth",
+    "detox_futures",
+    "detox_hyper",
     "detox_net",
     "dnsdetox",
     "paceval",
     "paclib",
-    "proxy_client",
     "proxydetox",
     "proxydetoxlib",
     "spnego",
+]
+default-members = [
+    "paceval",
+    "proxydetox",
 ]
 exclude = ["tools"]
-default-members = [
-    "detox_net",
-    "paceval",
-    "paclib",
-    "proxy_client",
-    "proxydetox",
-    "proxydetoxlib",
-    "spnego",
-]
 
 [workspace.package]
 version = "0.7.8"
@@ -41,20 +38,24 @@ bytes = "1.1"
 chrono = "0.4"
 clap = { version = "4.1", features = ["derive", "env"] }
 default-net = { version = "0.17" }
+detox_auth = { path = "detox_auth" }
+detox_futures = { path = "detox_futures" }
+detox_hyper = { path = "detox_hyper" }
 detox_net = { path = "detox_net" }
 dirs = "5.0"
-#futures-util = "0.3"
-futures-util = { version = "0.3", default-features = false }
+futures-util = { version = "0.3", features = [ "alloc" ], default-features = false }
 gc = { version = "0.5", features = ["derive"] }
-http = "0.2"
-# hyper = { version = "0.14", features = ["http1", "http2", "client", "server", "stream", "tcp", "deprecated", "backports"] }
-hyper = { version = "0.14", features = ["http1", "client", "server", "stream", "runtime", "tcp", "deprecated", "backports"] }
+http = "1"
+http-body = "1"
+http-body-util = "0.1"
+hyper = { version = "1.0", features = ["http1", "client", "server"] }
 hyper-rustls = "0.24"
+hyper-util = { version = "0.1", features = ["tokio"] }
 lazy_static = "1.4"
 libc = "0.2"
 netrc = { version = "0.4" }
 paclib = { path = "paclib" }
-proxy_client = { path = "proxy_client" }
+pin-project = "1"
 proxydetoxlib = { path = "proxydetoxlib" }
 regex = "1.5"
 rustls = "0.21"
@@ -65,14 +66,12 @@ spnego = { path = "spnego" }
 thiserror = "1.0"
 tokio = { version = "1", features = ["io-util", "rt-multi-thread", "net", "macros", "sync", "signal"] }
 tokio-rustls = "0.24"
-tokio-stream = { version = "0.1", features = ["sync"] }
+tokio-stream = { version = "0.1", features = ["net", "sync"] }
 tokio-util = "0.7"
-tower = { version = "0.4", features = ["util"] }
 tracing = "0.1"
 tracing-attributes = "0.1"
 tracing-futures = "0.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-webpki-roots = "0.22"
 
 [patch.crates-io]
 hyper = { git = "https://github.com/kiron1/hyper", rev = "b7118433fc8e7f984f6fc3d3b0d794b9bdd517b5" }

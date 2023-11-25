@@ -3,51 +3,53 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::task::JoinHandle;
+use tokio_util::sync::CancellationToken;
 
 pub struct Server {
     spawn_handle: JoinHandle<()>,
-    shutdown_tx: tokio::sync::oneshot::Sender<()>,
+    shutdown_token: CancellationToken,
     local_addr: SocketAddr,
 }
 
 impl Server {
-    pub(crate) fn new<Ret>(handler: impl Fn(TcpStream) -> Ret + Send + Sync + 'static) -> Self
+    pub(crate) async fn new<Ret>(handler: impl Fn(TcpStream) -> Ret + Send + Sync + 'static) -> Self
     where
         Ret: Future + Send + Sync + 'static,
     {
         let handler = Arc::new(handler);
-        let local_addr = SocketAddr::from(([127, 0, 0, 1], 0));
-        let listener = std::net::TcpListener::bind(local_addr).unwrap();
+        let listener = TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], 0)))
+            .await
+            .unwrap();
         let local_addr = listener.local_addr().unwrap();
-        let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();
+        let shutdown_token = CancellationToken::new();
 
-        let spawn_handle = tokio::spawn(async move {
-            let listener = TcpListener::from_std(listener).unwrap();
-            let accept = async move {
-                // loop {
-                let (stream, _addr) = listener.accept().await.unwrap();
+        let spawn_handle = tokio::spawn({
+            let handler = handler.clone();
+            let shutdown_token = shutdown_token.clone();
 
-                let handler = Arc::clone(&handler);
+            async move {
+                while !shutdown_token.is_cancelled() {
+                    tokio::select! {
+                        stream = listener.accept() =>  {
+                            let (stream, _addr) = stream.unwrap();
+                            tokio::spawn({
+                                let handler = handler.clone();
+                                async move {
+                                    handler(stream).await;
 
-                tokio::spawn(async move {
-                    stream.set_nodelay(true).unwrap();
-                    handler(stream).await;
-                });
-                tokio::task::yield_now().await;
-                // }
-            };
-
-            tokio::select! {
-                _ = accept =>  {},
-                _ = shutdown_rx => {
-                    tracing::debug!("got shutdown rx");
-                },
-            };
+                            }});
+                        },
+                        _ = shutdown_token.cancelled() => {
+                            tracing::debug!("got shutdown rx");
+                        },
+                    };
+                }
+            }
         });
 
         Self {
             spawn_handle,
-            shutdown_tx,
+            shutdown_token,
             local_addr,
         }
     }
@@ -67,7 +69,7 @@ impl Server {
 
     pub(crate) async fn shutdown(self) {
         tracing::trace!("shutdown");
-        self.shutdown_tx.send(()).ok();
+        self.shutdown_token.cancel();
         self.spawn_handle.await.ok();
     }
 }

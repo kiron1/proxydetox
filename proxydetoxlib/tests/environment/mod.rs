@@ -1,26 +1,37 @@
 #![allow(dead_code)]
-mod httpd;
+pub mod httpd;
 pub mod tcp;
 
-use std::{io::Cursor, net::SocketAddr};
+use std::{
+    io::{Cursor, Read},
+    net::SocketAddr,
+};
 
-use hyper::Body;
-use tokio::{net::TcpStream, sync::oneshot, task};
+use bytes::Buf;
+use http::{header::CONNECTION, HeaderMap, HeaderValue, StatusCode};
+use http_body_util::BodyExt;
+use hyper_util::rt::TokioIo;
+use tokio::{
+    net::{TcpListener, TcpStream},
+    task,
+};
 
-use proxydetoxlib::auth::{netrc, AuthenticatorFactory};
+use detox_auth::{netrc, AuthenticatorFactory};
 
-#[allow(unused_imports)]
-pub use httpd::Server;
+use tokio_stream::wrappers::TcpListenerStream;
+use tokio_util::sync::CancellationToken;
+
+pub type Body = http_body_util::combinators::BoxBody<bytes::Bytes, hyper::Error>;
 
 pub(crate) struct Environment {
     server_handle: task::JoinHandle<()>,
-    shutdown_tx: oneshot::Sender<()>,
+    shutdown_token: CancellationToken,
     local_addr: SocketAddr,
 }
 
 impl Environment {
-    pub(crate) fn new() -> Self {
-        Self::builder().build()
+    pub(crate) async fn new() -> Self {
+        Self::builder().build().await
     }
 
     pub(crate) fn builder() -> Builder {
@@ -43,38 +54,57 @@ impl Environment {
             .authority(self.local_addr.to_string())
     }
 
-    pub(crate) async fn send(&self, request: http::Request<Body>) -> http::Response<Body> {
+    pub(crate) async fn send(
+        &self,
+        mut request: http::Request<Body>,
+    ) -> http::Response<hyper::body::Incoming> {
         let stream = TcpStream::connect(self.proxy_addr()).await.unwrap();
         let (mut request_sender, connection) =
-            hyper::client::conn::http1::handshake(stream).await.unwrap();
+            hyper::client::conn::http1::handshake(TokioIo::new(stream))
+                .await
+                .unwrap();
 
-        // spawn a task to poll the connection and drive the HTTP state
-        let _task = tokio::spawn(async move {
-            connection.await.ok();
-        });
+        let h = request
+            .headers_mut()
+            .insert(CONNECTION, HeaderValue::from_static("close"));
+        assert!(h.is_none());
 
-        request_sender.send_request(request).await.unwrap()
+        let (response, connection) = tokio::join!(request_sender.send_request(request), connection);
+        let _ = connection.unwrap();
+        response.unwrap()
     }
 
     pub(crate) async fn connect(
         &self,
-        request: http::Request<Body>,
-    ) -> (http::Response<Body>, hyper::body::Bytes, TcpStream) {
+        mut request: http::Request<Body>,
+    ) -> (
+        StatusCode,
+        HeaderMap,
+        hyper::Result<hyper::upgrade::Upgraded>,
+    ) {
+        request
+            .headers_mut()
+            .insert(CONNECTION, HeaderValue::from_static("close"));
         let stream = TcpStream::connect(self.proxy_addr()).await.unwrap();
-        stream.set_nodelay(true).unwrap();
         let (mut request_sender, connection) =
-            hyper::client::conn::http1::handshake(stream).await.unwrap();
+            hyper::client::conn::http1::handshake(TokioIo::new(stream))
+                .await
+                .unwrap();
 
-        // spawn a task to poll the connection and drive the HTTP state
-        let parts = tokio::spawn(async move { connection.without_shutdown().await.unwrap() });
+        let send_request = async move {
+            let response = request_sender.send_request(request).await.unwrap();
+            let status = response.status();
+            let headers = response.headers().clone();
+            let upgraded = hyper::upgrade::on(response).await;
+            (status, headers, upgraded)
+        };
+        let (response, _connection) = tokio::join!(send_request, connection.with_upgrades());
 
-        let response = request_sender.send_request(request).await.unwrap();
-        let parts = parts.await.unwrap();
-        (response, parts.read_buf, parts.io)
+        response
     }
 
     pub(crate) async fn shutdown(self) {
-        self.shutdown_tx.send(()).unwrap();
+        self.shutdown_token.cancel();
         self.server_handle.await.ok();
     }
 }
@@ -97,13 +127,13 @@ impl Builder {
         self
     }
 
-    pub(crate) fn build(self) -> Environment {
+    pub(crate) async fn build(self) -> Environment {
         let auth = self
             .netrc_content
-            .map(|x| netrc::Store::new(Cursor::new(x)).unwrap())
+            .map(|n| netrc::Store::new(Cursor::new(n)).unwrap())
             .map(AuthenticatorFactory::basic);
 
-        let session = proxydetoxlib::Session::builder()
+        let context = proxydetoxlib::Context::builder()
             .pac_script(
                 self.pac_script
                     .unwrap_or_else(|| proxydetoxlib::DEFAULT_PAC_SCRIPT.to_string()),
@@ -112,20 +142,53 @@ impl Builder {
             .always_use_connect(self.always_use_connect)
             .build();
 
-        let local_addr = SocketAddr::from(([127, 0, 0, 1], 0));
-        let server = hyper::Server::bind(&local_addr).serve(session);
-        let local_addr = server.local_addr();
-        let (shutdown_tx, shutdown_rx) = oneshot::channel();
-        let server = server.with_graceful_shutdown(async {
-            shutdown_rx.await.ok();
-        });
+        let listener = TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], 0)))
+            .await
+            .expect("bind");
+        let local_addr = listener.local_addr().expect("local_addr");
+        let listener = TcpListenerStream::new(listener);
+        let shutdown_token = CancellationToken::new();
 
-        let server_handle = tokio::spawn(async { server.await.unwrap() });
+        let server_handle = tokio::spawn({
+            let shutdown_token = shutdown_token.clone();
+            async move {
+                let (server, control) = proxydetoxlib::server::Proxy::new(listener, context);
+
+                let mut server = std::pin::pin!(server);
+                tokio::select! {
+                    s = server.run() => {
+                        s.unwrap();
+                    },
+                    _ = shutdown_token.cancelled() => {
+                        control.shutdown();
+                    }
+                }
+            }
+        });
 
         Environment {
             server_handle,
-            shutdown_tx,
+            shutdown_token,
             local_addr,
         }
     }
+}
+
+pub(crate) fn empty() -> Body {
+    http_body_util::Empty::new()
+        .map_err(|never| match never {})
+        .boxed()
+}
+
+pub(crate) fn full<T: Into<bytes::Bytes>>(chunk: T) -> Body {
+    http_body_util::Full::new(chunk.into())
+        .map_err(|never| match never {})
+        .boxed()
+}
+
+pub(crate) async fn read_to_string(body: hyper::body::Incoming) -> String {
+    let body = body.collect().await.expect("receive body").aggregate();
+    let mut data = Vec::new();
+    body.reader().read_to_end(&mut data).expect("read_to_end");
+    String::from_utf8(data).expect("UTF-8 data")
 }

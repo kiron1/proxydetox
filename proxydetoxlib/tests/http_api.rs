@@ -1,18 +1,20 @@
 mod environment;
 
+use std::io::Read;
+
 use crate::environment::Environment;
+use bytes::Buf;
 use http::{
     header::{CONTENT_TYPE, HOST},
     Request,
 };
-use hyper::Body;
-use proxydetoxlib::net::read_to_string;
+use http_body_util::BodyExt;
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn api_get_request() {
-    let env = Environment::new();
+    let env = Environment::new().await;
 
-    let req = Request::get("/").body(Body::empty()).unwrap();
+    let req = Request::get("/").body(crate::environment::empty()).unwrap();
 
     let resp = env.send(req).await;
 
@@ -21,12 +23,12 @@ async fn api_get_request() {
     env.shutdown().await;
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn api_invalid_request() {
-    let env = Environment::new();
+    let env = Environment::new().await;
 
     let req = Request::options(env.proxy_uri().path_and_query("/").build().unwrap())
-        .body(Body::empty())
+        .body(crate::environment::empty())
         .unwrap();
 
     let resp = env.send(req).await;
@@ -36,13 +38,13 @@ async fn api_invalid_request() {
     env.shutdown().await;
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn api_get_proxy_pac() {
-    let env = Environment::new();
+    let env = Environment::new().await;
 
     let req = Request::get("/proxy.pac")
         .header(HOST, env.proxy_addr().to_string())
-        .body(Body::empty())
+        .body(crate::environment::empty())
         .unwrap();
 
     let resp = env.send(req).await;
@@ -54,7 +56,15 @@ async fn api_get_proxy_pac() {
             .and_then(|v| v.to_str().ok()),
         Some("application/x-ns-proxy-autoconfig")
     );
-    let body = read_to_string(resp).await.unwrap();
+    let body = resp
+        .into_body()
+        .collect()
+        .await
+        .expect("receive body")
+        .aggregate();
+    let mut data = Vec::new();
+    body.reader().read_to_end(&mut data).expect("read_to_end");
+    let body = String::from_utf8(data).expect("UTF-8 data");
     assert_eq!(
         body,
         format!(

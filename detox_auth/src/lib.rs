@@ -14,6 +14,7 @@ pub trait Authenticator: Send + Sync {
     fn step(&self, last_headers: Option<hyper::HeaderMap>) -> Result<hyper::HeaderMap>;
 }
 
+#[derive(Debug)]
 pub struct NoneAuthenticator;
 
 impl Authenticator for NoneAuthenticator {
@@ -31,13 +32,17 @@ pub enum AuthenticatorFactory {
 }
 
 impl AuthenticatorFactory {
+    pub fn none() -> Self {
+        Self::None
+    }
+
     pub fn basic(store: netrc::Store) -> Self {
-        AuthenticatorFactory::Basic(store)
+        Self::Basic(store)
     }
 
     #[cfg(feature = "negotiate")]
     pub fn negotiate(hosts: Vec<String>) -> Self {
-        AuthenticatorFactory::Negotiate(hosts)
+        Self::Negotiate(hosts)
     }
 
     pub fn make(&self, proxy_fqdn: &str) -> Result<Box<dyn Authenticator>> {
