@@ -2,6 +2,26 @@
 
 set -eu
 
+raw=false
+
+while getopts "r" o; do
+  case "${o}" in
+  r)
+    raw=true
+    ;;
+  *)
+    echo "fatal error: invalid arguments"
+    exit 1
+    ;;
+  esac
+done
+shift $((OPTIND - 1))
+
 query=$(printf '.packages[] | {name, version} | select(.name == "%s") | .version' "${1:-proxydetox}")
 version=$(cargo metadata --format-version 1 --no-deps --offline --quiet | jq -r "${query}")
-echo "version=${version}" >> "${GITHUB_OUTPUT:-/dev/stdout}"
+
+if "${raw}"; then
+  echo "${version}"
+else
+  echo "version=${version}" >> "${GITHUB_OUTPUT:-/dev/stdout}"
+fi

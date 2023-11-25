@@ -19,6 +19,11 @@ default-members = [
     "spnego",
 ]
 
+[workspace.package]
+version = "0.7.3"
+edition = "2021"
+homepage = "https://proxydetox.colorto.cc/"
+
 [workspace.dependencies]
 base64 = "0.21"
 boa_engine = { version = "0.17", features = ["annex-b"] }
