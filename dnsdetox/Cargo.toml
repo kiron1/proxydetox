@@ -7,16 +7,20 @@ edition = "2021"
 
 [dependencies]
 clap.workspace = true
+detox_auth.workspace = true
+detox_hyper.workspace = true
+detox_net.workspace = true
 dirs.workspace = true
 dns-parser = "0.8"
 env_logger = "0.11"
 futures-util.workspace = true
 http.workspace = true
+http-body.workspace = true
+http-body-util.workspace = true
 hyper.workspace = true
 hyper-rustls.workspace = true
 log = "0.4"
 paclib.workspace = true
-proxy_client.workspace = true
 rustls.workspace = true
 rustls-native-certs.workspace = true
 thiserror.workspace = true

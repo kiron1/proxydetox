@@ -1,60 +1,62 @@
-use hyper::body::Buf;
-use hyper::{body::Bytes, Body};
-use hyper_rustls::HttpsConnector;
+use detox_auth::AuthenticatorFactory;
+use detox_hyper::conn::Connection;
+use detox_net::HostAndPort;
+use http::StatusCode;
+use http_body_util::{BodyExt, Full};
+use hyper::body::{Buf, Bytes};
 use paclib::Proxy;
-use proxy_client::HttpConnectConnector;
+use std::future::IntoFuture;
 use std::io::Read;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::timeout;
-use tokio_rustls::TlsConnector;
 
 pub struct Client {
-    remote_addr: http::Uri,
-    client: hyper::Client<HttpsConnector<HttpConnectConnector>, Body>,
+    remote_uri: http::Uri,
+    proxy: Proxy,
     timeout: Duration,
 }
 
 impl Client {
     pub fn new(remote_uri: http::Uri, proxy: Proxy) -> Self {
-        let tls_config = default_tls_config();
-        let http_proxy = HttpConnectConnector::new(proxy, TlsConnector::from(tls_config));
-        let https = hyper_rustls::HttpsConnectorBuilder::new()
-            .with_native_roots()
-            .https_only()
-            .enable_http1()
-            .wrap_connector(http_proxy);
-        let client = hyper::Client::builder().build::<_, hyper::Body>(https);
         let timeout = Duration::from_millis(1500);
 
         Self {
-            remote_addr: remote_uri,
-            client,
+            remote_uri,
+            proxy,
             timeout,
         }
     }
+
     pub async fn request(&self, buf: Vec<u8>) -> std::result::Result<Vec<u8>, crate::error::Error> {
         let buf = Bytes::from(buf);
 
-        let req = http::Request::post(self.remote_addr.clone())
-            .header(http::header::ACCEPT, "application/dns-message")
-            .header(http::header::CONTENT_TYPE, "application/dns-message")
-            .body(Body::from(buf))?;
-        let resp = timeout(self.timeout, self.client.request(req)).await??;
+        let req: http::Request<http_body_util::Full<Bytes>> =
+            http::Request::post(self.remote_uri.clone())
+                .header(http::header::ACCEPT, "application/dns-message")
+                .header(http::header::CONTENT_TYPE, "application/dns-message")
+                .body(Full::from(buf))?;
 
-        let body = read_to_end(resp).await?;
+        let dst = HostAndPort::try_from_uri(&self.remote_uri)?;
+        let conn = Connection::http_tunnel(
+            self.proxy.clone(),
+            default_tls_config(),
+            AuthenticatorFactory::none(),
+            dst,
+        );
 
-        Ok(body)
+        let conn = timeout(self.timeout, conn.into_future()).await??;
+        let request_sender = conn.handshake().await?;
+        let resp = timeout(self.timeout, request_sender.send_request(req)).await??;
+        let (parts, body) = resp.into_parts();
+        if parts.status != StatusCode::OK {
+            return Err(crate::error::Error::UnexpectedHttpStatusCode(parts.status));
+        }
+        let body = body.collect().await?.aggregate();
+        let mut data = Vec::new();
+        body.reader().read_to_end(&mut data)?;
+        Ok(data)
     }
-}
-
-pub async fn read_to_end(res: http::Response<Body>) -> std::io::Result<Vec<u8>> {
-    let body = hyper::body::aggregate(res)
-        .await
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, format!("aggregate: {e}")))?;
-    let mut data = Vec::new();
-    body.reader().read_to_end(&mut data)?;
-    Ok(data)
 }
 
 fn default_tls_config() -> Arc<rustls::ClientConfig> {

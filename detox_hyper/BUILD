@@ -1,15 +1,12 @@
-load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
-    name = "proxy_client",
+    name = "detox_hyper",
     srcs = [
-        "src/http_connect_connector.rs",
-        "src/http_connect_stream.rs",
-        "src/http_proxy_connector.rs",
-        "src/http_proxy_stream.rs",
+        "src/conn.rs",
+        "src/http.rs",
         "src/lib.rs",
-        "src/stream.rs",
     ],
     aliases = aliases(),
     proc_macro_deps = all_crate_deps(
@@ -17,15 +14,17 @@ rust_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
+        "//detox_auth",
         "//detox_net",
         "//paclib",
+    ] + [
     ] + all_crate_deps(
         normal = True,
     ),
 )
 
 rust_test(
-    name = "proxy_client_test",
+    name = "detox_hyper_test",
     size = "small",
-    crate = ":proxy_client",
+    crate = ":detox_hyper",
 )

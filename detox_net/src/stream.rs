@@ -2,8 +2,6 @@ use std::io;
 use std::io::IoSlice;
 use std::pin::Pin;
 use std::task::{Context, Poll};
-
-use hyper::client::connect::{Connected, Connection};
 use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 pub use tokio_rustls::client::TlsStream;
 
@@ -84,15 +82,6 @@ impl<T: AsyncWrite + AsyncRead + Unpin> AsyncWrite for MaybeTlsStream<T> {
         match Pin::get_mut(self) {
             MaybeTlsStream::Plain(s) => Pin::new(s).poll_shutdown(cx),
             MaybeTlsStream::Tls(s) => Pin::new(s).poll_shutdown(cx),
-        }
-    }
-}
-
-impl<T: AsyncRead + AsyncWrite + Connection + Unpin> Connection for MaybeTlsStream<T> {
-    fn connected(&self) -> Connected {
-        match self {
-            MaybeTlsStream::Plain(s) => s.connected(),
-            MaybeTlsStream::Tls(s) => s.get_ref().0.connected(),
         }
     }
 }

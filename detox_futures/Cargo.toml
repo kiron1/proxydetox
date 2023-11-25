@@ -1,17 +1,12 @@
 [package]
-name = "detox_net"
-version = "0.1.5"
+name = "detox_futures"
+version = "0.0.1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-http.workspace = true
-socket2.workspace = true
-thiserror.workspace = true
 tokio.workspace = true
-tokio-rustls.workspace = true
-tracing.workspace = true
 
 [lib]
 doctest = false
