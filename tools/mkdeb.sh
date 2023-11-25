@@ -45,11 +45,11 @@ cargo install \
 sed -e "s|\${prefix}|${prefix}|" "${root}/debian/proxydetox.service" \
   >"${workdir}/lib/systemd/user/proxydetox.service"
 
-version=$(sed -n 's/^version\s*=\s*"\([0-9.]*\)"/\1/p' "${root}/proxydetox/Cargo.toml")
-echo "version=${version}" >> "${GITHUB_OUTPUT:-/dev/stdout}"
+version=$("${root}/tools/version" -r)
+echo "version=${version}" | tee -a "${GITHUB_OUTPUT:-/dev/stdout}"
 
 pkgfile=proxydetox-${version}-x86_64-${distname}.deb
-echo "pkgfile=${pkgfile}" >> "${GITHUB_OUTPUT:-/dev/stdout}"
+echo "pkgfile=${pkgfile}" | tee -a "${GITHUB_OUTPUT:-/dev/stdout}"
 
 sed -e "s/\${version}/${version}/" "${root}/debian/control" >"${workdir}/DEBIAN/control"
 for f in postinst postrm; do

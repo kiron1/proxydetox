@@ -47,10 +47,10 @@ install -v -m 0644 "${root}/pkg/macos/40-proxydetox" "${workdir}/etc/paths.d/"
 install -d "${workdir}/${prefix}/libexec/"
 install -v "${setproxy_helper}" "${workdir}/${prefix}/libexec/setproxy_helper"
 
-version=$(sed -n 's/^version[ \t]*=[ \t]*"\([0-9.]*\)"/\1/p' "${root}/proxydetox/Cargo.toml")
+version=$("${root}/tools/version" -r)
 pkgfile=proxydetox-${version}-${arch}-apple-darwin.pkg
-echo "version=${version}" >> "${GITHUB_OUTPUT:-/dev/stdout}"
-echo "pkgfile=${pkgfile}" >> "${GITHUB_OUTPUT:-/dev/stdout}"
+echo "version=${version}" | tee -a "${GITHUB_OUTPUT:-/dev/stdout}"
+echo "pkgfile=${pkgfile}" | tee -a "${GITHUB_OUTPUT:-/dev/stdout}"
 
 echo "Building ${pkgfile}"
 pkgbuild \
