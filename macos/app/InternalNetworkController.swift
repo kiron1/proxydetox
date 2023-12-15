@@ -2,7 +2,7 @@
 // https://www.apple.com/business/docs/site/Kerberos_Single_Sign_on_Extension_User_Guide.pdf
 //
 
-import AppKit
+// import AppKit
 import Foundation
 
 // import OSLog
