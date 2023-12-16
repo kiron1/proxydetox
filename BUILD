@@ -1,7 +1,11 @@
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag", "string_list_flag")
+load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
 
 exports_files(
-    [".cargo/config.toml"],
+    [
+        ".cargo/config.toml",
+        "Cargo.toml",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -39,9 +43,10 @@ platform(
     ],
 )
 
-sh_binary(
+native_binary(
     name = "current_version",
-    srcs = ["//tools:toml_get"],
+    out = "current_version",
+    src = "//tools:toml_get",
     args = [
         "-f$(location //:Cargo.toml)",
         "-nversion",
