@@ -8,13 +8,11 @@ defaults:
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
-
-# defaults:
-#   run:
-#     shell: bash
+    branches:
+      - main
 
 env:
   # https://github.com/bazelbuild/bazel/issues/3001
@@ -45,8 +43,8 @@ jobs:
         run: |
           bazel run --config=ci //:current_version | tee -a $GITHUB_OUTPUT
 
-  bazel_build_and_test:
-    name: Bazel build and test
+  bazel_test:
+    name: Bazel test
     runs-on: ${{ matrix.os }}
 
     needs: version
@@ -54,37 +52,23 @@ jobs:
     strategy:
       matrix:
         build:
-          - macos-aarch64
           - macos-x86_64
           - ubuntu-20.04
           - ubuntu-22.04
-          # - windows
+          - windows
         include:
-          - build: macos-aarch64
-            os: macos-latest
-            buildflags: --features=negotiate --config=aarch64_apple_darwin --//:version=${{ needs.version.outputs.version }}
-            dotest: false
-            pkgfile: proxydetox-${{ needs.version.outputs.version }}-aarch64-apple-darwin.pkg
           - build: macos-x86_64
             os: macos-latest
             buildflags: --features=negotiate --config=x86_64_apple_darwin --//:version=${{ needs.version.outputs.version }}
-            dotest: true
-            pkgfile: proxydetox-${{ needs.version.outputs.version }}-x86_64-apple-darwin.pkg
           - build: ubuntu-20.04
             os: ubuntu-20.04
             buildflags: --features=negotiate --//:version=${{ needs.version.outputs.version }}
-            dotest: true
-            pkgfile: proxydetox-${{ needs.version.outputs.version }}-x86_64-focal.deb
           - build: ubuntu-22.04
             os: ubuntu-22.04
             buildflags: --features=negotiate --//:version=${{ needs.version.outputs.version }}
-            dotest: true
-            pkgfile: proxydetox-${{ needs.version.outputs.version }}-x86_64-jammy.deb
-          # - build: windows
-          #   os: windows-latest
-          #   buildflags: --features=negotiate --//:version=${{ needs.version.outputs.version }}
-          #   dotest: true
-          #   pkgfile: proxydetox-${{ needs.version.outputs.version }}-x86_64-linux.zip
+          - build: windows
+            os: windows-latest
+            buildflags: --features=negotiate --//:version=${{ needs.version.outputs.version }}
 
     steps:
       - name: Git checkout with LF
@@ -101,9 +85,9 @@ jobs:
           path: |
             ~/.cache/bazel_build_cache
             ~/.cache/bazel_repo_cache
-          key: ${{ runner.os }}-bazel-${{ hashFiles('Cargo.Bazel.lock', 'WORKSPACE') }}
+          key: ${{ runner.os }}-bazel-test-${{ hashFiles('Cargo.Bazel.lock', 'WORKSPACE') }}
           restore-keys: |
-            ${{ runner.os }}-bazel-
+            ${{ runner.os }}-bazel-test-
       - name: Setup Windows Bazelrc
         # https://bazel.build/configure/windows
         run: |
@@ -114,12 +98,76 @@ jobs:
         if: startswith(matrix.os, 'ubuntu')
       - name: Run tests
         run: 'bazel test --config=ci ${{ matrix.buildflags }} "//..."'
-        if: ${{ matrix.dotest }}
+
+  bazel_build:
+    name: Bazel build and test
+    runs-on: ${{ matrix.os }}
+
+    needs: version
+
+    strategy:
+      matrix:
+        build:
+          - macos-aarch64
+          - macos-x86_64
+          - ubuntu-20.04
+          - ubuntu-22.04
+          - windows
+        include:
+          - build: macos-aarch64
+            os: macos-latest
+            buildflags: --features=negotiate --config=aarch64_apple_darwin --//:version=${{ needs.version.outputs.version }}
+            pkgfile: proxydetox-${{ needs.version.outputs.version }}-apple-darwin-aarch64.pkg
+          - build: macos-x86_64
+            os: macos-latest
+            buildflags: --features=negotiate --config=x86_64_apple_darwin --//:version=${{ needs.version.outputs.version }}
+            pkgfile: proxydetox-${{ needs.version.outputs.version }}-apple-darwin-x86_64.pkg
+          - build: ubuntu-20.04
+            os: ubuntu-20.04
+            buildflags: --features=negotiate --//:version=${{ needs.version.outputs.version }}
+            pkgfile: proxydetox-${{ needs.version.outputs.version }}-focal_amd64.deb
+          - build: ubuntu-22.04
+            os: ubuntu-22.04
+            buildflags: --features=negotiate --//:version=${{ needs.version.outputs.version }}
+            pkgfile: proxydetox-${{ needs.version.outputs.version }}-jammy_amd64.deb
+          - build: windows
+            os: windows-latest
+            buildflags: --features=negotiate --//:version=${{ needs.version.outputs.version }}
+            pkgfile: proxydetox-${{ needs.version.outputs.version }}-windows-x86_64.zip
+
+    steps:
+      - name: Git checkout with LF
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      - name: Bazel cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/bazel_build_cache
+            ~/.cache/bazel_repo_cache
+          key: ${{ runner.os }}-bazel-test-${{ hashFiles('Cargo.Bazel.lock', 'WORKSPACE') }}
+          restore-keys: |
+            ${{ runner.os }}-bazel-test-
+      - name: Setup Windows Bazelrc
+        # https://bazel.build/configure/windows
+        run: |
+          echo "startup --output_user_root=C:/tmp" > ${{ github.workspace }}\user.bazelrc
+        shell: cmd
+        if: startswith(matrix.os, 'windows')
+      - name: Install Linux dependency
+        run: sudo apt-get install libkrb5-dev
+        if: startswith(matrix.os, 'ubuntu')
       - name: Build package
         run: bazel build -c opt --config=ci ${{ matrix.buildflags }} //pkg
       - name: Query package file
         id: querypkg
         run: |
+          set -o pipefail
           BAZEL_OUT=$(bazel info --config=ci output_path)
           PKGFILE=$(bazel cquery --config=ci ${{ matrix.buildflags }} --output=files //pkg)
           printf 'pkgfile=%s/%s\n' "${BAZEL_OUT}" "${PKGFILE#bazel-out/}" | tee -a "${GITHUB_OUTPUT}"
@@ -128,57 +176,6 @@ jobs:
         with:
           name: ${{ matrix.pkgfile }}
           path: ./${{ steps.querypkg.outputs.pkgfile }}
-
-  cargo_build_and_test:
-    name: Cargo build and test
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        build:
-          - windows
-        include:
-          - build: windows
-            os: windows-latest
-            mkcmd: ./tools/mkzip.ps1
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
-      - uses: Swatinem/rust-cache@v2
-        with:
-          key: ${{ matrix.os }}
-      - name: Install Linux dependency
-        run: sudo apt-get install libkrb5-dev
-        if: startswith(matrix.os, 'ubuntu')
-      #  see https://github.com/rust-lang/rust-bindgen/issues/1797
-      - name: Install Windows dependency (LLVM)
-        uses: KyleMayes/install-llvm-action@v1.9.0
-        if: startswith(matrix.os, 'windows')
-        with:
-          version: "11.0"
-          directory: ${{ runner.temp }}/llvm
-      - name: Set LIBCLANG_PATH
-        run: echo "LIBCLANG_PATH=$((gcm clang).source -replace "clang.exe")" >> $env:GITHUB_ENV
-        if: startswith(matrix.os, 'windows')
-      - name: Run cargo test
-        run: cargo test
-      - name: Build Release Package
-        id: buildpkg
-        run: ${{ matrix.mkcmd }}
-      - name: Upload package artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ steps.buildpkg.outputs.pkgfile }}
-          path: ./${{ steps.buildpkg.outputs.pkgfile }}
 
   format_check:
     name: Rust lint
