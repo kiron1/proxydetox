@@ -2,8 +2,6 @@ load("@build_bazel_rules_apple//apple:macos.bzl", "macos_command_line_applicatio
 load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_static_library", "rust_test")
 
-exports_files(["Cargo.toml"])
-
 rust_binary(
     name = "proxydetox",
     srcs = [
@@ -42,8 +40,8 @@ rust_test(
         proc_macro = True,
     ),
     deps = [
-        "//proxydetoxlib",
         "//detox_net",
+        "//proxydetoxlib",
     ] + all_crate_deps(
         normal = True,
     ),
@@ -69,8 +67,8 @@ rust_static_library(
         "static_library",
     ],
     deps = [
-        "//proxydetoxlib",
         "//detox_net",
+        "//proxydetoxlib",
     ] + all_crate_deps(
         normal = True,
     ),

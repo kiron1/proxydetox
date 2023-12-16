@@ -30,9 +30,17 @@ pkg_variables(
 
 genrule(
     name = "version",
-    srcs = ["//proxydetox:Cargo.toml"],
+    srcs = ["//:Cargo.toml"],
     outs = ["version.txt"],
-    cmd = "$(location //tools:toml_get) -f $(location //proxydetox:Cargo.toml) package version > \"$@\"",
+    cmd = "$(location //tools:toml_get) -f $(location //:Cargo.toml) workspace package version > \"$@\"",
     tools = ["//tools:toml_get"],
     visibility = ["//pkg:__subpackages__"],
+)
+
+sh_binary(
+    name = "copy",
+    srcs = ["copy.sh"],
+    data = [":pkg"],
+    env = {"PKG": "$(location :pkg)"},
+    deps = ["@bazel_tools//tools/bash/runfiles"],
 )
