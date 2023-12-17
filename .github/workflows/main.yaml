@@ -194,8 +194,8 @@ jobs:
       - name: Build package
         run: >
           bazel build
-          -c opt
           --config=ci
+          --config=release
           --//:version=${{ needs.version.outputs.version }}
           --//:rev=${{ needs.version.outputs.rev }}
           ${{ matrix.buildflags }}
@@ -204,8 +204,8 @@ jobs:
         run: >
           bazel
           run
-          -c opt
           --config=ci
+          --config=release
           --//:version=${{ needs.version.outputs.version }}
           --//:rev=${{ needs.version.outputs.rev }}
           ${{ matrix.buildflags }}
