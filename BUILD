@@ -15,6 +15,12 @@ string_flag(
     visibility = ["//visibility:public"],
 )
 
+string_flag(
+    name = "rev", # `git rev-parse --short=10 HEAD`
+    build_setting_default = "unknown",
+    visibility = ["//visibility:public"],
+)
+
 string_list_flag(
     name = "features",
     build_setting_default = [],

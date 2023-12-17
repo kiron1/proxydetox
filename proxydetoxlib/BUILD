@@ -32,6 +32,11 @@ rust_library(
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
     ),
+    rustc_env = {
+        "CARGO_PKG_VERSION": "$(VERSION)",
+        "PROXYDETOX_BUILD_GIT_HASH": "$(REV)",
+    },
+    toolchains = ["//pkg:variables"],
     visibility = ["//visibility:public"],
     deps = [
         "//detox_net",
@@ -83,6 +88,7 @@ rust_test(
         normal_dev = True,
     ),
 )
+
 rust_test(
     name = "proxydetoxlib_http_direct_test",
     srcs = ["tests/http_direct.rs"] + env_src,
