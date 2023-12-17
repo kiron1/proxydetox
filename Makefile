@@ -1,4 +1,5 @@
 
+MDBOOK?=mdbook
 DOCSRC:=$(shell find doc/ -type f)
 PUBLICDIR:=public
 BOOKDIR:=${PUBLICDIR}/book
@@ -16,7 +17,7 @@ clean:
 
 ${BOOKDIR}/index.html: ${DOCSRC} book.toml
 	@mkdir -p "${BOOKDIR}"
-	mdbook build -d "${BOOKDIR}"
+	"${MDBOOK}" build -d "${BOOKDIR}"
 
 ${PUBLICDIR}/%: www/%
 	@install -v -m 0644 "$^" "$@"
