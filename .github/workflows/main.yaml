@@ -15,6 +15,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 env:
   # https://github.com/bazelbuild/bazel/issues/3001
@@ -227,9 +228,10 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     needs:
+      - version
       - bazel_build
       - cargo_build_and_test
-    if: github.event_name == 'push' && startswith(github.ref, 'refs/tags/')
+    if: ${{ github.event_name == 'push' && startswith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -239,7 +241,7 @@ jobs:
           name: pkg
       - name: Create Release
         run: |
-          gh release create v${{ github.event.inputs.version }} --generate-notes *.deb *.pkg *.zip
+          gh release create v${{ needs.version.outputs.version }} --generate-notes *.deb *.pkg *.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
