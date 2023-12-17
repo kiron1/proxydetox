@@ -1,5 +1,5 @@
 {
-  "checksum": "a369ba895be8305288289cab25dabae037a01447764eff2017bdcd0e74c2d350",
+  "checksum": "8145070bbed4da4163e04e400364af4de0b34970e92bc74197eba1e9bdec32c6",
   "crates": {
     "addr2line 0.21.0": {
       "name": "addr2line",
@@ -2474,9 +2474,9 @@
       },
       "license": "MIT"
     },
-    "detox_net 0.1.0": {
+    "detox_net 0.1.1": {
       "name": "detox_net",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "repository": null,
       "targets": [
         {
@@ -2516,7 +2516,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.1.0"
+        "version": "0.1.1"
       },
       "license": null
     },
@@ -2759,9 +2759,9 @@
       },
       "license": "MIT/Apache-2.0"
     },
-    "dnsdetox 0.1.0": {
+    "dnsdetox 0.1.1": {
       "name": "dnsdetox",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "repository": null,
       "targets": [
         {
@@ -2841,7 +2841,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.1.0"
+        "version": "0.1.1"
       },
       "license": null
     },
@@ -6915,9 +6915,9 @@
       },
       "license": "MIT"
     },
-    "paceval 0.1.0": {
+    "paceval 0.1.1": {
       "name": "paceval",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "repository": null,
       "targets": [],
       "library_target_name": null,
@@ -6939,13 +6939,13 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.1.0"
+        "version": "0.1.1"
       },
       "license": null
     },
-    "paclib 0.3.0": {
+    "paclib 0.3.1": {
       "name": "paclib",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "repository": null,
       "targets": [
         {
@@ -7009,7 +7009,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.3.0"
+        "version": "0.3.1"
       },
       "license": null
     },
@@ -7802,9 +7802,9 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "proxy_client 0.1.0": {
+    "proxy_client 0.1.1": {
       "name": "proxy_client",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "repository": null,
       "targets": [
         {
@@ -7860,13 +7860,13 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.1.0"
+        "version": "0.1.1"
       },
       "license": null
     },
-    "proxydetox 0.7.3": {
+    "proxydetox 0.7.4": {
       "name": "proxydetox",
-      "version": "0.7.3",
+      "version": "0.7.4",
       "repository": null,
       "targets": [],
       "library_target_name": null,
@@ -7939,13 +7939,13 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.7.3"
+        "version": "0.7.4"
       },
       "license": null
     },
-    "proxydetoxlib 0.7.3": {
+    "proxydetoxlib 0.7.4": {
       "name": "proxydetoxlib",
-      "version": "0.7.3",
+      "version": "0.7.4",
       "repository": null,
       "targets": [
         {
@@ -8026,7 +8026,7 @@
               "target": "netrc"
             },
             {
-              "id": "proxydetoxlib 0.7.3",
+              "id": "proxydetoxlib 0.7.4",
               "target": "build_script_build"
             },
             {
@@ -8091,7 +8091,7 @@
           ],
           "selects": {}
         },
-        "version": "0.7.3"
+        "version": "0.7.4"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -10132,9 +10132,9 @@
       },
       "license": "MIT"
     },
-    "spnego 0.1.0": {
+    "spnego 0.1.1": {
       "name": "spnego",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "repository": null,
       "targets": [
         {
@@ -10170,7 +10170,7 @@
           }
         },
         "edition": "2021",
-        "version": "0.1.0"
+        "version": "0.1.1"
       },
       "license": null
     },
@@ -14644,14 +14644,14 @@
   },
   "binary_crates": [],
   "workspace_members": {
-    "detox_net 0.1.0": "detox_net",
-    "dnsdetox 0.1.0": "dnsdetox",
-    "paceval 0.1.0": "paceval",
-    "paclib 0.3.0": "paclib",
-    "proxy_client 0.1.0": "proxy_client",
-    "proxydetox 0.7.3": "proxydetox",
-    "proxydetoxlib 0.7.3": "proxydetoxlib",
-    "spnego 0.1.0": "spnego"
+    "detox_net 0.1.1": "detox_net",
+    "dnsdetox 0.1.1": "dnsdetox",
+    "paceval 0.1.1": "paceval",
+    "paclib 0.3.1": "paclib",
+    "proxy_client 0.1.1": "proxy_client",
+    "proxydetox 0.7.4": "proxydetox",
+    "proxydetoxlib 0.7.4": "proxydetoxlib",
+    "spnego 0.1.1": "spnego"
   },
   "conditions": {
     "aarch64-apple-darwin": [
