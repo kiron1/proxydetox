@@ -28,6 +28,7 @@ rust_binary(
 rust_test(
     name = "proxydetox_test",
     srcs = [
+        "src/main.rs",
         "src/options.rs",
     ],
     aliases = aliases(),
@@ -35,6 +36,7 @@ rust_test(
         "//:enable_negotiate": ["negotiate"],
         "//conditions:default": [],
     }),
+    crate_root = "src/main.rs",
     data = ["//paceval:example.pac"],
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
