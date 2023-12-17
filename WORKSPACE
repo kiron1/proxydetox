@@ -2,6 +2,7 @@ workspace(name = "proxydetox")
 
 load("@//bazel:http.bzl", "versioned_http_archive")
 
+# https://github.com/bazelbuild/platforms/releases
 versioned_http_archive(
     name = "platforms",
     sha256 = "8150406605389ececb6da07cbcb509d5637a3ab9a24bc69b1101531367d89d74",
@@ -12,6 +13,17 @@ versioned_http_archive(
     version = "0.0.8",
 )
 
+# https://github.com/bazelbuild/rules_rust/releases
+versioned_http_archive(
+    name = "rules_rust",
+    sha256 = "75177226380b771be36d7efc538da842c433f14cd6c36d7660976efb53defe86",
+    urls = [
+        "https://github.com/bazelbuild/rules_rust/releases/download/{version}/rules_rust-v{version}.tar.gz",
+    ],
+    version = "0.34.1",
+)
+
+# https://github.com/bazelbuild/rules_apple/releases
 versioned_http_archive(
     name = "build_bazel_rules_apple",
     sha256 = "34c41bfb59cdaea29ac2df5a2fa79e5add609c71bb303b2ebb10985f93fa20e7",
@@ -21,6 +33,7 @@ versioned_http_archive(
     version = "3.1.1",
 )
 
+# https://github.com/bazelbuild/apple_support/releases
 versioned_http_archive(
     name = "build_bazel_apple_support",
     sha256 = "cf4d63f39c7ba9059f70e995bf5fe1019267d3f77379c2028561a5d7645ef67c",
@@ -30,14 +43,25 @@ versioned_http_archive(
     version = "1.11.1",
 )
 
+# https://github.com/bazelbuild/rules_swift/releases
 versioned_http_archive(
     name = "build_bazel_rules_swift",
     sha256 = "28a66ff5d97500f0304f4e8945d936fe0584e0d5b7a6f83258298007a93190ba",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_swift/releases/download/{version}/rules_swift.{version}.tar.gz",
         "https://github.com/bazelbuild/rules_swift/releases/download/{version}/rules_swift.{version}.tar.gz",
     ],
     version = "1.13.0",
+)
+
+# https://github.com/bazelbuild/rules_pkg/releases
+versioned_http_archive(
+    name = "rules_pkg",
+    sha256 = "8f9ee2dc10c1ae514ee599a8b42ed99fa262b757058f65ad3c384289ff70c4b8",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/{version}/rules_pkg-{version}.tar.gz",
+        "https://github.com/bazelbuild/rules_pkg/releases/download/{version}/rules_pkg-{version}.tar.gz",
+    ],
+    version = "0.9.1",
 )
 
 load(
@@ -67,15 +91,6 @@ load(
 )
 
 swift_rules_extra_dependencies()
-
-versioned_http_archive(
-    name = "rules_rust",
-    sha256 = "36ab8f9facae745c9c9c1b33d225623d976e78f2cc3f729b7973d8c20934ab95",
-    urls = [
-        "https://github.com/bazelbuild/rules_rust/releases/download/{version}/rules_rust-v{version}.tar.gz",
-    ],
-    version = "0.31.0",
-)
 
 load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
 
@@ -151,16 +166,6 @@ rust_bindgen_register_toolchains()
 load("@rules_rust//bindgen:transitive_repositories.bzl", "rust_bindgen_transitive_dependencies")
 
 rust_bindgen_transitive_dependencies()
-
-versioned_http_archive(
-    name = "rules_pkg",
-    sha256 = "8f9ee2dc10c1ae514ee599a8b42ed99fa262b757058f65ad3c384289ff70c4b8",
-    urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/{version}/rules_pkg-{version}.tar.gz",
-        "https://github.com/bazelbuild/rules_pkg/releases/download/{version}/rules_pkg-{version}.tar.gz",
-    ],
-    version = "0.9.1",
-)
 
 load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
 

@@ -1,5 +1,5 @@
 {
-  "checksum": "8145070bbed4da4163e04e400364af4de0b34970e92bc74197eba1e9bdec32c6",
+  "checksum": "b2960f66f368c418aa5449a964032545081619947b7e323e1cca0ff735f60866",
   "crates": {
     "addr2line 0.21.0": {
       "name": "addr2line",
@@ -911,10 +911,99 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "std"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "std"
+            ],
+            "aarch64-apple-ios": [
+              "std"
+            ],
+            "aarch64-apple-ios-sim": [
+              "std"
+            ],
+            "aarch64-fuchsia": [
+              "std"
+            ],
+            "aarch64-linux-android": [
+              "std"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "std"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "std"
+            ],
+            "aarch64-unknown-nto-qnx710": [
+              "std"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "std"
+            ],
+            "armv7-linux-androideabi": [
+              "std"
+            ],
+            "armv7-unknown-linux-gnueabi": [
+              "std"
+            ],
+            "i686-apple-darwin": [
+              "std"
+            ],
+            "i686-linux-android": [
+              "std"
+            ],
+            "i686-unknown-freebsd": [
+              "std"
+            ],
+            "i686-unknown-linux-gnu": [
+              "std"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "std"
+            ],
+            "riscv32imc-unknown-none-elf": [
+              "std"
+            ],
+            "riscv64gc-unknown-none-elf": [
+              "std"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "std"
+            ],
+            "thumbv7em-none-eabi": [
+              "std"
+            ],
+            "thumbv8m.main-none-eabi": [
+              "std"
+            ],
+            "wasm32-wasi": [
+              "std"
+            ],
+            "x86_64-apple-darwin": [
+              "std"
+            ],
+            "x86_64-apple-ios": [
+              "std"
+            ],
+            "x86_64-fuchsia": [
+              "std"
+            ],
+            "x86_64-linux-android": [
+              "std"
+            ],
+            "x86_64-unknown-freebsd": [
+              "std"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "std"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "std"
+            ],
+            "x86_64-unknown-none": [
+              "std"
+            ]
+          }
         },
         "edition": "2021",
         "version": "2.4.1"
@@ -2871,11 +2960,105 @@
           "**"
         ],
         "crate_features": {
-          "common": [
-            "default",
-            "use_std"
-          ],
-          "selects": {}
+          "common": [],
+          "selects": {
+            "aarch64-apple-darwin": [
+              "default",
+              "use_std"
+            ],
+            "aarch64-apple-ios": [
+              "default",
+              "use_std"
+            ],
+            "aarch64-apple-ios-sim": [
+              "default",
+              "use_std"
+            ],
+            "aarch64-fuchsia": [
+              "default",
+              "use_std"
+            ],
+            "aarch64-linux-android": [
+              "default",
+              "use_std"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "default",
+              "use_std"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "default",
+              "use_std"
+            ],
+            "aarch64-unknown-nto-qnx710": [
+              "default",
+              "use_std"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "default",
+              "use_std"
+            ],
+            "armv7-linux-androideabi": [
+              "default",
+              "use_std"
+            ],
+            "armv7-unknown-linux-gnueabi": [
+              "default",
+              "use_std"
+            ],
+            "i686-apple-darwin": [
+              "default",
+              "use_std"
+            ],
+            "i686-linux-android": [
+              "default",
+              "use_std"
+            ],
+            "i686-unknown-freebsd": [
+              "default",
+              "use_std"
+            ],
+            "i686-unknown-linux-gnu": [
+              "default",
+              "use_std"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "default",
+              "use_std"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "default",
+              "use_std"
+            ],
+            "x86_64-apple-darwin": [
+              "default",
+              "use_std"
+            ],
+            "x86_64-apple-ios": [
+              "default",
+              "use_std"
+            ],
+            "x86_64-fuchsia": [
+              "default",
+              "use_std"
+            ],
+            "x86_64-linux-android": [
+              "default",
+              "use_std"
+            ],
+            "x86_64-unknown-freebsd": [
+              "default",
+              "use_std"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "default",
+              "use_std"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "default",
+              "use_std"
+            ]
+          }
         },
         "edition": "2018",
         "version": "1.9.0"
@@ -5342,10 +5525,79 @@
         "crate_features": {
           "common": [
             "default",
-            "extra_traits",
             "std"
           ],
-          "selects": {}
+          "selects": {
+            "aarch64-apple-darwin": [
+              "extra_traits"
+            ],
+            "aarch64-apple-ios": [
+              "extra_traits"
+            ],
+            "aarch64-apple-ios-sim": [
+              "extra_traits"
+            ],
+            "aarch64-fuchsia": [
+              "extra_traits"
+            ],
+            "aarch64-linux-android": [
+              "extra_traits"
+            ],
+            "aarch64-unknown-nto-qnx710": [
+              "extra_traits"
+            ],
+            "armv7-linux-androideabi": [
+              "extra_traits"
+            ],
+            "i686-apple-darwin": [
+              "extra_traits"
+            ],
+            "i686-linux-android": [
+              "extra_traits"
+            ],
+            "i686-unknown-freebsd": [
+              "extra_traits"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "extra_traits"
+            ],
+            "riscv32imc-unknown-none-elf": [
+              "extra_traits"
+            ],
+            "riscv64gc-unknown-none-elf": [
+              "extra_traits"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "extra_traits"
+            ],
+            "thumbv7em-none-eabi": [
+              "extra_traits"
+            ],
+            "thumbv8m.main-none-eabi": [
+              "extra_traits"
+            ],
+            "wasm32-wasi": [
+              "extra_traits"
+            ],
+            "x86_64-apple-darwin": [
+              "extra_traits"
+            ],
+            "x86_64-apple-ios": [
+              "extra_traits"
+            ],
+            "x86_64-fuchsia": [
+              "extra_traits"
+            ],
+            "x86_64-linux-android": [
+              "extra_traits"
+            ],
+            "x86_64-unknown-freebsd": [
+              "extra_traits"
+            ],
+            "x86_64-unknown-none": [
+              "extra_traits"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -6802,10 +7054,106 @@
             "default",
             "portable-atomic",
             "race",
-            "std",
-            "unstable"
+            "std"
           ],
-          "selects": {}
+          "selects": {
+            "aarch64-apple-darwin": [
+              "unstable"
+            ],
+            "aarch64-apple-ios": [
+              "unstable"
+            ],
+            "aarch64-apple-ios-sim": [
+              "unstable"
+            ],
+            "aarch64-fuchsia": [
+              "unstable"
+            ],
+            "aarch64-linux-android": [
+              "unstable"
+            ],
+            "aarch64-pc-windows-msvc": [
+              "unstable"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "unstable"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "unstable"
+            ],
+            "aarch64-unknown-nto-qnx710": [
+              "unstable"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "unstable"
+            ],
+            "armv7-linux-androideabi": [
+              "unstable"
+            ],
+            "armv7-unknown-linux-gnueabi": [
+              "unstable"
+            ],
+            "i686-apple-darwin": [
+              "unstable"
+            ],
+            "i686-linux-android": [
+              "unstable"
+            ],
+            "i686-pc-windows-msvc": [
+              "unstable"
+            ],
+            "i686-unknown-freebsd": [
+              "unstable"
+            ],
+            "i686-unknown-linux-gnu": [
+              "unstable"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "unstable"
+            ],
+            "riscv32imc-unknown-none-elf": [
+              "unstable"
+            ],
+            "riscv64gc-unknown-none-elf": [
+              "unstable"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "unstable"
+            ],
+            "wasm32-unknown-unknown": [
+              "unstable"
+            ],
+            "wasm32-wasi": [
+              "unstable"
+            ],
+            "x86_64-apple-darwin": [
+              "unstable"
+            ],
+            "x86_64-apple-ios": [
+              "unstable"
+            ],
+            "x86_64-fuchsia": [
+              "unstable"
+            ],
+            "x86_64-linux-android": [
+              "unstable"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "unstable"
+            ],
+            "x86_64-unknown-freebsd": [
+              "unstable"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "unstable"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "unstable"
+            ],
+            "x86_64-unknown-none": [
+              "unstable"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -8958,12 +9306,84 @@
           "common": [
             "alloc",
             "default",
-            "fs",
             "std",
             "termios",
             "use-libc-auxv"
           ],
-          "selects": {}
+          "selects": {
+            "aarch64-apple-darwin": [
+              "fs"
+            ],
+            "aarch64-apple-ios": [
+              "fs"
+            ],
+            "aarch64-apple-ios-sim": [
+              "fs"
+            ],
+            "aarch64-fuchsia": [
+              "fs"
+            ],
+            "aarch64-linux-android": [
+              "fs"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "fs"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "fs"
+            ],
+            "aarch64-unknown-nto-qnx710": [
+              "fs"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "fs"
+            ],
+            "armv7-linux-androideabi": [
+              "fs"
+            ],
+            "armv7-unknown-linux-gnueabi": [
+              "fs"
+            ],
+            "i686-apple-darwin": [
+              "fs"
+            ],
+            "i686-linux-android": [
+              "fs"
+            ],
+            "i686-unknown-freebsd": [
+              "fs"
+            ],
+            "i686-unknown-linux-gnu": [
+              "fs"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "fs"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "fs"
+            ],
+            "x86_64-apple-darwin": [
+              "fs"
+            ],
+            "x86_64-apple-ios": [
+              "fs"
+            ],
+            "x86_64-fuchsia": [
+              "fs"
+            ],
+            "x86_64-linux-android": [
+              "fs"
+            ],
+            "x86_64-unknown-freebsd": [
+              "fs"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "fs"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "fs"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -10351,10 +10771,82 @@
             "printing",
             "proc-macro",
             "quote",
-            "visit",
-            "visit-mut"
+            "visit"
           ],
-          "selects": {}
+          "selects": {
+            "aarch64-apple-darwin": [
+              "visit-mut"
+            ],
+            "aarch64-apple-ios": [
+              "visit-mut"
+            ],
+            "aarch64-apple-ios-sim": [
+              "visit-mut"
+            ],
+            "aarch64-fuchsia": [
+              "visit-mut"
+            ],
+            "aarch64-linux-android": [
+              "visit-mut"
+            ],
+            "aarch64-unknown-linux-gnu": [
+              "visit-mut"
+            ],
+            "aarch64-unknown-nixos-gnu": [
+              "visit-mut"
+            ],
+            "aarch64-unknown-nto-qnx710": [
+              "visit-mut"
+            ],
+            "arm-unknown-linux-gnueabi": [
+              "visit-mut"
+            ],
+            "armv7-linux-androideabi": [
+              "visit-mut"
+            ],
+            "armv7-unknown-linux-gnueabi": [
+              "visit-mut"
+            ],
+            "i686-apple-darwin": [
+              "visit-mut"
+            ],
+            "i686-linux-android": [
+              "visit-mut"
+            ],
+            "i686-unknown-freebsd": [
+              "visit-mut"
+            ],
+            "i686-unknown-linux-gnu": [
+              "visit-mut"
+            ],
+            "powerpc-unknown-linux-gnu": [
+              "visit-mut"
+            ],
+            "s390x-unknown-linux-gnu": [
+              "visit-mut"
+            ],
+            "x86_64-apple-darwin": [
+              "visit-mut"
+            ],
+            "x86_64-apple-ios": [
+              "visit-mut"
+            ],
+            "x86_64-fuchsia": [
+              "visit-mut"
+            ],
+            "x86_64-linux-android": [
+              "visit-mut"
+            ],
+            "x86_64-unknown-freebsd": [
+              "visit-mut"
+            ],
+            "x86_64-unknown-linux-gnu": [
+              "visit-mut"
+            ],
+            "x86_64-unknown-nixos-gnu": [
+              "visit-mut"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -11038,10 +11530,19 @@
             "socket2",
             "sync",
             "time",
-            "tokio-macros",
-            "windows-sys"
+            "tokio-macros"
           ],
-          "selects": {}
+          "selects": {
+            "aarch64-pc-windows-msvc": [
+              "windows-sys"
+            ],
+            "i686-pc-windows-msvc": [
+              "windows-sys"
+            ],
+            "x86_64-pc-windows-msvc": [
+              "windows-sys"
+            ]
+          }
         },
         "deps": {
           "common": [
@@ -11695,8 +12196,7 @@
           "common": [
             "default",
             "once_cell",
-            "std",
-            "valuable"
+            "std"
           ],
           "selects": {}
         },
@@ -12703,16 +13203,12 @@
         ],
         "crate_features": {
           "common": [
-            "basetsd",
             "consoleapi",
-            "dbghelp",
             "errhandlingapi",
             "fileapi",
             "handleapi",
-            "libloaderapi",
             "minwindef",
             "processenv",
-            "processthreadsapi",
             "std",
             "sysinfoapi",
             "winbase",
@@ -13191,18 +13687,8 @@
           "common": [
             "Win32",
             "Win32_Foundation",
-            "Win32_NetworkManagement",
-            "Win32_NetworkManagement_IpHelper",
-            "Win32_Networking",
-            "Win32_Networking_WinSock",
             "Win32_System",
-            "Win32_System_Com",
             "Win32_System_Console",
-            "Win32_System_Diagnostics",
-            "Win32_System_Diagnostics_Debug",
-            "Win32_System_Threading",
-            "Win32_UI",
-            "Win32_UI_Shell",
             "default"
           ],
           "selects": {}
@@ -14674,7 +15160,11 @@
       "aarch64-pc-windows-msvc"
     ],
     "aarch64-unknown-linux-gnu": [
-      "aarch64-unknown-linux-gnu"
+      "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu"
+    ],
+    "aarch64-unknown-nto-qnx710": [
+      "aarch64-unknown-nto-qnx710"
     ],
     "arm-unknown-linux-gnueabi": [
       "arm-unknown-linux-gnueabi"
@@ -14696,16 +15186,19 @@
     "cfg(all(any(target_os = \"android\", target_os = \"linux\"), any(target_arch = \"aarch64\", target_arch = \"arm\")))": [
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi"
     ],
     "cfg(all(not(rustix_use_libc), not(miri), target_os = \"linux\", target_endian = \"little\", any(target_arch = \"arm\", all(target_arch = \"aarch64\", target_pointer_width = \"64\"), target_arch = \"riscv64\", all(rustix_use_experimental_asm, target_arch = \"powerpc64\"), all(rustix_use_experimental_asm, target_arch = \"mips\"), all(rustix_use_experimental_asm, target_arch = \"mips32r6\"), all(rustix_use_experimental_asm, target_arch = \"mips64\"), all(rustix_use_experimental_asm, target_arch = \"mips64r6\"), target_arch = \"x86\", all(target_arch = \"x86_64\", target_pointer_width = \"64\"))))": [
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
       "arm-unknown-linux-gnueabi",
       "armv7-unknown-linux-gnueabi",
       "i686-unknown-linux-gnu",
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ],
     "cfg(all(not(windows), any(rustix_use_libc, miri, not(all(target_os = \"linux\", target_endian = \"little\", any(target_arch = \"arm\", all(target_arch = \"aarch64\", target_pointer_width = \"64\"), target_arch = \"riscv64\", all(rustix_use_experimental_asm, target_arch = \"powerpc64\"), all(rustix_use_experimental_asm, target_arch = \"mips\"), all(rustix_use_experimental_asm, target_arch = \"mips32r6\"), all(rustix_use_experimental_asm, target_arch = \"mips64\"), all(rustix_use_experimental_asm, target_arch = \"mips64r6\"), target_arch = \"x86\", all(target_arch = \"x86_64\", target_pointer_width = \"64\")))))))": [
       "aarch64-apple-darwin",
@@ -14713,6 +15206,7 @@
       "aarch64-apple-ios-sim",
       "aarch64-fuchsia",
       "aarch64-linux-android",
+      "aarch64-unknown-nto-qnx710",
       "armv7-linux-androideabi",
       "i686-apple-darwin",
       "i686-linux-android",
@@ -14748,7 +15242,8 @@
       "i686-pc-windows-msvc"
     ],
     "cfg(all(target_arch = \"x86_64\", target_env = \"gnu\", not(target_abi = \"llvm\"), not(windows_raw_dylib)))": [
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ],
     "cfg(all(target_arch = \"x86_64\", target_env = \"msvc\", not(windows_raw_dylib)))": [
       "x86_64-pc-windows-msvc"
@@ -14759,6 +15254,8 @@
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -14771,7 +15268,8 @@
       "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-unknown-freebsd",
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ],
     "cfg(any())": [],
     "cfg(any(target_arch = \"aarch64\", target_arch = \"arm\", target_arch = \"x86\", target_arch = \"x86_64\"))": [
@@ -14782,6 +15280,8 @@
       "aarch64-linux-android",
       "aarch64-pc-windows-msvc",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -14799,6 +15299,7 @@
       "x86_64-pc-windows-msvc",
       "x86_64-unknown-freebsd",
       "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu",
       "x86_64-unknown-none"
     ],
     "cfg(any(target_os = \"macos\", target_os = \"ios\"))": [
@@ -14817,6 +15318,8 @@
       "aarch64-linux-android",
       "aarch64-pc-windows-msvc",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -14833,7 +15336,8 @@
       "x86_64-linux-android",
       "x86_64-pc-windows-msvc",
       "x86_64-unknown-freebsd",
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ],
     "cfg(not(all(target_arch = \"arm\", target_os = \"none\")))": [
       "aarch64-apple-darwin",
@@ -14843,6 +15347,8 @@
       "aarch64-linux-android",
       "aarch64-pc-windows-msvc",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -14864,6 +15370,7 @@
       "x86_64-pc-windows-msvc",
       "x86_64-unknown-freebsd",
       "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu",
       "x86_64-unknown-none"
     ],
     "cfg(not(all(windows, target_env = \"msvc\", not(target_vendor = \"uwp\"))))": [
@@ -14873,6 +15380,8 @@
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -14894,6 +15403,7 @@
       "x86_64-linux-android",
       "x86_64-unknown-freebsd",
       "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu",
       "x86_64-unknown-none"
     ],
     "cfg(not(any(windows, target_os = \"hermit\", target_os = \"unknown\")))": [
@@ -14903,6 +15413,8 @@
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -14923,6 +15435,7 @@
       "x86_64-linux-android",
       "x86_64-unknown-freebsd",
       "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu",
       "x86_64-unknown-none"
     ],
     "cfg(not(target_family = \"wasm\"))": [
@@ -14933,6 +15446,8 @@
       "aarch64-linux-android",
       "aarch64-pc-windows-msvc",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -14954,6 +15469,7 @@
       "x86_64-pc-windows-msvc",
       "x86_64-unknown-freebsd",
       "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu",
       "x86_64-unknown-none"
     ],
     "cfg(not(windows))": [
@@ -14963,6 +15479,8 @@
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -14984,6 +15502,7 @@
       "x86_64-linux-android",
       "x86_64-unknown-freebsd",
       "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu",
       "x86_64-unknown-none"
     ],
     "cfg(target_arch = \"wasm32\")": [
@@ -15021,6 +15540,8 @@
       "aarch64-fuchsia",
       "aarch64-linux-android",
       "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu",
+      "aarch64-unknown-nto-qnx710",
       "arm-unknown-linux-gnueabi",
       "armv7-linux-androideabi",
       "armv7-unknown-linux-gnueabi",
@@ -15035,7 +15556,8 @@
       "x86_64-fuchsia",
       "x86_64-linux-android",
       "x86_64-unknown-freebsd",
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ],
     "cfg(windows)": [
       "aarch64-pc-windows-msvc",
@@ -15103,10 +15625,50 @@
       "x86_64-unknown-freebsd"
     ],
     "x86_64-unknown-linux-gnu": [
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ],
     "x86_64-unknown-none": [
       "x86_64-unknown-none"
     ]
-  }
+  },
+  "direct_deps": [
+    "base64 0.21.5",
+    "boa_engine 0.17.3",
+    "boa_gc 0.17.3",
+    "bytes 1.5.0",
+    "chrono 0.4.31",
+    "clap 4.4.11",
+    "default-net 0.17.0",
+    "dirs 5.0.1",
+    "dns-parser 0.8.0",
+    "env_logger 0.10.1",
+    "futures-util 0.3.29",
+    "gc 0.5.0",
+    "http 0.2.11",
+    "hyper 0.14.27",
+    "hyper-rustls 0.24.2",
+    "lazy_static 1.4.0",
+    "libc 0.2.151",
+    "libgssapi 0.6.4",
+    "log 0.4.20",
+    "netrc 0.4.1",
+    "regex 1.10.2",
+    "rustls 0.21.10",
+    "rustls-native-certs 0.6.3",
+    "rustls-pemfile 1.0.4",
+    "socket2 0.5.5",
+    "thiserror 1.0.51",
+    "tokio 1.35.0",
+    "tokio-rustls 0.24.1",
+    "tokio-stream 0.1.14",
+    "tokio-util 0.7.10",
+    "tower 0.4.13",
+    "tracing 0.1.40",
+    "tracing-attributes 0.1.27",
+    "tracing-futures 0.2.5",
+    "tracing-subscriber 0.3.18",
+    "windows 0.52.0"
+  ],
+  "direct_dev_deps": []
 }

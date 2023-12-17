@@ -1,6 +1,6 @@
 load("@build_bazel_rules_apple//apple:macos.bzl", "macos_application")
-load("@rules_pkg//:pkg.bzl", "pkg_zip")
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+load("@rules_pkg//:pkg.bzl", "pkg_zip")
 
 # https://github.com/bazelbuild/rules_swift/blob/master/doc/rules.md#swift_library
 swift_library(
@@ -24,9 +24,6 @@ macos_application(
         "//proxydetox:proxydetoxcli": "MacOS",
     },
     bundle_id = "cc.colorto.Proxydetox",
-    # codesign_inputs = [
-    # "//proxydetox:proxydetox",
-    # ],
     entitlements = ":ProxydetoxApp.entitlements",
     infoplists = ["Info.plist"],
     minimum_os_version = "11.1",

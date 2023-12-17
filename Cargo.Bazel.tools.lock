@@ -1,5 +1,5 @@
 {
-  "checksum": "41577d3c6f8950661e94dc3ef3121b29c6db38af2face288d4d946dcf6971d61",
+  "checksum": "c50af686d2da91cb758c4d78c41f5fac044f4d70dee7c9ad66be28c1bd867db9",
   "crates": {
     "anstyle 1.0.4": {
       "name": "anstyle",
@@ -1041,7 +1041,11 @@
       "aarch64-pc-windows-msvc"
     ],
     "aarch64-unknown-linux-gnu": [
-      "aarch64-unknown-linux-gnu"
+      "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-nixos-gnu"
+    ],
+    "aarch64-unknown-nto-qnx710": [
+      "aarch64-unknown-nto-qnx710"
     ],
     "arm-unknown-linux-gnueabi": [
       "arm-unknown-linux-gnueabi"
@@ -1111,10 +1115,16 @@
       "x86_64-unknown-freebsd"
     ],
     "x86_64-unknown-linux-gnu": [
-      "x86_64-unknown-linux-gnu"
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-nixos-gnu"
     ],
     "x86_64-unknown-none": [
       "x86_64-unknown-none"
     ]
-  }
+  },
+  "direct_deps": [
+    "clap 4.4.11",
+    "toml 0.7.8"
+  ],
+  "direct_dev_deps": []
 }
