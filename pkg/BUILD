@@ -24,8 +24,12 @@ pkg_variables(
         "@platforms//os:windows": "windows",
         "//conditions:default": "unknown",
     }),
+    rev = "//:rev",
     version = "//:version",
-    visibility = ["//pkg:__subpackages__"],
+    visibility = [
+        "//pkg:__subpackages__",
+        "//proxydetoxlib:__subpackages__",
+    ],
 )
 
 genrule(

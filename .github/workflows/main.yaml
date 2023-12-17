@@ -45,6 +45,10 @@ jobs:
         id: version
         run: |
           bazel run --config=ci //:current_version | tee -a $GITHUB_OUTPUT
+      - name: Rev
+        id: rev
+        run: |
+          printf 'rev=%s\n' $(git rev-parse --short HEAD) | tee -a $GITHUB_OUTPUT
 
   bazel_test:
     name: Bazel test
@@ -62,16 +66,16 @@ jobs:
         include:
           - build: macos-x86_64
             os: macos-latest
-            buildflags: --features=negotiate --config=x86_64_apple_darwin --//:version=${{ needs.version.outputs.version }}
+            buildflags: --features=negotiate --config=x86_64_apple_darwin
           - build: ubuntu-20.04
             os: ubuntu-20.04
-            buildflags: --features=negotiate --//:version=${{ needs.version.outputs.version }}
+            buildflags: --features=negotiate
           - build: ubuntu-22.04
             os: ubuntu-22.04
-            buildflags: --features=negotiate --//:version=${{ needs.version.outputs.version }}
+            buildflags: --features=negotiate
           # - build: windows
           #   os: windows-latest
-          #   buildflags: --features=negotiate --//:version=${{ needs.version.outputs.version }}
+          #   buildflags: --features=negotiate
 
     steps:
       - name: Git checkout with LF
@@ -101,11 +105,25 @@ jobs:
         run: sudo apt-get install libkrb5-dev
         if: ${{ startswith(matrix.os, 'ubuntu') }}
       - name: Run tests
-        run: 'bazel test --config=ci ${{ matrix.buildflags }} "//..."'
+        run: >
+          bazel
+          test
+          --config=ci
+          --//:version=${{ needs.version.outputs.version }}
+          --//:rev=${{ needs.version.outputs.rev }}
+          ${{ matrix.buildflags }}
+          "//..."
         shell: cmd
         if: ${{ startswith(matrix.os, 'windows') }}
       - name: Run tests
-        run: 'bazel test --config=ci ${{ matrix.buildflags }} "//..."'
+        run: >
+          bazel
+          test
+          --config=ci
+          --//:version=${{ needs.version.outputs.version }}
+          --//:rev=${{ needs.version.outputs.rev }}
+          ${{ matrix.buildflags }}
+          "//..."
         if: ${{ ! startswith(matrix.os, 'windows') }}
 
   bazel_build:
@@ -127,23 +145,23 @@ jobs:
         include:
           - build: macos-aarch64
             os: macos-latest
-            buildflags: --features=negotiate --config=aarch64_apple_darwin --//:version=${{ needs.version.outputs.version }}
+            buildflags: --features=negotiate --config=aarch64_apple_darwin
             pkgfile: proxydetox-${{ needs.version.outputs.version }}-apple-darwin-aarch64.pkg
           - build: macos-x86_64
             os: macos-latest
-            buildflags: --features=negotiate --config=x86_64_apple_darwin --//:version=${{ needs.version.outputs.version }}
+            buildflags: --features=negotiate --config=x86_64_apple_darwin
             pkgfile: proxydetox-${{ needs.version.outputs.version }}-apple-darwin-x86_64.pkg
           - build: ubuntu-20.04
             os: ubuntu-20.04
-            buildflags: --features=negotiate --//:version=${{ needs.version.outputs.version }}
+            buildflags: --features=negotiate
             pkgfile: proxydetox-${{ needs.version.outputs.version }}-focal_amd64.deb
           - build: ubuntu-22.04
             os: ubuntu-22.04
-            buildflags: --features=negotiate --//:version=${{ needs.version.outputs.version }}
+            buildflags: --features=negotiate
             pkgfile: proxydetox-${{ needs.version.outputs.version }}-jammy_amd64.deb
           # - build: windows
           #   os: windows-latest
-          #   buildflags: --features=negotiate --//:version=${{ needs.version.outputs.version }}
+          #   buildflags: --features=negotiate
           #   pkgfile: proxydetox-${{ needs.version.outputs.version }}-windows-x86_64.zip
 
     steps:
@@ -174,9 +192,26 @@ jobs:
         run: sudo apt-get install libkrb5-dev
         if: startswith(matrix.os, 'ubuntu')
       - name: Build package
-        run: bazel build -c opt --config=ci ${{ matrix.buildflags }} "//pkg"
+        run: >
+          bazel build
+          -c opt
+          --config=ci
+          --//:version=${{ needs.version.outputs.version }}
+          --//:rev=${{ needs.version.outputs.rev }}
+          ${{ matrix.buildflags }}
+          "//pkg"
       - name: Copy package
-        run: bazel run -c opt --config=ci ${{ matrix.buildflags }} "//pkg:copy" -- ${{ matrix.pkgfile }}
+        run: >
+          bazel
+          run
+          -c opt
+          --config=ci
+          --//:version=${{ needs.version.outputs.version }}
+          --//:rev=${{ needs.version.outputs.rev }}
+          ${{ matrix.buildflags }}
+          "//pkg:copy"
+          --
+          ${{ matrix.pkgfile }}
       - name: Upload package artifact
         uses: actions/upload-artifact@v3
         with:
