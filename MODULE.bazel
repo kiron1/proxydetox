@@ -1,0 +1,65 @@
+module(
+    name = "proxydetox",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "bazel_skylib", version = "1.5.0")
+bazel_dep(name = "platforms", version = "0.0.10")
+bazel_dep(name = "rules_pkg", version = "1.0.1")
+bazel_dep(name = "rules_rust", version = "0.47.1")
+
+# Apple
+bazel_dep(name = "apple_support", version = "1.16.0", repo_name = "build_bazel_apple_support")
+bazel_dep(name = "rules_apple", version = "3.6.0", repo_name = "build_bazel_rules_apple")
+bazel_dep(name = "rules_swift", version = "2.1.1", repo_name = "build_bazel_rules_swift")
+
+apple_cc_configure = use_extension(
+    "@build_bazel_apple_support//crosstool:setup.bzl",
+    "apple_cc_configure_extension",
+)
+use_repo(apple_cc_configure, "local_config_apple_cc", "local_config_apple_cc_toolchains")
+
+# register_toolchains("@local_config_apple_cc_toolchains//:all")
+
+cc_configure = use_extension("@bazel_tools//tools/cpp:cc_configure.bzl", "cc_configure_extension")
+use_repo(cc_configure, "local_config_cc_toolchains")
+
+register_toolchains("@local_config_cc_toolchains//:all")
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = "2021",
+    extra_target_triples = [
+        "aarch64-apple-darwin",
+        "x86_64-apple-darwin",
+    ],
+)
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+crate = use_extension("@rules_rust//crate_universe:extension.bzl", "crate")
+crate.from_cargo(
+    name = "crate_index",
+    cargo_lockfile = "//:Cargo.lock",
+    manifests = [
+        "//:Cargo.toml",
+        "//detox_auth:Cargo.toml",
+        "//detox_futures:Cargo.toml",
+        "//detox_hyper:Cargo.toml",
+        "//detox_net:Cargo.toml",
+        "//dnsdetox:Cargo.toml",
+        "//paceval:Cargo.toml",
+        "//paclib:Cargo.toml",
+        "//proxydetox:Cargo.toml",
+        "//proxydetoxlib:Cargo.toml",
+        "//spnego:Cargo.toml",
+    ],
+)
+use_repo(crate, "crate_index")
+crate.from_cargo(
+    name = "crate_index_tools",
+    cargo_lockfile = "//tools:Cargo.lock",
+    manifests = ["//tools:Cargo.toml"],
+)
+use_repo(crate, "crate_index_tools")

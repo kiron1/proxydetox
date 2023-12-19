@@ -404,8 +404,11 @@ mod tests {
     fn example_pac() -> String {
         let mut p = if let Ok(runfiles_dir) = std::env::var("RUNFILES_DIR") {
             let mut p = PathBuf::from(runfiles_dir);
-            // p.push("_main"); // Bazel 7+ module
-            p.push("proxydetox"); // Bazel 6 workspace name
+            if let Ok(workspace) = std::env::var("TEST_WORKSPACE") {
+                p.push(workspace);
+            } else {
+                p.push("proxydetox"); // Bazel workspace name
+            }
             p
         } else {
             PathBuf::from(env!("CARGO_MANIFEST_DIR"))
