@@ -215,7 +215,7 @@ jobs:
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
         with:
-          name: pkg
+          name: pkg-bazel-${{ matrix.build }}
           path: ./${{ matrix.pkgfile }}
 
   cargo_build_and_test:
@@ -256,7 +256,7 @@ jobs:
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
         with:
-          name: pkg
+          name: pkg-cargo-windows
           path: ./${{ steps.buildpkg.outputs.pkgfile }}
 
   mkrelease:
@@ -266,15 +266,16 @@ jobs:
       - version
       - bazel_build
       - cargo_build_and_test
-    if: ${{ github.event_name == 'push' && startswith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
       - name: Download pkg artifact
         uses: actions/download-artifact@v4
         with:
-          name: pkg
+          pattern: pkg-*
+          merge-multiple: true
+      - name: Show downloaded artifacts
+        run: find . -name '*.deb' -o -name '*.pkg' -o -name '*.zip'
       - name: Create Release
+        if: ${{ github.event_name == 'push' && startswith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
         run: |
           gh release create v${{ needs.version.outputs.version }} --generate-notes *.deb *.pkg *.zip
         env:
@@ -295,13 +296,30 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          components: rustfmt, clippy
-          override: true
+      - name: Rustup
+        run: |
+          rustup update --no-self-update stable
+          rustup component add clippy rustfmt
       - name: Install Linux dependency
         run: sudo apt-get install libkrb5-dev
         if: ${{ matrix.lint == 'clippy' }}
       - name: Lint check
         run: cargo ${{ matrix.lint }} ${{ matrix.flags }}
+
+  # The success job is here to consolidate the total success/failure state of
+  # all other jobs. This job is then included in the GitHub branch protection
+  # rule which prevents merges unless all other jobs are passing. This makes
+  # it easier to manage the list of jobs via this yml file and to prevent
+  # accidentally adding new jobs without also updating the branch protections.
+  success:
+    name: Success gate
+    if: always()
+    needs:
+      - bazel_build
+      - cargo_build_and_test
+      - format_check
+    runs-on: ubuntu-latest
+    steps:
+      - run: jq --exit-status 'all(.result == "success")' <<< '${{ toJson(needs) }}'
+      - name: Done
+        run: exit 0
