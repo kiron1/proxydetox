@@ -9,6 +9,7 @@ use tokio::{net::TcpStream, sync::oneshot, task};
 
 use proxydetoxlib::auth::{netrc, AuthenticatorFactory};
 
+#[allow(unused_imports)]
 pub use httpd::Server;
 
 pub(crate) struct Environment {
