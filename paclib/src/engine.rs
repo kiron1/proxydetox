@@ -1,4 +1,4 @@
-use boa_engine::{Context, JsResult, JsString, JsValue, NativeFunction, Source};
+use boa_engine::{Context, JsNativeError, JsResult, JsString, JsValue, NativeFunction, Source};
 use http::Uri;
 use std::result::Result;
 use std::time::Instant;
@@ -121,9 +121,9 @@ fn alert(_this: &JsValue, args: &[JsValue], _ctx: &mut Context) -> JsResult<JsVa
     Ok(JsValue::undefined())
 }
 
-fn dns_resolve(_this: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue> {
-    let global = ctx.global_object();
-    let dns_cache = global.get("_dnsCache", ctx).expect("_dnsCache");
+fn dns_resolve(_this: &JsValue, args: &[JsValue], context: &mut Context) -> JsResult<JsValue> {
+    let global = context.global_object();
+    let dns_cache = global.get("_dnsCache", context).expect("_dnsCache");
     let dns_cache = dns_cache.as_object();
     let mut dns_cache = dns_cache
         .and_then(|obj| obj.try_borrow_mut().ok())
@@ -132,18 +132,20 @@ fn dns_resolve(_this: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult
         .downcast_mut::<DnsCache>()
         .expect("downcast_mut<DnsCache>");
 
-    let value = if let Some(host) = args.first() {
-        if let Ok(host) = host.to_string(ctx) {
-            let resolved = dns_cache.lookup(&host.to_std_string_escaped());
-            match resolved {
-                Some(ip) => JsValue::from(JsString::from(ip)),
-                None => JsValue::undefined(),
-            }
-        } else {
-            JsValue::undefined()
-        }
-    } else {
-        JsValue::undefined()
+    let Some(host) = args.first() else {
+        return Err(JsNativeError::typ()
+            .with_message("first argument is missing")
+            .into());
+    };
+    let Ok(host) = host.to_string(context) else {
+        return Err(JsNativeError::typ()
+            .with_message("first argument must be string")
+            .into());
+    };
+    let resolved = dns_cache.lookup(&host.to_std_string_escaped());
+    let value = match resolved {
+        Some(ip) => JsValue::from(JsString::from(ip)),
+        None => JsValue::null(),
     };
 
     Ok(value)
