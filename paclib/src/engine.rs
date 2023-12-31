@@ -109,7 +109,7 @@ impl<'a> Default for Engine<'a> {
 fn alert(_this: &JsValue, args: &[JsValue], _ctx: &mut Context) -> JsResult<JsValue> {
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Proxy_servers_and_tunneling/Proxy_Auto-Configuration_PAC_file#alert
     // https://developer.mozilla.org/en-US/docs/Web/API/Window/alert
-    if let Some(message) = args.get(0) {
+    if let Some(message) = args.first() {
         let message = message
             .as_string()
             .map(|s| s.to_std_string_escaped())
@@ -132,7 +132,7 @@ fn dns_resolve(_this: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult
         .downcast_mut::<DnsCache>()
         .expect("downcast_mut<DnsCache>");
 
-    let value = if let Some(host) = args.get(0) {
+    let value = if let Some(host) = args.first() {
         if let Ok(host) = host.to_string(ctx) {
             let resolved = dns_cache.lookup(&host.to_std_string_escaped());
             match resolved {
@@ -152,7 +152,7 @@ fn dns_resolve(_this: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult
 fn my_ip_address(_this: &JsValue, _args: &[JsValue], _ctx: &mut Context) -> JsResult<JsValue> {
     let ip = default_net::get_default_interface()
         .ok()
-        .and_then(|i| i.ipv4.get(0).map(|i| i.addr.to_string()))
+        .and_then(|i| i.ipv4.first().map(|i| i.addr.to_string()))
         .unwrap_or_else(|| String::from("127.0.0.1"));
     Ok(JsValue::from(JsString::from(ip)))
 }
