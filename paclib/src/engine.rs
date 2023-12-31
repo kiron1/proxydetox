@@ -5,7 +5,7 @@ use std::time::Instant;
 use tracing::{field::debug, instrument};
 
 use crate::dns::DnsCache;
-use crate::Proxies;
+use crate::{domain, Proxies};
 use crate::{FindProxyError, PacScriptError};
 
 const PAC_UTILS: &str = include_str!("pac_utils.js");
@@ -19,6 +19,7 @@ impl<'a> Engine<'a> {
         let mut js = Context::default();
 
         js.register_global_class::<DnsCache>().unwrap();
+        js.register_global_class::<domain::Table>().unwrap();
         js.register_global_builtin_callable("alert", 1, NativeFunction::from_fn_ptr(alert))
             .expect("register_global_property");
         js.register_global_builtin_callable(
