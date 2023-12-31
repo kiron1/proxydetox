@@ -1,4 +1,5 @@
 pub mod dns;
+pub mod domain;
 pub mod engine;
 pub mod evaluator;
 pub mod proxy;

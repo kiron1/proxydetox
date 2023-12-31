@@ -5,6 +5,7 @@ rust_library(
     name = "paclib",
     srcs = [
         "src/dns.rs",
+        "src/domain.rs",
         "src/engine.rs",
         "src/evaluator.rs",
         "src/lib.rs",
