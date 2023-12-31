@@ -277,9 +277,11 @@ jobs:
       - name: Create Release
         if: ${{ github.event_name == 'push' && startswith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
         run: |
-          gh release create v${{ needs.version.outputs.version }} --generate-notes *.deb *.pkg *.zip
+          gh --repo "${REPO}" release create "${VERSION}" --generate-notes *.deb *.pkg *.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          VERSION: v${{ needs.version.outputs.version }}
 
   format_check:
     name: Rust lint
