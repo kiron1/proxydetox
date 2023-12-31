@@ -80,15 +80,10 @@ impl Class for DnsCache {
 pub(crate) fn resolve(host: &str) -> Option<String> {
     use std::net::ToSocketAddrs;
 
-    let host_port = (host, 0u16);
-    if let Ok(mut addrs) = host_port.to_socket_addrs() {
-        if let Some(addr) = addrs.next() {
-            let ip = addr.ip();
-            Some(ip.to_string())
-        } else {
-            None
-        }
-    } else {
-        None
-    }
+    (host, 0u16)
+        .to_socket_addrs()
+        .ok()
+        .and_then(|mut a| a.next())
+        .map(|a| a.ip())
+        .map(|ip| ip.to_string())
 }
