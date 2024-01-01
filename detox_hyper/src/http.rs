@@ -1,14 +1,12 @@
 use bytes::{Buf, Bytes};
-use detox_net::stream::MaybeTlsStream;
-use http::header::{CONNECTION, CONTENT_LENGTH, HOST, LOCATION};
-use http::{HeaderValue, Request, Response, StatusCode, Uri};
+use detox_net::HostAndPort;
+use http::header::{CONTENT_LENGTH, LOCATION};
+use http::{Request, Response, StatusCode, Uri};
 use http_body_util::{BodyExt, Empty};
-use hyper::client::conn::http1;
-use hyper_util::rt::TokioIo;
 use std::io::{Error, Read};
 use std::sync::Arc;
-use tokio::net::TcpStream;
-use tokio_rustls::TlsConnector;
+
+use crate::conn::Connection;
 
 static MAX_SIZE: u64 = 8 * 1024 * 1024;
 
@@ -16,59 +14,27 @@ async fn http_get(
     uri: Uri,
     tls_config: Arc<rustls::ClientConfig>,
 ) -> std::io::Result<Response<hyper::body::Incoming>> {
-    let http::uri::Parts {
-        scheme,
-        authority,
-        path_and_query,
-        ..
-    } = uri.into_parts();
-    let scheme = scheme.unwrap_or(http::uri::Scheme::HTTP);
-    let host = authority
-        .as_ref()
-        .map(|a| a.host())
-        .ok_or_else(|| Error::other("Invalid URI: host missing"))?;
-    let stream = if scheme == http::uri::Scheme::HTTPS {
-        let port = authority
-            .as_ref()
-            .and_then(|a| a.port().map(|p| p.as_u16()))
-            .unwrap_or(443);
-        let stream = TcpStream::connect((host, port)).await?;
-        let domain = rustls::ServerName::try_from(host)
-            .map_err(|e| Error::other(format!("Invalid domain name: {e}")))?;
-        let tls = TlsConnector::from(tls_config);
-        let stream = tls.connect(domain, stream).await?;
-        MaybeTlsStream::from(stream)
+    let dst = HostAndPort::try_from_uri(&uri).map_err(std::io::Error::other)?;
+    let scheme = uri.scheme().unwrap_or(&http::uri::Scheme::HTTP);
+    let conn = if scheme == &http::uri::Scheme::HTTPS {
+        Connection::https(dst, tls_config)
     } else {
-        // scheme == &http::uri::Scheme::HTTP
-        let port = authority
-            .as_ref()
-            .and_then(|a| a.port().map(|p| p.as_u16()))
-            .unwrap_or(80);
-
-        let stream = TcpStream::connect((host, port)).await?;
-        MaybeTlsStream::from(stream)
+        Connection::http(dst)
     };
+    let conn = conn.await?;
 
-    let path_and_query =
-        path_and_query.unwrap_or_else(|| http::uri::PathAndQuery::from_static("/"));
-    let uri = Uri::builder()
-        .path_and_query(path_and_query)
-        .build()
-        .expect("URI");
     let request = Request::get(uri)
-        .header(HOST, host)
-        .header(CONNECTION, HeaderValue::from_static("close"))
         .body(Empty::<Bytes>::new())
         .map_err(|e| Error::other(format!("Invalid HTTP request: {e}")))?;
 
-    let (mut request_sender, connection) = http1::handshake(TokioIo::new(stream))
+    let conn = conn
+        .handshake()
         .await
         .map_err(|e| Error::other(format!("HTTP handshake error: {e}")))?;
 
-    let (response, _connection) = tokio::join!(request_sender.send_request(request), connection);
-
-    let response = response.map_err(|e| Error::other(format!("HTTP error: {e}")))?;
-    Ok(response)
+    conn.send_request(request)
+        .await
+        .map_err(|e| Error::other(format!("HTTP error: {e}")))
 }
 
 /// We currently support only IETF RFC 2616, which requires absolute URIs in case of an redirect

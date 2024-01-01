@@ -10,7 +10,6 @@ rust_library(
         "src/lib.rs",
         "src/metered.rs",
         "src/path_or_uri.rs",
-        "src/stream.rs",
     ],
     aliases = aliases(),
     proc_macro_deps = all_crate_deps(
