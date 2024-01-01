@@ -30,23 +30,25 @@ pub struct HostAndPort(String, u16);
 
 impl HostAndPort {
     pub fn try_from_uri(uri: &Uri) -> std::result::Result<HostAndPort, Error> {
-        match (uri.scheme(), uri.host(), uri.port_u16()) {
-            (Some(scheme), Some(host), None) => {
-                let port = if *scheme == http::uri::Scheme::HTTP {
-                    80u16
-                } else if *scheme == http::uri::Scheme::HTTPS {
-                    443u16
+        let Some(host) = uri.host() else {
+            return Err(Error::NoHost);
+        };
+        let port = uri.port_u16().ok_or(Error::NoPort).or_else(|_| {
+            uri.scheme().ok_or(Error::NoPort).and_then(|s| {
+                if *s == http::uri::Scheme::HTTP {
+                    Ok(80u16)
+                } else if *s == http::uri::Scheme::HTTPS {
+                    Ok(443u16)
                 } else {
-                    return Err(Error::NoPort);
-                };
-                Ok(HostAndPort(
-                    host.trim_matches(|c| c == '[' || c == ']').to_owned(),
-                    port,
-                ))
-            }
-            (_, Some(host), Some(port)) => Ok(HostAndPort(host.to_owned(), port)),
-            (_, _, _) => Err(Error::InvalidUri),
-        }
+                    Err(Error::InvalidUri)
+                }
+            })
+        })?;
+
+        Ok(HostAndPort(
+            host.trim_matches(|c| c == '[' || c == ']').to_owned(),
+            port,
+        ))
     }
     pub fn host(&self) -> &str {
         &self.0
