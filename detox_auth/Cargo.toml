@@ -1,0 +1,21 @@
+[package]
+name = "detox_auth"
+version = "0.0.1"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = ["negotiate"]
+negotiate = ["dep:spnego"]
+
+[dependencies]
+base64.workspace = true
+http.workspace = true
+hyper.workspace = true
+netrc.workspace = true
+spnego = { workspace = true, optional = true }
+thiserror.workspace = true
+
+[lib]
+doctest = false

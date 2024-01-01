@@ -1,13 +1,11 @@
 pub mod accesslog;
-pub mod auth;
-pub mod client;
-pub mod connect;
-pub mod net;
+pub mod context;
+pub mod server;
 pub mod session;
 pub mod socket;
 
+pub use crate::context::Context;
 pub use crate::session::Session;
-pub use hyper::Server;
 
 pub const DEFAULT_PAC_SCRIPT: &str = "function FindProxyForURL(url, host) { return \"DIRECT\"; }";
 
@@ -41,13 +39,35 @@ pub enum Error {
     Netrc(
         #[from]
         #[source]
-        crate::auth::netrc::Error,
+        detox_auth::netrc::Error,
     ),
-
     #[error("PAC script error: {0}")]
     PacScript(
         #[from]
         #[source]
         paclib::PacScriptError,
     ),
+    // #[error("Invalid URI: {0}")]
+    // InvalidURI(
+    //     #[from]
+    //     #[source]
+    //     host_and_port::Error,
+    // ),
+}
+
+pub(crate) mod body {
+    use bytes::Bytes;
+    use http_body_util::{combinators::BoxBody, BodyExt};
+
+    pub(crate) fn empty() -> BoxBody<Bytes, hyper::Error> {
+        http_body_util::Empty::new()
+            .map_err(|never| match never {})
+            .boxed()
+    }
+
+    pub(crate) fn full<T: Into<Bytes>>(chunk: T) -> BoxBody<Bytes, hyper::Error> {
+        http_body_util::Full::new(chunk.into())
+            .map_err(|never| match never {})
+            .boxed()
+    }
 }

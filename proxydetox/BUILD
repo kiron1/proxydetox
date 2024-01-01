@@ -18,6 +18,7 @@ rust_binary(
     ),
     visibility = ["//visibility:public"],
     deps = [
+        "//detox_auth",
         "//detox_net",
         "//proxydetoxlib",
     ] + all_crate_deps(
@@ -27,6 +28,7 @@ rust_binary(
 
 rust_test(
     name = "proxydetox_test",
+    size = "small",
     srcs = [
         "src/main.rs",
         "src/options.rs",
@@ -42,6 +44,7 @@ rust_test(
         proc_macro = True,
     ),
     deps = [
+        "//detox_auth",
         "//detox_net",
         "//proxydetoxlib",
     ] + all_crate_deps(
@@ -69,6 +72,7 @@ rust_static_library(
         "static_library",
     ],
     deps = [
+        "//detox_auth",
         "//detox_net",
         "//proxydetoxlib",
     ] + all_crate_deps(

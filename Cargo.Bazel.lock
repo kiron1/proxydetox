@@ -1,5 +1,5 @@
 {
-  "checksum": "9f8bc34edec1cd85d42648c97cecbb9d2480484d577fecd16019f8d8ef0f00c6",
+  "checksum": "8c5489a06dce45fecef388198f3e4aa0152da3f8df87846061317840a59b29b4",
   "crates": {
     "addr2line 0.21.0": {
       "name": "addr2line",
@@ -780,7 +780,7 @@
               "target": "cexpr"
             },
             {
-              "id": "clang-sys 1.6.1",
+              "id": "clang-sys 1.7.0",
               "target": "clang_sys"
             },
             {
@@ -800,11 +800,11 @@
               "target": "peeking_take_while"
             },
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
@@ -840,7 +840,7 @@
         "link_deps": {
           "common": [
             {
-              "id": "clang-sys 1.6.1",
+              "id": "clang-sys 1.7.0",
               "target": "clang_sys"
             }
           ],
@@ -1204,7 +1204,7 @@
               "target": "serde"
             },
             {
-              "id": "serde_json 1.0.108",
+              "id": "serde_json 1.0.109",
               "target": "serde_json"
             },
             {
@@ -1480,15 +1480,15 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
-              "id": "syn 2.0.43",
+              "id": "syn 2.0.44",
               "target": "syn"
             },
             {
@@ -1951,13 +1951,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "clang-sys 1.6.1": {
+    "clang-sys 1.7.0": {
       "name": "clang-sys",
-      "version": "1.6.1",
+      "version": "1.7.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/clang-sys/1.6.1/download",
-          "sha256": "c688fc74432808e3eb684cae8830a86be1d66a2bd58e1f248ed0960a590baf6f"
+          "url": "https://crates.io/api/v1/crates/clang-sys/1.7.0/download",
+          "sha256": "67523a3b4be3ce1989d607a828d036249522dd9c1c8de7f4dd2dae43a37369d1"
         }
       },
       "targets": [
@@ -2003,7 +2003,7 @@
         "deps": {
           "common": [
             {
-              "id": "clang-sys 1.6.1",
+              "id": "clang-sys 1.7.0",
               "target": "build_script_build"
             },
             {
@@ -2015,14 +2015,14 @@
               "target": "libc"
             },
             {
-              "id": "libloading 0.7.4",
+              "id": "libloading 0.8.1",
               "target": "libloading"
             }
           ],
           "selects": {}
         },
         "edition": "2015",
-        "version": "1.6.1"
+        "version": "1.7.0"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -2204,15 +2204,15 @@
               "target": "heck"
             },
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
-              "id": "syn 2.0.43",
+              "id": "syn 2.0.44",
               "target": "syn"
             }
           ],
@@ -2563,6 +2563,179 @@
       },
       "license": "MIT"
     },
+    "detox_auth 0.0.1": {
+      "name": "detox_auth",
+      "version": "0.0.1",
+      "repository": null,
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "detox_auth",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "detox_auth",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": {
+          "common": [
+            "default",
+            "negotiate"
+          ],
+          "selects": {}
+        },
+        "deps": {
+          "common": [
+            {
+              "id": "base64 0.21.5",
+              "target": "base64"
+            },
+            {
+              "id": "http 1.0.0",
+              "target": "http"
+            },
+            {
+              "id": "hyper 1.1.0",
+              "target": "hyper"
+            },
+            {
+              "id": "netrc 0.4.1",
+              "target": "netrc"
+            },
+            {
+              "id": "thiserror 1.0.53",
+              "target": "thiserror"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2021",
+        "version": "0.0.1"
+      },
+      "license": null
+    },
+    "detox_futures 0.0.1": {
+      "name": "detox_futures",
+      "version": "0.0.1",
+      "repository": null,
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "detox_futures",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "detox_futures",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "tokio 1.35.1",
+              "target": "tokio"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2021",
+        "version": "0.0.1"
+      },
+      "license": null
+    },
+    "detox_hyper 0.0.1": {
+      "name": "detox_hyper",
+      "version": "0.0.1",
+      "repository": null,
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "detox_hyper",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "detox_hyper",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "bytes 1.5.0",
+              "target": "bytes"
+            },
+            {
+              "id": "futures-util 0.3.30",
+              "target": "futures_util"
+            },
+            {
+              "id": "http 1.0.0",
+              "target": "http"
+            },
+            {
+              "id": "http-body 1.0.0",
+              "target": "http_body"
+            },
+            {
+              "id": "http-body-util 0.1.0",
+              "target": "http_body_util"
+            },
+            {
+              "id": "hyper 1.1.0",
+              "target": "hyper"
+            },
+            {
+              "id": "hyper-rustls 0.24.2",
+              "target": "hyper_rustls"
+            },
+            {
+              "id": "hyper-util 0.1.2",
+              "target": "hyper_util"
+            },
+            {
+              "id": "pin-project 1.1.3",
+              "target": "pin_project"
+            },
+            {
+              "id": "rustls 0.21.10",
+              "target": "rustls"
+            },
+            {
+              "id": "thiserror 1.0.53",
+              "target": "thiserror"
+            },
+            {
+              "id": "tokio 1.35.1",
+              "target": "tokio"
+            },
+            {
+              "id": "tokio-rustls 0.24.1",
+              "target": "tokio_rustls"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2021",
+        "version": "0.0.1"
+      },
+      "license": null
+    },
     "detox_net 0.1.2": {
       "name": "detox_net",
       "version": "0.1.2",
@@ -2586,7 +2759,7 @@
         "deps": {
           "common": [
             {
-              "id": "http 0.2.11",
+              "id": "http 1.0.0",
               "target": "http"
             },
             {
@@ -2600,6 +2773,14 @@
             {
               "id": "tokio 1.35.1",
               "target": "tokio"
+            },
+            {
+              "id": "tokio-rustls 0.24.1",
+              "target": "tokio_rustls"
+            },
+            {
+              "id": "tracing 0.1.40",
+              "target": "tracing"
             }
           ],
           "selects": {}
@@ -2734,15 +2915,15 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
-              "id": "syn 2.0.43",
+              "id": "syn 2.0.44",
               "target": "syn"
             }
           ],
@@ -2891,11 +3072,19 @@
               "target": "futures_util"
             },
             {
-              "id": "http 0.2.11",
+              "id": "http 1.0.0",
               "target": "http"
             },
             {
-              "id": "hyper 0.14.28",
+              "id": "http-body 1.0.0",
+              "target": "http_body"
+            },
+            {
+              "id": "http-body-util 0.1.0",
+              "target": "http_body_util"
+            },
+            {
+              "id": "hyper 1.1.0",
               "target": "hyper"
             },
             {
@@ -3625,11 +3814,11 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
@@ -3765,85 +3954,6 @@
         "version": "0.3.1"
       },
       "license": "MIT OR Apache-2.0"
-    },
-    "h2 0.3.22": {
-      "name": "h2",
-      "version": "0.3.22",
-      "repository": {
-        "Http": {
-          "url": "https://crates.io/api/v1/crates/h2/0.3.22/download",
-          "sha256": "4d6250322ef6e60f93f9a2162799302cd6f68f79f6e5d85c8c16f14d1d958178"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "h2",
-            "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        }
-      ],
-      "library_target_name": "h2",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "bytes 1.5.0",
-              "target": "bytes"
-            },
-            {
-              "id": "fnv 1.0.7",
-              "target": "fnv"
-            },
-            {
-              "id": "futures-core 0.3.30",
-              "target": "futures_core"
-            },
-            {
-              "id": "futures-sink 0.3.30",
-              "target": "futures_sink"
-            },
-            {
-              "id": "futures-util 0.3.30",
-              "target": "futures_util"
-            },
-            {
-              "id": "http 0.2.11",
-              "target": "http"
-            },
-            {
-              "id": "indexmap 2.1.0",
-              "target": "indexmap"
-            },
-            {
-              "id": "slab 0.4.9",
-              "target": "slab"
-            },
-            {
-              "id": "tokio 1.35.1",
-              "target": "tokio"
-            },
-            {
-              "id": "tokio-util 0.7.10",
-              "target": "tokio_util"
-            },
-            {
-              "id": "tracing 0.1.40",
-              "target": "tracing"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2018",
-        "version": "0.3.22"
-      },
-      "license": "MIT"
     },
     "hashbrown 0.13.2": {
       "name": "hashbrown",
@@ -4083,6 +4193,60 @@
       },
       "license": "MIT OR Apache-2.0"
     },
+    "http 1.0.0": {
+      "name": "http",
+      "version": "1.0.0",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/http/1.0.0/download",
+          "sha256": "b32afd38673a8016f7c9ae69e5af41a58f81b1d31689040f2f1959594ce194ea"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "http",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "http",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": {
+          "common": [
+            "default",
+            "std"
+          ],
+          "selects": {}
+        },
+        "deps": {
+          "common": [
+            {
+              "id": "bytes 1.5.0",
+              "target": "bytes"
+            },
+            {
+              "id": "fnv 1.0.7",
+              "target": "fnv"
+            },
+            {
+              "id": "itoa 1.0.10",
+              "target": "itoa"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "1.0.0"
+      },
+      "license": "MIT OR Apache-2.0"
+    },
     "http-body 0.4.6": {
       "name": "http-body",
       "version": "0.4.6",
@@ -4127,6 +4291,104 @@
         },
         "edition": "2018",
         "version": "0.4.6"
+      },
+      "license": "MIT"
+    },
+    "http-body 1.0.0": {
+      "name": "http-body",
+      "version": "1.0.0",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/http-body/1.0.0/download",
+          "sha256": "1cac85db508abc24a2e48553ba12a996e87244a0395ce011e62b37158745d643"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "http_body",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "http_body",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "bytes 1.5.0",
+              "target": "bytes"
+            },
+            {
+              "id": "http 1.0.0",
+              "target": "http"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "1.0.0"
+      },
+      "license": "MIT"
+    },
+    "http-body-util 0.1.0": {
+      "name": "http-body-util",
+      "version": "0.1.0",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/http-body-util/0.1.0/download",
+          "sha256": "41cb79eb393015dadd30fc252023adb0b2400a0caee0fa2a077e6e21a551e840"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "http_body_util",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "http_body_util",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "bytes 1.5.0",
+              "target": "bytes"
+            },
+            {
+              "id": "futures-util 0.3.30",
+              "target": "futures_util"
+            },
+            {
+              "id": "http 1.0.0",
+              "target": "http"
+            },
+            {
+              "id": "http-body 1.0.0",
+              "target": "http_body"
+            },
+            {
+              "id": "pin-project-lite 0.2.13",
+              "target": "pin_project_lite"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.1.0"
       },
       "license": "MIT"
     },
@@ -4250,13 +4512,15 @@
       },
       "license": "MIT/Apache-2.0"
     },
-    "hyper 0.14.28": {
+    "hyper 0.14.27": {
       "name": "hyper",
-      "version": "0.14.28",
+      "version": "0.14.27",
       "repository": {
-        "Http": {
-          "url": "https://crates.io/api/v1/crates/hyper/0.14.28/download",
-          "sha256": "bf96e135eb83a2a8ddf766e426a841d8ddd7449d5f00d34ea02b41d2f19eef80"
+        "Git": {
+          "remote": "https://github.com/kiron1/hyper",
+          "commitish": {
+            "Rev": "b7118433fc8e7f984f6fc3d3b0d794b9bdd517b5"
+          }
         }
       },
       "targets": [
@@ -4278,14 +4542,10 @@
         "crate_features": {
           "common": [
             "client",
-            "default",
-            "h2",
             "http1",
-            "http2",
             "runtime",
             "server",
             "socket2",
-            "stream",
             "tcp"
           ],
           "selects": {}
@@ -4307,10 +4567,6 @@
             {
               "id": "futures-util 0.3.30",
               "target": "futures_util"
-            },
-            {
-              "id": "h2 0.3.22",
-              "target": "h2"
             },
             {
               "id": "http 0.2.11",
@@ -4360,7 +4616,95 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.14.28"
+        "version": "0.14.27"
+      },
+      "license": "MIT"
+    },
+    "hyper 1.1.0": {
+      "name": "hyper",
+      "version": "1.1.0",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/hyper/1.1.0/download",
+          "sha256": "fb5aa53871fc917b1a9ed87b683a5d86db645e23acb32c2e0785a353e522fb75"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "hyper",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "hyper",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": {
+          "common": [
+            "client",
+            "default",
+            "http1",
+            "server"
+          ],
+          "selects": {}
+        },
+        "deps": {
+          "common": [
+            {
+              "id": "bytes 1.5.0",
+              "target": "bytes"
+            },
+            {
+              "id": "futures-channel 0.3.30",
+              "target": "futures_channel"
+            },
+            {
+              "id": "futures-util 0.3.30",
+              "target": "futures_util"
+            },
+            {
+              "id": "http 1.0.0",
+              "target": "http"
+            },
+            {
+              "id": "http-body 1.0.0",
+              "target": "http_body"
+            },
+            {
+              "id": "httparse 1.8.0",
+              "target": "httparse"
+            },
+            {
+              "id": "httpdate 1.0.3",
+              "target": "httpdate"
+            },
+            {
+              "id": "itoa 1.0.10",
+              "target": "itoa"
+            },
+            {
+              "id": "pin-project-lite 0.2.13",
+              "target": "pin_project_lite"
+            },
+            {
+              "id": "tokio 1.35.1",
+              "target": "tokio"
+            },
+            {
+              "id": "want 0.3.1",
+              "target": "want"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "1.1.0"
       },
       "license": "MIT"
     },
@@ -4414,7 +4758,7 @@
               "target": "http"
             },
             {
-              "id": "hyper 0.14.28",
+              "id": "hyper 0.14.27",
               "target": "hyper"
             },
             {
@@ -4444,6 +4788,88 @@
         "version": "0.24.2"
       },
       "license": "Apache-2.0 OR ISC OR MIT"
+    },
+    "hyper-util 0.1.2": {
+      "name": "hyper-util",
+      "version": "0.1.2",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/hyper-util/0.1.2/download",
+          "sha256": "bdea9aac0dbe5a9240d68cfd9501e2db94222c6dc06843e06640b9e07f0fdc67"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "hyper_util",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "hyper_util",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": {
+          "common": [
+            "default",
+            "tokio"
+          ],
+          "selects": {}
+        },
+        "deps": {
+          "common": [
+            {
+              "id": "bytes 1.5.0",
+              "target": "bytes"
+            },
+            {
+              "id": "futures-channel 0.3.30",
+              "target": "futures_channel"
+            },
+            {
+              "id": "futures-util 0.3.30",
+              "target": "futures_util"
+            },
+            {
+              "id": "http 1.0.0",
+              "target": "http"
+            },
+            {
+              "id": "http-body 1.0.0",
+              "target": "http_body"
+            },
+            {
+              "id": "hyper 1.1.0",
+              "target": "hyper"
+            },
+            {
+              "id": "pin-project-lite 0.2.13",
+              "target": "pin_project_lite"
+            },
+            {
+              "id": "socket2 0.5.5",
+              "target": "socket2"
+            },
+            {
+              "id": "tokio 1.35.1",
+              "target": "tokio"
+            },
+            {
+              "id": "tracing 0.1.40",
+              "target": "tracing"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.1.2"
+      },
+      "license": "MIT"
     },
     "iana-time-zone 0.1.59": {
       "name": "iana-time-zone",
@@ -5116,11 +5542,11 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
@@ -5656,13 +6082,13 @@
       },
       "license": "MIT"
     },
-    "libloading 0.7.4": {
+    "libloading 0.8.1": {
       "name": "libloading",
-      "version": "0.7.4",
+      "version": "0.8.1",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/libloading/0.7.4/download",
-          "sha256": "b67380fd3b2fbe7527a606e18729d21c6f3951633d0500574c4dc22d2d638b9f"
+          "url": "https://crates.io/api/v1/crates/libloading/0.8.1/download",
+          "sha256": "c571b676ddfc9a8c12f1f3d3085a7b163966a8fd8098a90640953ce5f6170161"
         }
       },
       "targets": [
@@ -5692,14 +6118,14 @@
             ],
             "cfg(windows)": [
               {
-                "id": "winapi 0.3.9",
-                "target": "winapi"
+                "id": "windows-sys 0.48.0",
+                "target": "windows_sys"
               }
             ]
           }
         },
         "edition": "2015",
-        "version": "0.7.4"
+        "version": "0.8.1"
       },
       "license": "ISC"
     },
@@ -6882,15 +7308,15 @@
               "target": "proc_macro_crate"
             },
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
-              "id": "syn 2.0.43",
+              "id": "syn 2.0.44",
               "target": "syn"
             }
           ],
@@ -7101,7 +7527,7 @@
               "target": "clap"
             },
             {
-              "id": "http 0.2.11",
+              "id": "http 1.0.0",
               "target": "http"
             }
           ],
@@ -7151,7 +7577,7 @@
               "target": "gc"
             },
             {
-              "id": "http 0.2.11",
+              "id": "http 1.0.0",
               "target": "http"
             },
             {
@@ -7479,15 +7905,15 @@
               "target": "phf_shared"
             },
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
-              "id": "syn 2.0.43",
+              "id": "syn 2.0.44",
               "target": "syn"
             }
           ],
@@ -7604,15 +8030,15 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
-              "id": "syn 2.0.43",
+              "id": "syn 2.0.44",
               "target": "syn"
             }
           ],
@@ -7907,13 +8333,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "proc-macro2 1.0.72": {
+    "proc-macro2 1.0.73": {
       "name": "proc-macro2",
-      "version": "1.0.72",
+      "version": "1.0.73",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/proc-macro2/1.0.72/download",
-          "sha256": "a293318316cf6478ec1ad2a21c49390a8d5b5eae9fab736467d93fbc0edc29c5"
+          "url": "https://crates.io/api/v1/crates/proc-macro2/1.0.73/download",
+          "sha256": "2dd5e8a1f1029c43224ad5898e50140c2aebb1705f19e67c918ebf5b9e797fe1"
         }
       },
       "targets": [
@@ -7951,7 +8377,7 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "build_script_build"
             },
             {
@@ -7962,7 +8388,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "1.0.72"
+        "version": "1.0.73"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -7970,68 +8396,6 @@
         ]
       },
       "license": "MIT OR Apache-2.0"
-    },
-    "proxy_client 0.1.2": {
-      "name": "proxy_client",
-      "version": "0.1.2",
-      "repository": null,
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "proxy_client",
-            "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        }
-      ],
-      "library_target_name": "proxy_client",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "http 0.2.11",
-              "target": "http"
-            },
-            {
-              "id": "hyper 0.14.28",
-              "target": "hyper"
-            },
-            {
-              "id": "hyper-rustls 0.24.2",
-              "target": "hyper_rustls"
-            },
-            {
-              "id": "rustls 0.21.10",
-              "target": "rustls"
-            },
-            {
-              "id": "thiserror 1.0.53",
-              "target": "thiserror"
-            },
-            {
-              "id": "tokio 1.35.1",
-              "target": "tokio"
-            },
-            {
-              "id": "tokio-rustls 0.24.1",
-              "target": "tokio_rustls"
-            },
-            {
-              "id": "tower 0.4.13",
-              "target": "tower"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2021",
-        "version": "0.1.2"
-      },
-      "license": null
     },
     "proxydetox 0.7.5": {
       "name": "proxydetox",
@@ -8065,12 +8429,16 @@
               "target": "futures_util"
             },
             {
-              "id": "http 0.2.11",
+              "id": "http 1.0.0",
               "target": "http"
             },
             {
-              "id": "hyper 0.14.28",
+              "id": "hyper 1.1.0",
               "target": "hyper"
+            },
+            {
+              "id": "hyper-util 0.1.2",
+              "target": "hyper_util"
             },
             {
               "id": "lazy_static 1.4.0",
@@ -8091,6 +8459,10 @@
             {
               "id": "tokio-rustls 0.24.1",
               "target": "tokio_rustls"
+            },
+            {
+              "id": "tokio-stream 0.1.14",
+              "target": "tokio_stream"
             },
             {
               "id": "tokio-util 0.7.10",
@@ -8144,16 +8516,13 @@
         "crate_features": {
           "common": [
             "default",
+            "detox_auth",
             "negotiate"
           ],
           "selects": {}
         },
         "deps": {
           "common": [
-            {
-              "id": "base64 0.21.5",
-              "target": "base64"
-            },
             {
               "id": "bytes 1.5.0",
               "target": "bytes"
@@ -8171,16 +8540,20 @@
               "target": "futures_util"
             },
             {
-              "id": "http 0.2.11",
+              "id": "http 1.0.0",
               "target": "http"
             },
             {
-              "id": "hyper 0.14.28",
+              "id": "http-body-util 0.1.0",
+              "target": "http_body_util"
+            },
+            {
+              "id": "hyper 1.1.0",
               "target": "hyper"
             },
             {
-              "id": "hyper-rustls 0.24.2",
-              "target": "hyper_rustls"
+              "id": "hyper-util 0.1.2",
+              "target": "hyper_util"
             },
             {
               "id": "lazy_static 1.4.0",
@@ -8189,10 +8562,6 @@
             {
               "id": "libc 0.2.151",
               "target": "libc"
-            },
-            {
-              "id": "netrc 0.4.1",
-              "target": "netrc"
             },
             {
               "id": "proxydetoxlib 0.7.5",
@@ -8227,8 +8596,8 @@
               "target": "tokio_stream"
             },
             {
-              "id": "tower 0.4.13",
-              "target": "tower"
+              "id": "tokio-util 0.7.10",
+              "target": "tokio_util"
             },
             {
               "id": "tracing 0.1.40",
@@ -8299,13 +8668,13 @@
       },
       "license": "MIT/Apache-2.0"
     },
-    "quote 1.0.33": {
+    "quote 1.0.34": {
       "name": "quote",
-      "version": "1.0.33",
+      "version": "1.0.34",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/quote/1.0.33/download",
-          "sha256": "5267fca4496028628a95160fc423a33e8b2e6af8a5302579e322e4b520293cae"
+          "url": "https://crates.io/api/v1/crates/quote/1.0.34/download",
+          "sha256": "22a37c9326af5ed140c86a46655b5278de879853be5573c01df185b6f49a580a"
         }
       },
       "targets": [
@@ -8334,14 +8703,14 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             }
           ],
           "selects": {}
         },
         "edition": "2018",
-        "version": "1.0.33"
+        "version": "1.0.34"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -9889,15 +10258,15 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
-              "id": "syn 2.0.43",
+              "id": "syn 2.0.44",
               "target": "syn"
             }
           ],
@@ -9908,13 +10277,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "serde_json 1.0.108": {
+    "serde_json 1.0.109": {
       "name": "serde_json",
-      "version": "1.0.108",
+      "version": "1.0.109",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/serde_json/1.0.108/download",
-          "sha256": "3d1c7e3eac408d115102c4c24ad393e0821bb3a5df4d506a80f85f7a742a526b"
+          "url": "https://crates.io/api/v1/crates/serde_json/1.0.109/download",
+          "sha256": "cb0652c533506ad7a2e353cce269330d6afd8bdfb6d75e0ace5b35aacbd7b9e9"
         }
       },
       "targets": [
@@ -9964,14 +10333,14 @@
               "target": "serde"
             },
             {
-              "id": "serde_json 1.0.108",
+              "id": "serde_json 1.0.109",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2021",
-        "version": "1.0.108"
+        "version": "1.0.109"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -10131,75 +10500,6 @@
         "version": "0.3.11"
       },
       "license": "MIT/Apache-2.0"
-    },
-    "slab 0.4.9": {
-      "name": "slab",
-      "version": "0.4.9",
-      "repository": {
-        "Http": {
-          "url": "https://crates.io/api/v1/crates/slab/0.4.9/download",
-          "sha256": "8f92a496fb766b417c996b9c5e57daf2f7ad3b0bebe1ccfca4856390e3d3bb67"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "slab",
-            "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        },
-        {
-          "BuildScript": {
-            "crate_name": "build_script_build",
-            "crate_root": "build.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        }
-      ],
-      "library_target_name": "slab",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "crate_features": {
-          "common": [
-            "default",
-            "std"
-          ],
-          "selects": {}
-        },
-        "deps": {
-          "common": [
-            {
-              "id": "slab 0.4.9",
-              "target": "build_script_build"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2018",
-        "version": "0.4.9"
-      },
-      "build_script_attrs": {
-        "data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "autocfg 1.1.0",
-              "target": "autocfg"
-            }
-          ],
-          "selects": {}
-        }
-      },
-      "license": "MIT"
     },
     "smallvec 1.11.2": {
       "name": "smallvec",
@@ -10619,11 +10919,11 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
@@ -10647,13 +10947,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "syn 2.0.43": {
+    "syn 2.0.44": {
       "name": "syn",
-      "version": "2.0.43",
+      "version": "2.0.44",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/syn/2.0.43/download",
-          "sha256": "ee659fb5f3d355364e1f3e5bc10fb82068efbf824a1e9d1c9504244a6469ad53"
+          "url": "https://crates.io/api/v1/crates/syn/2.0.44/download",
+          "sha256": "92d27c2c202598d05175a6dd3af46824b7f747f8d8e9b14c623f19fa5069735d"
         }
       },
       "targets": [
@@ -10692,11 +10992,11 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
@@ -10707,7 +11007,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "2.0.43"
+        "version": "2.0.44"
       },
       "license": "MIT OR Apache-2.0"
     },
@@ -10746,11 +11046,11 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
@@ -10804,15 +11104,15 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
-              "id": "syn 2.0.43",
+              "id": "syn 2.0.44",
               "target": "syn"
             },
             {
@@ -11133,15 +11433,15 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
-              "id": "syn 2.0.43",
+              "id": "syn 2.0.44",
               "target": "syn"
             }
           ],
@@ -11404,15 +11704,15 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
-              "id": "syn 2.0.43",
+              "id": "syn 2.0.44",
               "target": "syn"
             }
           ],
@@ -11502,6 +11802,7 @@
         "crate_features": {
           "common": [
             "default",
+            "net",
             "sync",
             "time",
             "tokio-util"
@@ -11561,10 +11862,7 @@
         ],
         "crate_features": {
           "common": [
-            "codec",
-            "default",
-            "io",
-            "tracing"
+            "default"
           ],
           "selects": {}
         },
@@ -11589,10 +11887,6 @@
             {
               "id": "tokio 1.35.1",
               "target": "tokio"
-            },
-            {
-              "id": "tracing 0.1.40",
-              "target": "tracing"
             }
           ],
           "selects": {}
@@ -11685,113 +11979,6 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "tower 0.4.13": {
-      "name": "tower",
-      "version": "0.4.13",
-      "repository": {
-        "Http": {
-          "url": "https://crates.io/api/v1/crates/tower/0.4.13/download",
-          "sha256": "b8fa9be0de6cf49e536ce1851f987bd21a43b771b09473c3549a6c853db37c1c"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "tower",
-            "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        }
-      ],
-      "library_target_name": "tower",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "crate_features": {
-          "common": [
-            "__common",
-            "default",
-            "futures-core",
-            "futures-util",
-            "log",
-            "pin-project",
-            "pin-project-lite",
-            "tracing",
-            "util"
-          ],
-          "selects": {}
-        },
-        "deps": {
-          "common": [
-            {
-              "id": "futures-core 0.3.30",
-              "target": "futures_core"
-            },
-            {
-              "id": "futures-util 0.3.30",
-              "target": "futures_util"
-            },
-            {
-              "id": "pin-project 1.1.3",
-              "target": "pin_project"
-            },
-            {
-              "id": "pin-project-lite 0.2.13",
-              "target": "pin_project_lite"
-            },
-            {
-              "id": "tower-layer 0.3.2",
-              "target": "tower_layer"
-            },
-            {
-              "id": "tower-service 0.3.2",
-              "target": "tower_service"
-            },
-            {
-              "id": "tracing 0.1.40",
-              "target": "tracing"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2018",
-        "version": "0.4.13"
-      },
-      "license": "MIT"
-    },
-    "tower-layer 0.3.2": {
-      "name": "tower-layer",
-      "version": "0.3.2",
-      "repository": {
-        "Http": {
-          "url": "https://crates.io/api/v1/crates/tower-layer/0.3.2/download",
-          "sha256": "c20c8dbed6283a09604c3e69b4b7eeb54e298b8a600d4d5ecb5ad39de609f1d0"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "tower_layer",
-            "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        }
-      ],
-      "library_target_name": "tower_layer",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "edition": "2018",
-        "version": "0.3.2"
-      },
-      "license": "MIT"
-    },
     "tower-service 0.3.2": {
       "name": "tower-service",
       "version": "0.3.2",
@@ -11851,7 +12038,6 @@
           "common": [
             "attributes",
             "default",
-            "log",
             "std",
             "tracing-attributes"
           ],
@@ -11859,10 +12045,6 @@
         },
         "deps": {
           "common": [
-            {
-              "id": "log 0.4.20",
-              "target": "log"
-            },
             {
               "id": "pin-project-lite 0.2.13",
               "target": "pin_project_lite"
@@ -11916,15 +12098,15 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
-              "id": "syn 2.0.43",
+              "id": "syn 2.0.44",
               "target": "syn"
             }
           ],
@@ -12692,15 +12874,15 @@
               "target": "once_cell"
             },
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
-              "id": "syn 2.0.43",
+              "id": "syn 2.0.44",
               "target": "syn"
             },
             {
@@ -12749,7 +12931,7 @@
         "deps": {
           "common": [
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
@@ -12798,15 +12980,15 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
-              "id": "syn 2.0.43",
+              "id": "syn 2.0.44",
               "target": "syn"
             },
             {
@@ -14531,15 +14713,15 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
-              "id": "syn 2.0.43",
+              "id": "syn 2.0.44",
               "target": "syn"
             },
             {
@@ -14629,15 +14811,15 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
-              "id": "syn 2.0.43",
+              "id": "syn 2.0.44",
               "target": "syn"
             }
           ],
@@ -14723,15 +14905,15 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
-              "id": "syn 2.0.43",
+              "id": "syn 2.0.44",
               "target": "syn"
             },
             {
@@ -14838,15 +15020,15 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.72",
+              "id": "proc-macro2 1.0.73",
               "target": "proc_macro2"
             },
             {
-              "id": "quote 1.0.33",
+              "id": "quote 1.0.34",
               "target": "quote"
             },
             {
-              "id": "syn 2.0.43",
+              "id": "syn 2.0.44",
               "target": "syn"
             }
           ],
@@ -14860,11 +15042,13 @@
   },
   "binary_crates": [],
   "workspace_members": {
+    "detox_auth 0.0.1": "detox_auth",
+    "detox_futures 0.0.1": "detox_futures",
+    "detox_hyper 0.0.1": "detox_hyper",
     "detox_net 0.1.2": "detox_net",
     "dnsdetox 0.1.2": "dnsdetox",
     "paceval 0.1.2": "paceval",
     "paclib 0.3.2": "paclib",
-    "proxy_client 0.1.2": "proxy_client",
     "proxydetox 0.7.5": "proxydetox",
     "proxydetoxlib 0.7.5": "proxydetoxlib",
     "spnego 0.1.2": "spnego"
@@ -15375,14 +15559,18 @@
     "env_logger 0.10.1",
     "futures-util 0.3.30",
     "gc 0.5.0",
-    "http 0.2.11",
-    "hyper 0.14.28",
+    "http 1.0.0",
+    "http-body 1.0.0",
+    "http-body-util 0.1.0",
+    "hyper 1.1.0",
     "hyper-rustls 0.24.2",
+    "hyper-util 0.1.2",
     "lazy_static 1.4.0",
     "libc 0.2.151",
     "libgssapi 0.6.4",
     "log 0.4.20",
     "netrc 0.4.1",
+    "pin-project 1.1.3",
     "regex 1.10.2",
     "rustls 0.21.10",
     "rustls-native-certs 0.6.3",
@@ -15393,7 +15581,6 @@
     "tokio-rustls 0.24.1",
     "tokio-stream 0.1.14",
     "tokio-util 0.7.10",
-    "tower 0.4.13",
     "tracing 0.1.40",
     "tracing-attributes 0.1.27",
     "tracing-futures 0.2.5",
