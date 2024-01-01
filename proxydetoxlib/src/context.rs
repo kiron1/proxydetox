@@ -138,7 +138,7 @@ impl Context {
                     Connection::http_proxy(proxy.clone(), tls_config.clone(), auth.clone())
                 }
             }
-            ProxyOrDirect::Direct => Connection::direct(dst),
+            ProxyOrDirect::Direct => Connection::http(dst),
         };
         let conn = conn.with_tcp_keepalive(self.client_tcp_keepalive.clone());
 
