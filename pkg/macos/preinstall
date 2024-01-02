@@ -11,14 +11,14 @@ agentplist=/Library/LaunchAgents/${label}.plist
 # Usage: uid label plist_file
 kill_and_bootout() {
   if [ -e "${3}" ]; then
-    launchctl kill TERM "gui/${1}/${2}"
-    launchctl bootout "gui/${1}" "${3}"
+    /bin/launchctl kill TERM "gui/${1}/${2}"
+    /bin/launchctl bootout "gui/${1}" "${3}"
   fi
 }
 
 
 if [ -e /dev/console ]; then
-  uid=$(stat -f %u /dev/console)
+  uid=$(/usr/bin/stat -f %u /dev/console)
   # Cleanup potential old left-overs
   kill_and_bootout "${uid}" "${oldlabel}" "${oldagentplist}"
   rm -f "${oldagentplist}"
@@ -27,7 +27,7 @@ if [ -e /dev/console ]; then
 fi
 
 # Cleanup potential old left-overs
-if pkgutil --packages | grep -q "${oldlabel}"; then
-  rm -f "/usr/local/bin/proxydetox"
-  pkgutil --forget "${oldlabel}"
+if /usr/sbin/pkgutil --packages | grep -q "${oldlabel}"; then
+  /bin/rm -f "/usr/local/bin/proxydetox"
+  /usr/sbin/pkgutil --forget "${oldlabel}"
 fi
