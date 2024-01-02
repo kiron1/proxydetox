@@ -16,11 +16,11 @@ versioned_http_archive(
 # https://github.com/bazelbuild/rules_rust/releases
 versioned_http_archive(
     name = "rules_rust",
-    sha256 = "75177226380b771be36d7efc538da842c433f14cd6c36d7660976efb53defe86",
+    sha256 = "ff1c4b8d154509154acbad7af94d1dda3b59163e62bcd81f8087df10a5f66468",
     urls = [
         "https://github.com/bazelbuild/rules_rust/releases/download/{version}/rules_rust-v{version}.tar.gz",
     ],
-    version = "0.34.1",
+    version = "0.36.1",
 )
 
 # https://github.com/bazelbuild/rules_apple/releases
@@ -158,16 +158,6 @@ crates_repository(
 load("@crate_index_tools//:defs.bzl", crate_repositories_tools = "crate_repositories")
 
 crate_repositories_tools()
-
-load("@rules_rust//bindgen:repositories.bzl", "rust_bindgen_dependencies", "rust_bindgen_register_toolchains")
-
-rust_bindgen_dependencies()
-
-rust_bindgen_register_toolchains()
-
-load("@rules_rust//bindgen:transitive_repositories.bzl", "rust_bindgen_transitive_dependencies")
-
-rust_bindgen_transitive_dependencies()
 
 load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
 
