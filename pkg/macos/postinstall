@@ -4,16 +4,16 @@ set -u
 
 label=cc.colorto.proxydetox
 agentplist=/Library/LaunchAgents/${label}.plist
- 
+
 # Usage: uid label plist_file
 bootstrap_and_enable() {
   if [ -e "${3}" ]; then
-    launchctl enable "gui/${1}/${2}"
-    launchctl bootstrap "gui/${1}" "${3}"
+    /bin/launchctl enable "gui/${1}/${2}"
+    /bin/launchctl bootstrap "gui/${1}" "${3}"
   fi
 }
 
 if [ -e /dev/console ]; then
-  uid=$(stat -f %u /dev/console)
+  uid=$(/usr/bin/stat -f %u /dev/console)
   bootstrap_and_enable "${uid}" "${label}" "${agentplist}"
 fi
