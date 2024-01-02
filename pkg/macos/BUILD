@@ -72,7 +72,7 @@ pkgbuild(
     data = ":data",
     identifier = "cc.colorto.proxydetox",
     install_location = "/",
-    package_file_name = "proxydetox_{version}_{architecture}.deb",
+    package_file_name = "proxydetox_{version}_{architecture}.pkg",
     package_variables = "//pkg:variables",
     postinstall = ":postinstall",
     preinstall = ":preinstall",
