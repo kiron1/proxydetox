@@ -77,12 +77,16 @@ def main(args):
             tar.extractall(path=root_dir)
 
         if args.postinstall:
-            with open(os.path.join(scripts_dir, "postinstall"), "w") as f:
+            postinall_path = os.path.join(scripts_dir, "postinstall")
+            with open(postinall_path, "w") as f:
                 f.write(args.postinstall.read())
+            os.chmod(postinall_path, 0o555)
 
         if args.preinstall:
-            with open(os.path.join(scripts_dir, "preinstall"), "w") as f:
+            preinstall_path = os.path.join(scripts_dir, "preinstall")
+            with open(preinstall_path, "w") as f:
                 f.write(args.preinstall.read())
+            os.chmod(preinstall_path, 0o555)
 
         pkgbuild(
             out=args.out,
