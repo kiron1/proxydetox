@@ -9,6 +9,7 @@ use http::Uri;
 use paclib::ProxyOrDirect;
 use std::fs::read_to_string;
 use std::future::IntoFuture;
+use std::net::IpAddr;
 use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
@@ -102,6 +103,15 @@ impl Context {
         };
         self.eval
             .set_pac_script(pac)
+            .await
+            .map_err(std::io::Error::other)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn set_my_ip_address(&self, addr: IpAddr) -> std::io::Result<()> {
+        tracing::info!("update my IP address");
+        self.eval
+            .set_my_ip_address(addr)
             .await
             .map_err(std::io::Error::other)
     }

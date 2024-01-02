@@ -1,4 +1,6 @@
 use http::Uri;
+use std::convert::Infallible;
+use std::net::IpAddr;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 use tokio::sync::oneshot;
@@ -14,10 +16,12 @@ pub struct Evaluator {
 
 type FindProxyResult = Result<Proxies, FindProxyError>;
 type SetPacScriptResult = Result<(), PacScriptError>;
+type SetMyIpAddressResult = Result<(), Infallible>;
 
 enum Action {
     FindProxy(Uri, oneshot::Sender<FindProxyResult>),
     SetPacScript(Option<String>, oneshot::Sender<SetPacScriptResult>),
+    SetMyIpAddress(IpAddr, oneshot::Sender<SetMyIpAddressResult>),
 }
 
 impl Evaluator {
@@ -65,6 +69,10 @@ impl Evaluator {
                     let r = engine.set_pac_script(script.as_deref());
                     result.send(r).ok();
                 }
+                Action::SetMyIpAddress(addr, result) => {
+                    let r = engine.set_my_ip_address(addr);
+                    result.send(r).ok();
+                }
             }
         }
     }
@@ -88,6 +96,17 @@ impl Evaluator {
                 sender
                     .send(Action::SetPacScript(pac_script, tx))
                     .expect("send");
+            }
+        }
+        rx.await.expect("receive")
+    }
+
+    pub async fn set_my_ip_address(&self, addr: IpAddr) -> SetMyIpAddressResult {
+        let (tx, rx) = oneshot::channel::<SetMyIpAddressResult>();
+        {
+            let sender = self.sender.lock().unwrap();
+            if let Some(ref sender) = *sender {
+                sender.send(Action::SetMyIpAddress(addr, tx)).expect("send");
             }
         }
         rx.await.expect("receive")

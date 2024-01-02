@@ -1,7 +1,7 @@
 use std::{
     ffi::OsString,
     fs::read_to_string,
-    net::{IpAddr, SocketAddr},
+    net::{IpAddr, Ipv4Addr, SocketAddr},
     path::{Path, PathBuf},
     sync::Arc,
     time::Duration,
@@ -28,6 +28,7 @@ pub enum Authorization {
 pub struct Options {
     pub log_level: LevelFilter,
     pub pac_file: Option<PathOrUri>,
+    pub my_ip_address: Option<IpAddr>,
     pub authorization: Authorization,
     pub connect_timeout: Duration,
     pub race_connect: bool,
@@ -173,6 +174,15 @@ impl Options {
                     .value_parser(is_file_or_http_uri)
                     .action(clap::ArgAction::Set),
             )
+            .arg(
+                Arg::new("my_ip_address")
+                    .long("my-ip-address")
+                    .value_name("IP-ADDRESS")
+                    .help(
+                        "Custom IP address to be returned by the myIpAddress PAC function",
+                    )
+                    .action(clap::ArgAction::Set),
+            )
             .arg(netrc_arg)
             .arg(
                 Arg::new("proxytunnel")
@@ -308,7 +318,7 @@ impl From<ArgMatches> for Options {
             listen.cloned().collect()
         } else {
             vec![SocketAddr::new(
-                IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1)),
+                IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
                 3128,
             )]
         };
@@ -340,6 +350,7 @@ impl From<ArgMatches> for Options {
                 .get_one::<PathOrUri>("pac_file")
                 .cloned()
                 .or_else(|| which_pac_file().map(PathOrUri::Path)),
+            my_ip_address: m.get_one::<IpAddr>("my_ip_address").cloned(),
             authorization,
             proxytunnel: m.get_flag("proxytunnel"),
             direct_fallback: m.get_flag("direct_fallback"),
