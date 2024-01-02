@@ -11,6 +11,7 @@ negotiate = ["detox_auth/negotiate", "proxydetoxlib/negotiate"]
 [dependencies]
 clap.workspace = true
 detox_auth.workspace = true
+default-net.workspace = true
 detox_net.workspace = true
 dirs.workspace = true
 futures-util.workspace = true

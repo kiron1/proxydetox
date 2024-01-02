@@ -8,7 +8,6 @@ edition = "2021"
 [dependencies]
 boa_engine.workspace = true
 boa_gc.workspace = true
-default-net.workspace = true
 detox_net.workspace = true
 gc.workspace = true
 http.workspace = true

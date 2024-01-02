@@ -13,6 +13,7 @@ use options::{Authorization, Options};
 use proxydetoxlib::server::Proxy;
 use proxydetoxlib::socket;
 use std::fs::File;
+use std::net::IpAddr;
 use std::result::Result;
 use std::sync::Arc;
 use tokio_stream::wrappers::TcpListenerStream;
@@ -173,9 +174,11 @@ async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
         tokio::select! {
             _ = reload_trigger() => {
                 context.load_pac_file(&config.pac_file).await?;
+                context.set_my_ip_address(my_ip_address()).await?;
             },
             _ = direct_mode_trigger() => {
                 context.load_pac_file(&None).await?;
+                context.set_my_ip_address(my_ip_address()).await?;
             },
             _ = shutdown_trigger() => {
                 tracing::info!("shutdown requested");
@@ -251,4 +254,12 @@ async fn shutdown_trigger() {
 #[cfg(not(unix))]
 async fn shutdown_trigger() {
     tokio::signal::ctrl_c().await.expect("ctrl_c event");
+}
+
+fn my_ip_address() -> IpAddr {
+    let ipv4 = default_net::get_default_interface()
+        .ok()
+        .and_then(|i| i.ipv4.first().map(|i| i.addr))
+        .unwrap_or_else(|| std::net::Ipv4Addr::new(127, 0, 0, 1));
+    IpAddr::from(ipv4)
 }

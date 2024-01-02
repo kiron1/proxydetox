@@ -1,6 +1,9 @@
 use boa_engine::{Context, JsNativeError, JsResult, JsString, JsValue, NativeFunction, Source};
 use http::Uri;
+use std::convert::Infallible;
+use std::net::IpAddr;
 use std::result::Result;
+use std::sync::{Arc, Mutex};
 use std::time::Instant;
 use tracing::{field::debug, instrument};
 
@@ -12,11 +15,15 @@ const PAC_UTILS: &str = include_str!("pac_utils.js");
 
 pub struct Engine<'a> {
     js: Context<'a>,
+    my_ip_addr: Arc<Mutex<IpAddr>>,
 }
 
 impl<'a> Engine<'a> {
     pub fn new() -> Self {
         let mut js = Context::default();
+        let my_ip_addr = Arc::new(Mutex::new(IpAddr::from(std::net::Ipv4Addr::new(
+            127, 0, 0, 1,
+        ))));
 
         js.register_global_class::<DnsCache>().unwrap();
         js.register_global_class::<domain::Table>().unwrap();
@@ -28,12 +35,19 @@ impl<'a> Engine<'a> {
             NativeFunction::from_fn_ptr(dns_resolve),
         )
         .expect("register_global_property");
-        js.register_global_builtin_callable(
-            "myIpAddress",
-            0,
-            NativeFunction::from_fn_ptr(my_ip_address),
-        )
-        .expect("register_global_property");
+        // # Safety
+        // We do not capture any varaibles whe require tracing.
+        unsafe {
+            js.register_global_builtin_callable(
+                "myIpAddress",
+                0,
+                NativeFunction::from_closure({
+                    let ip = my_ip_addr.clone();
+                    move |this, args, ctx| my_ip_address(&ip, this, args, ctx)
+                }),
+            )
+            .expect("register_global_property");
+        }
 
         let dns_cache = js
             .eval(Source::from_bytes("new _DnsCache();"))
@@ -50,7 +64,7 @@ impl<'a> Engine<'a> {
         js.eval(Source::from_bytes(crate::DEFAULT_PAC_SCRIPT))
             .expect("eval default PAC script");
 
-        Self { js }
+        Self { js, my_ip_addr }
     }
 
     pub fn with_pac_script(pac_script: &str) -> Result<Self, PacScriptError> {
@@ -67,7 +81,14 @@ impl<'a> Engine<'a> {
         Ok(())
     }
 
-    #[instrument(level = "debug", skip(self), err, ret(Display), fields(duration))]
+    pub fn set_my_ip_address(&mut self, addr: IpAddr) -> Result<(), Infallible> {
+        if let Ok(mut ip) = self.my_ip_addr.lock() {
+            *ip = addr;
+        }
+        Ok(())
+    }
+
+    #[instrument(level = "debug", skip(self), ret, fields(duration))]
     pub fn find_proxy(&mut self, uri: &Uri) -> Result<Proxies, FindProxyError> {
         let host = uri.host().ok_or(FindProxyError::NoHost)?;
 
@@ -158,11 +179,16 @@ fn dns_resolve(_this: &JsValue, args: &[JsValue], context: &mut Context) -> JsRe
     Ok(value)
 }
 
-fn my_ip_address(_this: &JsValue, _args: &[JsValue], _ctx: &mut Context) -> JsResult<JsValue> {
-    let ip = default_net::get_default_interface()
-        .ok()
-        .and_then(|i| i.ipv4.first().map(|i| i.addr.to_string()))
-        .unwrap_or_else(|| String::from("127.0.0.1"));
+fn my_ip_address(
+    ip: &Arc<Mutex<IpAddr>>,
+    _this: &JsValue,
+    _args: &[JsValue],
+    _ctx: &mut Context,
+) -> JsResult<JsValue> {
+    let ip = ip
+        .lock()
+        .map(|ip| ip.to_string())
+        .unwrap_or_else(|_| String::from("127.0.0.1"));
     Ok(JsValue::from(JsString::from(ip)))
 }
 
