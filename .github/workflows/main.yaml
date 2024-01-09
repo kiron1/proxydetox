@@ -30,6 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
+      rev: ${{ steps.rev.outputs.rev }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
