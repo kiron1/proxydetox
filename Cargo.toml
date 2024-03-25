@@ -36,7 +36,7 @@ homepage = "https://proxydetox.colorto.cc/"
 base64 = "0.21"
 boa_engine = { version = "0.17", features = ["annex-b"] }
 boa_gc = "0.17"
-bytes = "1.1"
+bytes = "1.6"
 chrono = "0.4"
 clap = { version = "4.1", features = ["derive", "env"] }
 default-net = { version = "0.17" }
