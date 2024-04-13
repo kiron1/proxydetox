@@ -22,5 +22,6 @@ rust_library(
 
 rust_test(
     name = "detox_net_test",
+    size = "small",
     crate = ":detox_net",
 )

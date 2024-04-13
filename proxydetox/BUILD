@@ -27,6 +27,7 @@ rust_binary(
 
 rust_test(
     name = "proxydetox_test",
+    size = "small",
     srcs = [
         "src/main.rs",
         "src/options.rs",
