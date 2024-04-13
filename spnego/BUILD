@@ -20,5 +20,6 @@ rust_library(
 
 rust_test(
     name = "spnego_test",
+    size = "small",
     crate = ":spnego",
 )

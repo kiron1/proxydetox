@@ -26,5 +26,6 @@ rust_library(
 
 rust_test(
     name = "proxy_client_test",
+    size = "small",
     crate = ":proxy_client",
 )

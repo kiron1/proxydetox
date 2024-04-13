@@ -28,5 +28,6 @@ rust_library(
 
 rust_test(
     name = "paclib_test",
+    size = "small",
     crate = ":paclib",
 )

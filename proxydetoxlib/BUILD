@@ -1,5 +1,5 @@
-load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "proxydetoxlib",
@@ -48,6 +48,7 @@ rust_library(
 
 rust_test(
     name = "proxydetoxlib_test",
+    size = "small",
     crate = ":proxydetoxlib",
 )
 
@@ -55,6 +56,7 @@ env_src = glob(["tests/environment/**/*.rs"])
 
 rust_test(
     name = "proxydetoxlib_connect_direct_test",
+    size = "small",
     srcs = ["tests/connect_direct.rs"] + env_src,
     crate_root = "tests/connect_direct.rs",
     deps = [
@@ -67,6 +69,7 @@ rust_test(
 
 rust_test(
     name = "proxydetoxlib_connect_proxy_test",
+    size = "small",
     srcs = ["tests/connect_proxy.rs"] + env_src,
     crate_root = "tests/connect_proxy.rs",
     deps = [
@@ -79,6 +82,7 @@ rust_test(
 
 rust_test(
     name = "proxydetoxlib_http_api_test",
+    size = "small",
     srcs = ["tests/http_api.rs"] + env_src,
     crate_root = "tests/http_api.rs",
     deps = [
@@ -91,6 +95,7 @@ rust_test(
 
 rust_test(
     name = "proxydetoxlib_http_direct_test",
+    size = "small",
     srcs = ["tests/http_direct.rs"] + env_src,
     crate_root = "tests/http_direct.rs",
     deps = [
@@ -103,6 +108,7 @@ rust_test(
 
 rust_test(
     name = "proxydetoxlib_http-proxy_test",
+    size = "small",
     srcs = ["tests/http_proxy.rs"] + env_src,
     crate_root = "tests/http_proxy.rs",
     deps = [
@@ -115,6 +121,7 @@ rust_test(
 
 rust_test(
     name = "proxydetoxlib_net_test",
+    size = "small",
     srcs = ["tests/net.rs"] + env_src,
     crate_root = "tests/net.rs",
     deps = [
