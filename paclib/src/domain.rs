@@ -151,14 +151,14 @@ mod tests {
 
     #[test]
     fn build_domain_table() {
-        let table = vec!["example.org", "example.net", "test.org"]
+        let table = ["example.org", "example.net", "test.org"]
             .iter()
             .collect::<Table>();
         assert_eq!(table.root.len(), 2);
-        assert_eq!(table.contains("example.org"), true);
-        assert_eq!(table.contains("www.example.org"), true);
-        assert_eq!(table.contains("example.info"), false);
-        assert_eq!(table.contains("net"), false);
-        assert_eq!(table.contains("org"), false);
+        assert!(table.contains("example.org"));
+        assert!(table.contains("www.example.org"));
+        assert!(!table.contains("example.info"));
+        assert!(!table.contains("net"));
+        assert!(!table.contains("org"));
     }
 }
