@@ -17,6 +17,7 @@ members = [
     "proxydetoxlib",
     "spnego",
 ]
+exclude = ["tools"]
 default-members = [
     "detox_net",
     "paceval",

@@ -5,63 +5,74 @@ load("@//bazel:http.bzl", "versioned_http_archive")
 # https://github.com/bazelbuild/platforms/releases
 versioned_http_archive(
     name = "platforms",
-    sha256 = "8150406605389ececb6da07cbcb509d5637a3ab9a24bc69b1101531367d89d74",
+    sha256 = "218efe8ee736d26a3572663b374a253c012b716d8af0c07e842e82f238a0a7ee",
     urls = [
         "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/{version}/platforms-{version}.tar.gz",
         "https://github.com/bazelbuild/platforms/releases/download/{version}/platforms-{version}.tar.gz",
     ],
-    version = "0.0.8",
+    version = "0.0.10",
+)
+
+# https://github.com/bazelbuild/rules_cc/releases
+versioned_http_archive(
+    name = "rules_cc",
+    sha256 = "d75a040c32954da0d308d3f2ea2ba735490f49b3a7aa3e4b40259ca4b814f825",
+    # strip_prefix = "rules_cc-{version}",
+    urls = ["https://github.com/bazelbuild/rules_cc/releases/download/{version}/rules_cc-{version}.tar.gz"],
+    version = "0.0.10-rc1",
 )
 
 # https://github.com/bazelbuild/rules_rust/releases
 versioned_http_archive(
     name = "rules_rust",
-    sha256 = "75177226380b771be36d7efc538da842c433f14cd6c36d7660976efb53defe86",
+    # integrity = "sha256-+bWb47wg0VchIADaHt6L5Dma2Gn+Q589nz/MKcTi+lo=",
+    integrity = "sha256-JLN47ZcAbx9wEr5Jiib4HduZATGLiDgK7oUi/fvotzU=",
     urls = [
         "https://github.com/bazelbuild/rules_rust/releases/download/{version}/rules_rust-v{version}.tar.gz",
     ],
-    version = "0.34.1",
+    # version = "0.45.1",
+    version = "0.42.1",
 )
 
 # https://github.com/bazelbuild/rules_apple/releases
 versioned_http_archive(
     name = "build_bazel_rules_apple",
-    sha256 = "34c41bfb59cdaea29ac2df5a2fa79e5add609c71bb303b2ebb10985f93fa20e7",
+    sha256 = "b4df908ec14868369021182ab191dbd1f40830c9b300650d5dc389e0b9266c8d",
     urls = [
         "https://github.com/bazelbuild/rules_apple/releases/download/{version}/rules_apple.{version}.tar.gz",
     ],
-    version = "3.1.1",
+    version = "3.5.1",
 )
 
 # https://github.com/bazelbuild/apple_support/releases
 versioned_http_archive(
     name = "build_bazel_apple_support",
-    sha256 = "cf4d63f39c7ba9059f70e995bf5fe1019267d3f77379c2028561a5d7645ef67c",
+    sha256 = "c4bb2b7367c484382300aee75be598b92f847896fb31bbd22f3a2346adf66a80",
     urls = [
         "https://github.com/bazelbuild/apple_support/releases/download/{version}/apple_support.{version}.tar.gz",
     ],
-    version = "1.11.1",
+    version = "1.15.1",
 )
 
 # https://github.com/bazelbuild/rules_swift/releases
 versioned_http_archive(
     name = "build_bazel_rules_swift",
-    sha256 = "28a66ff5d97500f0304f4e8945d936fe0584e0d5b7a6f83258298007a93190ba",
+    sha256 = "bb01097c7c7a1407f8ad49a1a0b1960655cf823c26ad2782d0b7d15b323838e2",
     urls = [
         "https://github.com/bazelbuild/rules_swift/releases/download/{version}/rules_swift.{version}.tar.gz",
     ],
-    version = "1.13.0",
+    version = "1.18.0",
 )
 
 # https://github.com/bazelbuild/rules_pkg/releases
 versioned_http_archive(
     name = "rules_pkg",
-    sha256 = "8f9ee2dc10c1ae514ee599a8b42ed99fa262b757058f65ad3c384289ff70c4b8",
+    sha256 = "d250924a2ecc5176808fc4c25d5cf5e9e79e6346d79d5ab1c493e289e722d1d0",
     urls = [
         "https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/{version}/rules_pkg-{version}.tar.gz",
         "https://github.com/bazelbuild/rules_pkg/releases/download/{version}/rules_pkg-{version}.tar.gz",
     ],
-    version = "0.9.1",
+    version = "0.10.1",
 )
 
 load(
