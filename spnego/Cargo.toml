@@ -12,7 +12,7 @@ edition = "2021"
 libgssapi = { git = "https://github.com/kiron1/libgssapi", branch = "option-cred", default-features = false }
 
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.52", features = ["Win32_Foundation", "Win32_Security_Authentication_Identity", "Win32_Security_Credentials"] }
+windows = { version = "0.56", features = ["Win32_Foundation", "Win32_Security_Authentication_Identity", "Win32_Security_Credentials"] }
 
 [lib]
 doctest = false
