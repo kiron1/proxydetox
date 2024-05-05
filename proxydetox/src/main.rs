@@ -37,9 +37,9 @@ fn main() {
     }
 }
 
-fn write_error<W, E: 'static>(writer: &mut W, error: E) -> std::io::Result<()>
+fn write_error<W, E>(writer: &mut W, error: E) -> std::io::Result<()>
 where
-    E: std::error::Error + Send + Sync,
+    E: std::error::Error + Send + Sync + 'static,
     W: std::io::Write,
 {
     writeln!(writer, "fatal error: {error}")?;
