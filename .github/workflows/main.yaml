@@ -60,20 +60,20 @@ jobs:
     strategy:
       matrix:
         build:
-          - macos-x86_64
+          - macos
           - ubuntu-20.04
-          - ubuntu-22.04
+          # - ubuntu-22.04
           # - windows
         include:
-          - build: macos-x86_64
+          - build: macos
             os: macos-latest
-            buildflags: --features=negotiate --config=x86_64_apple_darwin
+            buildflags: --features=negotiate
           - build: ubuntu-20.04
             os: ubuntu-20.04
             buildflags: --features=negotiate
-          - build: ubuntu-22.04
-            os: ubuntu-22.04
-            buildflags: --features=negotiate
+          # - build: ubuntu-22.04
+          #   os: ubuntu-22.04
+          #   buildflags: --features=negotiate
           # - build: windows
           #   os: windows-latest
           #   buildflags: --features=negotiate
@@ -142,6 +142,7 @@ jobs:
           - macos-x86_64
           - ubuntu-20.04
           - ubuntu-22.04
+          - ubuntu-24.04
           # - windows
         include:
           - build: macos-aarch64
@@ -160,6 +161,10 @@ jobs:
             os: ubuntu-22.04
             buildflags: --features=negotiate
             pkgfile: proxydetox-${{ needs.version.outputs.version }}-jammy_amd64.deb
+          - build: ubuntu-24.04
+            os: ubuntu-24.04
+            buildflags: --features=negotiate
+            pkgfile: proxydetox-${{ needs.version.outputs.version }}-noble_amd64.deb
           # - build: windows
           #   os: windows-latest
           #   buildflags: --features=negotiate
