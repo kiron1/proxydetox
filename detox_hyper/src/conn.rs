@@ -257,6 +257,7 @@ impl std::future::IntoFuture for ConnectionBuilder {
         match self.kind {
             Http(dst) => async move {
                 let stream = TcpStream::connect(dst.to_pair()).await?;
+                stream.set_nodelay(true)?;
                 if let Some(ka) = self.tcp_keepalive {
                     ka.apply(&stream)?;
                 }
@@ -270,6 +271,7 @@ impl std::future::IntoFuture for ConnectionBuilder {
             .boxed(),
             Https(dst, tls_config) => async move {
                 let stream = TcpStream::connect(dst.to_pair()).await?;
+                stream.set_nodelay(true)?;
                 if let Some(ka) = self.tcp_keepalive {
                     ka.apply(&stream)?;
                 }
@@ -297,6 +299,7 @@ impl std::future::IntoFuture for ConnectionBuilder {
                         ))
                     })?;
                     let stream = TcpStream::connect(proxy.to_pair()).await?;
+                    stream.set_nodelay(true)?;
                     if let Some(ka) = self.tcp_keepalive {
                         ka.apply(&stream)?;
                     }
@@ -315,6 +318,7 @@ impl std::future::IntoFuture for ConnectionBuilder {
                         ))
                     })?;
                     let stream = TcpStream::connect(proxy.to_pair()).await?;
+                    stream.set_nodelay(true)?;
                     if let Some(ka) = self.tcp_keepalive {
                         ka.apply(&stream)?;
                     }
@@ -338,6 +342,7 @@ impl std::future::IntoFuture for ConnectionBuilder {
             HttpTunnel(proxy, tls_config, auth, dst) => match proxy {
                 Proxy::Http(proxy) => async move {
                     let stream = TcpStream::connect(proxy.to_pair()).await?;
+                    stream.set_nodelay(true)?;
                     if let Some(ka) = self.tcp_keepalive {
                         ka.apply(&stream)?;
                     }
@@ -352,6 +357,7 @@ impl std::future::IntoFuture for ConnectionBuilder {
                 .boxed(),
                 Proxy::Https(proxy) => async move {
                     let stream = TcpStream::connect(proxy.to_pair()).await?;
+                    stream.set_nodelay(true)?;
                     if let Some(ka) = self.tcp_keepalive {
                         ka.apply(&stream)?;
                     }
