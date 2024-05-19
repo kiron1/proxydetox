@@ -26,7 +26,7 @@ env:
 jobs:
 
   version:
-    name: Current proxydetox version
+    name: Current version
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -128,7 +128,7 @@ jobs:
         if: ${{ ! startswith(matrix.os, 'windows') }}
 
   bazel_build:
-    name: Bazel build release package
+    name: Package
     runs-on: ${{ matrix.os }}
 
     needs:
