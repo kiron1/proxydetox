@@ -1,5 +1,5 @@
 {
-  "checksum": "c3b122b83c6a88fd8b2e08113da378d70a0ddac8ef37a0936ba70db5a6e167d9",
+  "checksum": "6a302cea84421356114edab9977867a12166830e215474ddcc18ec7893fc9ebd",
   "crates": {
     "addr2line 0.21.0": {
       "name": "addr2line",
@@ -2962,9 +2962,9 @@
       ],
       "license_file": "LICENSE"
     },
-    "detox_net 0.1.4": {
+    "detox_net 0.1.5": {
       "name": "detox_net",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "package_url": null,
       "repository": null,
       "targets": [
@@ -3008,7 +3008,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.1.4"
+        "version": "0.1.5"
       },
       "license": null,
       "license_ids": [],
@@ -3297,9 +3297,9 @@
       ],
       "license_file": "LICENSE-APACHE"
     },
-    "dnsdetox 0.1.4": {
+    "dnsdetox 0.1.5": {
       "name": "dnsdetox",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "package_url": null,
       "repository": null,
       "targets": [
@@ -3383,7 +3383,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.1.4"
+        "version": "0.1.5"
       },
       "license": null,
       "license_ids": [],
@@ -8195,9 +8195,9 @@
       ],
       "license_file": "LICENSE"
     },
-    "paceval 0.1.4": {
+    "paceval 0.1.5": {
       "name": "paceval",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "package_url": null,
       "repository": null,
       "targets": [],
@@ -8220,15 +8220,15 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.1.4"
+        "version": "0.1.5"
       },
       "license": null,
       "license_ids": [],
       "license_file": null
     },
-    "paclib 0.3.4": {
+    "paclib 0.3.5": {
       "name": "paclib",
-      "version": "0.3.4",
+      "version": "0.3.5",
       "package_url": null,
       "repository": null,
       "targets": [
@@ -8296,7 +8296,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.3.4"
+        "version": "0.3.5"
       },
       "license": null,
       "license_ids": [],
@@ -9332,9 +9332,9 @@
       ],
       "license_file": "LICENSE-APACHE"
     },
-    "proxy_client 0.1.4": {
+    "proxy_client 0.1.5": {
       "name": "proxy_client",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "package_url": null,
       "repository": null,
       "targets": [
@@ -9394,15 +9394,15 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.1.4"
+        "version": "0.1.5"
       },
       "license": null,
       "license_ids": [],
       "license_file": null
     },
-    "proxydetox 0.7.7": {
+    "proxydetox 0.7.8": {
       "name": "proxydetox",
-      "version": "0.7.7",
+      "version": "0.7.8",
       "package_url": "https://proxydetox.colorto.cc/",
       "repository": null,
       "targets": [],
@@ -9476,15 +9476,15 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.7.7"
+        "version": "0.7.8"
       },
       "license": null,
       "license_ids": [],
       "license_file": null
     },
-    "proxydetoxlib 0.7.7": {
+    "proxydetoxlib 0.7.8": {
       "name": "proxydetoxlib",
-      "version": "0.7.7",
+      "version": "0.7.8",
       "package_url": "https://proxydetox.colorto.cc/",
       "repository": null,
       "targets": [
@@ -9572,7 +9572,7 @@
               "target": "netrc"
             },
             {
-              "id": "proxydetoxlib 0.7.7",
+              "id": "proxydetoxlib 0.7.8",
               "target": "build_script_build"
             },
             {
@@ -9637,7 +9637,7 @@
           ],
           "selects": {}
         },
-        "version": "0.7.7"
+        "version": "0.7.8"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -11996,9 +11996,9 @@
       ],
       "license_file": "LICENSE"
     },
-    "spnego 0.1.4": {
+    "spnego 0.1.5": {
       "name": "spnego",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "package_url": null,
       "repository": null,
       "targets": [
@@ -12038,7 +12038,7 @@
           }
         },
         "edition": "2021",
-        "version": "0.1.4"
+        "version": "0.1.5"
       },
       "license": null,
       "license_ids": [],
@@ -17443,14 +17443,14 @@
   },
   "binary_crates": [],
   "workspace_members": {
-    "detox_net 0.1.4": "detox_net",
-    "dnsdetox 0.1.4": "dnsdetox",
-    "paceval 0.1.4": "paceval",
-    "paclib 0.3.4": "paclib",
-    "proxy_client 0.1.4": "proxy_client",
-    "proxydetox 0.7.7": "proxydetox",
-    "proxydetoxlib 0.7.7": "proxydetoxlib",
-    "spnego 0.1.4": "spnego"
+    "detox_net 0.1.5": "detox_net",
+    "dnsdetox 0.1.5": "dnsdetox",
+    "paceval 0.1.5": "paceval",
+    "paclib 0.3.5": "paclib",
+    "proxy_client 0.1.5": "proxy_client",
+    "proxydetox 0.7.8": "proxydetox",
+    "proxydetoxlib 0.7.8": "proxydetoxlib",
+    "spnego 0.1.5": "spnego"
   },
   "conditions": {
     "aarch64-apple-darwin": [

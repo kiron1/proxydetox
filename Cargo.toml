@@ -29,7 +29,7 @@ default-members = [
 ]
 
 [workspace.package]
-version = "0.7.7"
+version = "0.7.8"
 edition = "2021"
 homepage = "https://proxydetox.colorto.cc/"
 
