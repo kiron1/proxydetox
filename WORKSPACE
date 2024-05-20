@@ -123,6 +123,12 @@ load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_repository")
 
 crates_repository(
     name = "crate_index",
+    annotations = {"linux-raw-sys": [crate.annotation(
+        crate_features = [
+            "general",
+            "errno",
+        ],
+    )]},
     cargo_config = "//:.cargo/config.toml",
     cargo_lockfile = "//:Cargo.lock",
     # Generate with:
