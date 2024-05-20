@@ -1,5 +1,5 @@
 {
-  "checksum": "b804630d7758ec3c94e84c6ff255a4bca16552cb6d11d4fb65a7fa1e67274b65",
+  "checksum": "51c66407e8c64523a49b55ab9c6d5b3493755125ba50156c0225f95d11cc6c45",
   "crates": {
     "addr2line 0.21.0": {
       "name": "addr2line",
@@ -3981,12 +3981,6 @@
         "compile_data_glob": [
           "**"
         ],
-        "crate_features": {
-          "common": [
-            "std"
-          ],
-          "selects": {}
-        },
         "deps": {
           "common": [],
           "selects": {
@@ -6880,80 +6874,7 @@
             "default",
             "std"
           ],
-          "selects": {
-            "aarch64-apple-darwin": [
-              "extra_traits"
-            ],
-            "aarch64-apple-ios": [
-              "extra_traits"
-            ],
-            "aarch64-apple-ios-sim": [
-              "extra_traits"
-            ],
-            "aarch64-fuchsia": [
-              "extra_traits"
-            ],
-            "aarch64-linux-android": [
-              "extra_traits"
-            ],
-            "aarch64-unknown-linux-gnu": [
-              "extra_traits"
-            ],
-            "aarch64-unknown-nixos-gnu": [
-              "extra_traits"
-            ],
-            "aarch64-unknown-nto-qnx710": [
-              "extra_traits"
-            ],
-            "arm-unknown-linux-gnueabi": [
-              "extra_traits"
-            ],
-            "armv7-linux-androideabi": [
-              "extra_traits"
-            ],
-            "armv7-unknown-linux-gnueabi": [
-              "extra_traits"
-            ],
-            "i686-apple-darwin": [
-              "extra_traits"
-            ],
-            "i686-linux-android": [
-              "extra_traits"
-            ],
-            "i686-unknown-freebsd": [
-              "extra_traits"
-            ],
-            "i686-unknown-linux-gnu": [
-              "extra_traits"
-            ],
-            "powerpc-unknown-linux-gnu": [
-              "extra_traits"
-            ],
-            "s390x-unknown-linux-gnu": [
-              "extra_traits"
-            ],
-            "x86_64-apple-darwin": [
-              "extra_traits"
-            ],
-            "x86_64-apple-ios": [
-              "extra_traits"
-            ],
-            "x86_64-fuchsia": [
-              "extra_traits"
-            ],
-            "x86_64-linux-android": [
-              "extra_traits"
-            ],
-            "x86_64-unknown-freebsd": [
-              "extra_traits"
-            ],
-            "x86_64-unknown-linux-gnu": [
-              "extra_traits"
-            ],
-            "x86_64-unknown-nixos-gnu": [
-              "extra_traits"
-            ]
-          }
+          "selects": {}
         },
         "deps": {
           "common": [
@@ -7251,6 +7172,16 @@
         "compile_data_glob": [
           "**"
         ],
+        "crate_features": {
+          "common": [
+            "elf",
+            "errno",
+            "general",
+            "ioctl",
+            "no_std"
+          ],
+          "selects": {}
+        },
         "edition": "2021",
         "version": "0.4.14"
       },
