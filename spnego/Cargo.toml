@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 
 [target.'cfg(unix)'.dependencies]
-libgssapi = { version = "0.7.0", default-features = false }
+libgssapi = { version = "0.7.1", default-features = false }
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.56", features = [
