@@ -1,5 +1,5 @@
 {
-  "checksum": "3128b66068ef576d8303b40ce2b58cd1b6a8ab08a0fec202ec759188deeee848",
+  "checksum": "5090dadec4ea86a6c97405bc423cb142773edbc2096f7f42f785f6dd2091dd9e",
   "crates": {
     "addr2line 0.22.0": {
       "name": "addr2line",
@@ -819,7 +819,7 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.1.3",
+              "id": "cc 1.1.4",
               "target": "cc"
             }
           ],
@@ -2033,14 +2033,14 @@
       ],
       "license_file": "LICENSE"
     },
-    "cc 1.1.3": {
+    "cc 1.1.4": {
       "name": "cc",
-      "version": "1.1.3",
+      "version": "1.1.4",
       "package_url": "https://github.com/rust-lang/cc-rs",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/cc/1.1.3/download",
-          "sha256": "18e2d530f35b40a84124146478cd16f34225306a8441998836466a2e2961c950"
+          "url": "https://static.crates.io/crates/cc/1.1.4/download",
+          "sha256": "9711f33475c22aab363b05564a17d7b789bf3dfec5ebabb586adee56f0e271b5"
         }
       },
       "targets": [
@@ -2063,7 +2063,7 @@
           "**"
         ],
         "edition": "2018",
-        "version": "1.1.3"
+        "version": "1.1.4"
       },
       "license": "MIT OR Apache-2.0",
       "license_ids": [
@@ -5680,7 +5680,7 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.1.3",
+              "id": "cc 1.1.4",
               "target": "cc"
             }
           ],
@@ -8670,10 +8670,6 @@
               "target": "lazy_static"
             },
             {
-              "id": "regex 1.10.5",
-              "target": "regex"
-            },
-            {
               "id": "thiserror 1.0.62",
               "target": "thiserror"
             },
@@ -10529,7 +10525,6 @@
         ],
         "crate_features": {
           "common": [
-            "default",
             "perf",
             "perf-backtrack",
             "perf-cache",
@@ -10538,14 +10533,8 @@
             "perf-literal",
             "perf-onepass",
             "std",
-            "unicode",
-            "unicode-age",
-            "unicode-bool",
             "unicode-case",
-            "unicode-gencat",
-            "unicode-perl",
-            "unicode-script",
-            "unicode-segment"
+            "unicode-perl"
           ],
           "selects": {}
         },
@@ -10680,14 +10669,8 @@
             "perf-literal-substring",
             "std",
             "syntax",
-            "unicode",
-            "unicode-age",
-            "unicode-bool",
             "unicode-case",
-            "unicode-gencat",
             "unicode-perl",
-            "unicode-script",
-            "unicode-segment",
             "unicode-word-boundary"
           ],
           "selects": {}
@@ -10803,16 +10786,9 @@
         ],
         "crate_features": {
           "common": [
-            "default",
             "std",
-            "unicode",
-            "unicode-age",
-            "unicode-bool",
             "unicode-case",
-            "unicode-gencat",
-            "unicode-perl",
-            "unicode-script",
-            "unicode-segment"
+            "unicode-perl"
           ],
           "selects": {}
         },
@@ -10985,7 +10961,7 @@
         "deps": {
           "common": [
             {
-              "id": "cc 1.1.3",
+              "id": "cc 1.1.4",
               "target": "cc"
             }
           ],
@@ -11333,7 +11309,7 @@
             ],
             "cfg(target_os = \"macos\")": [
               {
-                "id": "security-framework 2.11.0",
+                "id": "security-framework 2.11.1",
                 "target": "security_framework"
               }
             ],
@@ -11681,14 +11657,14 @@
       ],
       "license_file": "LICENSE"
     },
-    "security-framework 2.11.0": {
+    "security-framework 2.11.1": {
       "name": "security-framework",
-      "version": "2.11.0",
+      "version": "2.11.1",
       "package_url": "https://github.com/kornelski/rust-security-framework",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/security-framework/2.11.0/download",
-          "sha256": "c627723fd09706bacdb5cf41499e95098555af3c3c29d014dc3c458ef6be11c0"
+          "url": "https://static.crates.io/crates/security-framework/2.11.1/download",
+          "sha256": "897b2245f0b511c87893af39b033e5ca9cce68824c4d7e7630b5a1d339658d02"
         }
       },
       "targets": [
@@ -11714,6 +11690,7 @@
           "common": [
             "OSX_10_10",
             "OSX_10_11",
+            "OSX_10_12",
             "OSX_10_9",
             "default"
           ],
@@ -11738,14 +11715,14 @@
               "target": "libc"
             },
             {
-              "id": "security-framework-sys 2.11.0",
+              "id": "security-framework-sys 2.11.1",
               "target": "security_framework_sys"
             }
           ],
           "selects": {}
         },
         "edition": "2021",
-        "version": "2.11.0"
+        "version": "2.11.1"
       },
       "license": "MIT OR Apache-2.0",
       "license_ids": [
@@ -11754,14 +11731,14 @@
       ],
       "license_file": "LICENSE-APACHE"
     },
-    "security-framework-sys 2.11.0": {
+    "security-framework-sys 2.11.1": {
       "name": "security-framework-sys",
-      "version": "2.11.0",
+      "version": "2.11.1",
       "package_url": "https://github.com/kornelski/rust-security-framework",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/security-framework-sys/2.11.0/download",
-          "sha256": "317936bbbd05227752583946b9e66d7ce3b489f84e11a94a510b4437fef407d7"
+          "url": "https://static.crates.io/crates/security-framework-sys/2.11.1/download",
+          "sha256": "75da29fe9b9b08fe9d6b22b5b4bcbc75d8db3aa31e639aa56bb62e9d46bfceaf"
         }
       },
       "targets": [
@@ -11787,6 +11764,7 @@
           "common": [
             "OSX_10_10",
             "OSX_10_11",
+            "OSX_10_12",
             "OSX_10_9"
           ],
           "selects": {}
@@ -11805,7 +11783,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "2.11.0"
+        "version": "2.11.1"
       },
       "license": "MIT OR Apache-2.0",
       "license_ids": [
@@ -18483,7 +18461,6 @@
     "log 0.4.22",
     "netrc 0.4.1",
     "pin-project 1.1.5",
-    "regex 1.10.5",
     "rustls 0.21.12",
     "rustls-native-certs 0.6.3",
     "rustls-pemfile 1.0.4",
