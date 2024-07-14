@@ -98,7 +98,7 @@ impl Context {
             let pac = match uri {
                 PathOrUri::Path(p) => read_to_string(p)?,
                 PathOrUri::Uri(u) => detox_hyper::http_file(u.clone(), self.tls_config.clone())
-                    .timeout(Duration::from_secs(30))
+                    .timeout(Duration::from_secs(15))
                     .await
                     .map_err(std::io::Error::other)??,
             };
