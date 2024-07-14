@@ -34,9 +34,8 @@ pub struct Options {
     pub always_use_connect: bool,
     pub activate_socket: Option<String>,
     pub listen: Vec<SocketAddr>,
-    pub interface: IpAddr,
-    pub port: u16,
     pub client_tcp_keepalive: TcpKeepAlive,
+    #[allow(dead_code)]
     pub server_tcp_keepalive: TcpKeepAlive,
     pub graceful_shutdown_timeout: Duration,
 }
@@ -58,13 +57,6 @@ fn is_file_or_http_uri(v: &str) -> Result<PathOrUri, String> {
         }
     }
     Ok(p)
-}
-
-fn is_ip(v: &str) -> Result<IpAddr, String> {
-    match v.parse::<IpAddr>() {
-        Ok(ip) => Ok(ip),
-        Err(_) => Err(format!("value '{}' is not a valid IP address", &v)),
-    }
 }
 
 fn which_pac_file() -> Option<PathBuf> {
@@ -167,28 +159,6 @@ impl Options {
                     .help("Listening interface (e.g. 127.0.0.1:3128)")
                     .value_parser(clap::value_parser!(SocketAddr))
                     .action(ArgAction::Append)
-            )
-             .arg(
-                Arg::new("interface")
-                    .long("interface")
-                    .short('i')
-                    .help("Interface to listen on for incoming connections (DEPRECATED: use --listen)")
-                    .conflicts_with("listen")
-                    .default_value("127.0.0.1")
-                    .value_name("INTERFACE")
-                    .value_parser(is_ip)
-                    .action(ArgAction::Set),
-            )
-            .arg(
-                Arg::new("port")
-                    .short('P')
-                    .long("port")
-                    .help("Listening port (DEPRECATED: use --listen)")
-                    .conflicts_with("listen")
-                    .value_name("PORT")
-                    .value_parser(clap::value_parser!(u16))
-                    .action(ArgAction::Set)
-                    .default_value("3128"),
             )
             .arg(
                 Arg::new("pac_file")
@@ -322,9 +292,10 @@ impl From<ArgMatches> for Options {
         let listen = if let Some(listen) = m.get_many::<SocketAddr>("listen") {
             listen.cloned().collect()
         } else {
-            let ip = *m.get_one::<IpAddr>("interface").unwrap();
-            let port = *m.get_one::<u16>("port").unwrap();
-            vec![SocketAddr::new(ip, port)]
+            vec![SocketAddr::new(
+                IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1)),
+                3128,
+            )]
         };
 
         let client_tcp_keepalive = TcpKeepAlive::new()
@@ -363,8 +334,6 @@ impl From<ArgMatches> for Options {
                 .expect("default value for connect_timeout"),
             activate_socket: m.get_one::<String>("activate_socket").cloned(),
             listen,
-            interface: *m.get_one::<IpAddr>("interface").unwrap(),
-            port: *m.get_one::<u16>("port").expect("default value for port"),
             client_tcp_keepalive,
             server_tcp_keepalive,
             graceful_shutdown_timeout: m
@@ -457,13 +426,6 @@ mod tests {
     }
 
     #[test]
-    fn test_is_ip() {
-        assert!(is_ip("0.0.0.0").is_ok());
-        assert!(is_ip("::1").is_ok());
-        assert!(is_ip("this.is.not.ip").is_err())
-    }
-
-    #[test]
     fn test_is_file_or_uri() {
         assert!(is_file_or_http_uri("http://example.org/").is_ok());
         assert!(is_file_or_http_uri("https://example.org/").is_ok());
@@ -523,25 +485,6 @@ mod tests {
             addr2_str.into(),
         ]);
         assert_eq!(args.listen, vec![addr1, addr2]);
-    }
-
-    #[test]
-    fn test_interface() {
-        let args =
-            Options::parse_args(&["proxydetox".into(), "--interface".into(), "0.0.0.0".into()]);
-        assert_eq!(
-            args.listen,
-            vec!["0.0.0.0:3128".parse::<SocketAddr>().unwrap()]
-        );
-    }
-
-    #[test]
-    fn test_port() {
-        let args = Options::parse_args(&["proxydetox".into(), "--port".into(), "8080".into()]);
-        assert_eq!(
-            args.listen,
-            vec!["127.0.0.1:8080".parse::<SocketAddr>().unwrap()]
-        );
     }
 
     #[cfg(feature = "negotiate")]
