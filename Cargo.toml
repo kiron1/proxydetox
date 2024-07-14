@@ -49,7 +49,6 @@ http = "1"
 http-body = "1"
 http-body-util = "0.1"
 hyper = { version = "1.0", features = ["http1", "client", "server"] }
-hyper-rustls = "0.24"
 hyper-util = { version = "0.1", features = ["tokio"] }
 lazy_static = "1.4"
 libc = "0.2"
@@ -72,6 +71,3 @@ tracing = "0.1"
 tracing-attributes = "0.1"
 tracing-futures = "0.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-
-[patch.crates-io]
-hyper = { git = "https://github.com/kiron1/hyper", rev = "b7118433fc8e7f984f6fc3d3b0d794b9bdd517b5" }

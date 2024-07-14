@@ -25,62 +25,43 @@ versioned_http_archive(
 # https://github.com/bazelbuild/rules_rust/releases
 versioned_http_archive(
     name = "rules_rust",
-    # integrity = "sha256-+bWb47wg0VchIADaHt6L5Dma2Gn+Q589nz/MKcTi+lo=",
-    integrity = "sha256-JLN47ZcAbx9wEr5Jiib4HduZATGLiDgK7oUi/fvotzU=",
+    integrity = "sha256-35cwdTOaqqu4y+aXgIUU2C2PAKMz4+uyJ7/UMIGCmFs=",
     urls = [
         "https://github.com/bazelbuild/rules_rust/releases/download/{version}/rules_rust-v{version}.tar.gz",
     ],
-    # version = "0.45.1",
-    version = "0.42.1",
+    version = "0.47.1",
 )
 
 # https://github.com/bazelbuild/rules_apple/releases
 versioned_http_archive(
     name = "build_bazel_rules_apple",
-    sha256 = "b4df908ec14868369021182ab191dbd1f40830c9b300650d5dc389e0b9266c8d",
+    sha256 = "d0f566ad408a6e4d179f0ac4d50a93494a70fcff8fab4c4af0a25b2c241c9b8d",
     urls = [
         "https://github.com/bazelbuild/rules_apple/releases/download/{version}/rules_apple.{version}.tar.gz",
     ],
-    version = "3.5.1",
-)
-
-# https://github.com/bazelbuild/apple_support/releases
-versioned_http_archive(
-    name = "build_bazel_apple_support",
-    sha256 = "c4bb2b7367c484382300aee75be598b92f847896fb31bbd22f3a2346adf66a80",
-    urls = [
-        "https://github.com/bazelbuild/apple_support/releases/download/{version}/apple_support.{version}.tar.gz",
-    ],
-    version = "1.15.1",
+    version = "3.6.0",
 )
 
 # https://github.com/bazelbuild/rules_swift/releases
 versioned_http_archive(
     name = "build_bazel_rules_swift",
-    sha256 = "bb01097c7c7a1407f8ad49a1a0b1960655cf823c26ad2782d0b7d15b323838e2",
+    sha256 = "9919ed1d8dae509645bfd380537ae6501528d8de971caebed6d5185b9970dc4d",
     urls = [
         "https://github.com/bazelbuild/rules_swift/releases/download/{version}/rules_swift.{version}.tar.gz",
     ],
-    version = "1.18.0",
+    version = "2.1.1",
 )
 
 # https://github.com/bazelbuild/rules_pkg/releases
 versioned_http_archive(
     name = "rules_pkg",
-    sha256 = "d250924a2ecc5176808fc4c25d5cf5e9e79e6346d79d5ab1c493e289e722d1d0",
+    sha256 = "d20c951960ed77cb7b341c2a59488534e494d5ad1d30c4818c736d57772a9fef",
     urls = [
         "https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/{version}/rules_pkg-{version}.tar.gz",
         "https://github.com/bazelbuild/rules_pkg/releases/download/{version}/rules_pkg-{version}.tar.gz",
     ],
-    version = "0.10.1",
+    version = "1.0.1",
 )
-
-load(
-    "@build_bazel_apple_support//lib:repositories.bzl",
-    "apple_support_dependencies",
-)
-
-apple_support_dependencies()
 
 load(
     "@build_bazel_rules_apple//apple:repositories.bzl",
@@ -102,6 +83,13 @@ load(
 )
 
 swift_rules_extra_dependencies()
+
+load(
+    "@build_bazel_apple_support//lib:repositories.bzl",
+    "apple_support_dependencies",
+)
+
+apple_support_dependencies()
 
 load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
 
@@ -125,8 +113,10 @@ crates_repository(
     name = "crate_index",
     annotations = {"linux-raw-sys": [crate.annotation(
         crate_features = [
-            "general",
             "errno",
+            "general",
+            "ioctl",
+            "std",
         ],
     )]},
     cargo_config = "//:.cargo/config.toml",
