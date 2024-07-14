@@ -36,16 +36,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-      - name: Fetch dependencies
-        run: |
-          bazel build --nobuild --config=ci //pkg:version
-      - name: Build version
-        run: |
-          bazel build --config=ci //:current_version
       - name: Version
         id: version
         run: |
-          bazel run --config=ci //:current_version | tee -a $GITHUB_OUTPUT
+          ./tools/version | tee -a $GITHUB_OUTPUT
       - name: Rev
         id: rev
         run: |
@@ -63,6 +57,7 @@ jobs:
           - macos
           - ubuntu-20.04
           # - ubuntu-22.04
+          # - ubuntu-24.04
           # - windows
         include:
           - build: macos
@@ -74,34 +69,41 @@ jobs:
           # - build: ubuntu-22.04
           #   os: ubuntu-22.04
           #   buildflags: --features=negotiate
+          # - build: ubuntu-24.04
+          #   os: ubuntu-24.04
+          #   buildflags: --features=negotiate
           # - build: windows
           #   os: windows-latest
           #   buildflags: --features=negotiate
 
     steps:
-      - name: Git checkout with LF
-        run: |
-          git config --global core.autocrlf false
-          git config --global core.eol lf
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+      - name: macOS version
+        if: ${{ runner.os == 'macOS' }}
+        run: |
+          printf 'OS_VER=%s\n' "$(sw_vers --productVersion)" | tee -a $GITHUB_ENV
+      - name: Linux version
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          printf 'OS_VER=%s\n' "$(lsb_release --short --release)" | tee -a $GITHUB_ENV
       - name: Bazel cache
         uses: actions/cache@v4
         with:
           path: |
             ~/.cache/bazel_build_cache
             ~/.cache/bazel_repo_cache
-          key: ${{ matrix.build }}-bazel-test-${{ hashFiles('Cargo.Bazel.lock', 'WORKSPACE') }}
+          key: ${{ runner.os }}-${{ env.OS_VER }}-bazel-test-${{ hashFiles('Cargo.Bazel.lock', 'WORKSPACE') }}
           restore-keys: |
-            ${{ matrix.build }}-bazel-test-
+            ${{ runner.os }}-${{ env.OS_VER }}-bazel-test-
       - name: Setup Windows Bazelrc
         # https://bazel.build/configure/windows
         run: |
           echo "startup --output_user_root=C:/tmp" > ${{ github.workspace }}/user.bazelrc
         shell: cmd
-        if: startswith(matrix.os, 'windows')
+        if: runner.os == 'Windows'
       - name: Install Linux dependency
         run: sudo apt-get install libkrb5-dev
         if: ${{ startswith(matrix.os, 'ubuntu') }}
@@ -115,7 +117,7 @@ jobs:
           ${{ matrix.buildflags }}
           "//..."
         shell: cmd
-        if: ${{ startswith(matrix.os, 'windows') }}
+        if: runner.os == 'Windows'
       - name: Run tests
         run: >
           bazel
@@ -125,7 +127,7 @@ jobs:
           --//:rev=${{ needs.version.outputs.rev }}
           ${{ matrix.buildflags }}
           "//..."
-        if: ${{ ! startswith(matrix.os, 'windows') }}
+        if: runner.os != 'Windows'
 
   bazel_build:
     name: Package
@@ -171,29 +173,33 @@ jobs:
           #   pkgfile: proxydetox-${{ needs.version.outputs.version }}-windows-x86_64.zip
 
     steps:
-      - name: Git checkout with LF
-        run: |
-          git config --global core.autocrlf false
-          git config --global core.eol lf
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+      - name: macOS version
+        if: ${{ runner.os == 'macOS' }}
+        run: |
+          printf 'OS_VER=%s\n' "$(sw_vers --productVersion)" | tee -a $GITHUB_ENV
+      - name: Linux version
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          printf 'OS_VER=%s\n' "$(lsb_release --short --release)" | tee -a $GITHUB_ENV
       - name: Bazel cache
         uses: actions/cache@v4
         with:
           path: |
             ~/.cache/bazel_build_cache
             ~/.cache/bazel_repo_cache
-          key: ${{ matrix.build }}-bazel-test-${{ hashFiles('Cargo.Bazel.lock', 'WORKSPACE') }}
+          key: ${{ runner.os }}-${{ env.OS_VER }}-bazel-build-${{ hashFiles('Cargo.Bazel.lock', 'WORKSPACE') }}
           restore-keys: |
-            ${{ matrix.build }}-bazel-test-
+            ${{ runner.os }}-${{ env.OS_VER }}-bazel-build-
       - name: Setup Windows Bazelrc
         # https://bazel.build/configure/windows
         run: |
           echo "startup --output_user_root=C:/tmp" > ${{ github.workspace }}\user.bazelrc
         shell: cmd
-        if: startswith(matrix.os, 'windows')
+        if: runner.os == 'Windows'
       - name: Install Linux dependency
         run: sudo apt-get install libkrb5-dev
         if: startswith(matrix.os, 'ubuntu')

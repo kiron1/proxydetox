@@ -1,13 +1,14 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 set -eu
+set -o pipefail
 
-raw=false
+prefix="version="
 
 while getopts "r" o; do
   case "${o}" in
   r)
-    raw=true
+    prefix=""
     ;;
   *)
     echo "fatal error: invalid arguments"
@@ -17,11 +18,5 @@ while getopts "r" o; do
 done
 shift $((OPTIND - 1))
 
-query=$(printf '.packages[] | {name, version} | select(.name == "%s") | .version' "${1:-proxydetox}")
-version=$(cargo metadata --format-version 1 --no-deps --offline --quiet | jq -r "${query}")
-
-if "${raw}"; then
-  echo "${version}"
-else
-  echo "version=${version}" >> "${GITHUB_OUTPUT:-/dev/stdout}"
-fi
+query=$(printf '"\($prefix)\(.packages[] | {name, version} | select(.name == "%s") | .version)"' "${1:-proxydetox}")
+cargo metadata --format-version 1 --no-deps --offline --quiet | jq --arg prefix "${prefix}" -r "${query}"
