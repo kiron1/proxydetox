@@ -14,7 +14,6 @@ http.workspace = true
 http-body.workspace = true
 http-body-util.workspace = true
 hyper.workspace = true
-hyper-rustls.workspace = true
 hyper-util.workspace = true
 paclib.workspace = true
 pin-project.workspace = true

@@ -41,7 +41,6 @@ async fn http_file_redirect() {
         let counter = Arc::new(AtomicUsize::new(1));
         move |r| {
             let k = counter.fetch_add(1, Ordering::SeqCst);
-            dbg!(k, r.uri());
             assert!(k < redirects.len());
             assert_eq!(r.method(), http::method::Method::GET);
             assert_eq!(r.uri(), redirects[k - 1]);

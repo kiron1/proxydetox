@@ -107,7 +107,7 @@ impl Builder {
                 let context = context.clone();
                 async move {
                     if let Err(cause) = context.load_pac_file(&self.pac_file).await {
-                        tracing::error!(%cause, "failed to load PAC from URI");
+                        tracing::error!(%cause, pac_file = ?&self.pac_file, "failed to load PAC from URI");
                     }
                 }
             });

@@ -441,7 +441,7 @@ impl AsyncRead for AnyStream {
 
 impl<B> SendRequest<B>
 where
-    B: Body + 'static,
+    B: Body + Send + 'static,
     B::Data: Send,
     B::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
 {
@@ -483,9 +483,13 @@ where
         req.headers_mut()
             .insert(CONNECTION, HeaderValue::from_static("close"));
 
-        let send_request = async move { sender.send_request(req).await };
+        tokio::spawn(async move {
+            if let Err(e) = conn.await {
+                eprintln!("Error in connection: {}", e);
+            }
+        });
 
-        let (response, _connection) = tokio::join!(send_request, conn.with_upgrades());
+        let response = sender.send_request(req).await;
 
         Ok(response?)
     }
