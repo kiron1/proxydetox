@@ -6,6 +6,9 @@ build --verbose_failures
 
 test --test_output=errors
 
+# Required for Bazel 6, see https://github.com/bazelbuild/rules_rust/issues/2665
+build --incompatible_merge_fixed_and_default_shell_env
+
 build --enable_platform_specific_config
 
 build:macos --apple_crosstool_top=@local_config_apple_cc//:toolchain
