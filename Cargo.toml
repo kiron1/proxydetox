@@ -56,7 +56,6 @@ netrc = { version = "0.4" }
 paclib = { path = "paclib" }
 pin-project = "1"
 proxydetoxlib = { path = "proxydetoxlib" }
-regex = "1.5"
 rustls = "0.21"
 rustls-native-certs = "0.6"
 rustls-pemfile = "1.0"
