@@ -35,7 +35,7 @@ jobs:
 
       - name: Cargo update
         run: |
-          ./tools/repin
+          cargo update
 
       - name: Get new version
         id: new_version
@@ -48,6 +48,5 @@ jobs:
           git config user.email github-actions@github.com
           git add .
           git commit -m "Version ${{ steps.new_version.outputs.version }}"
-          git tag "v${{ steps.new_version.outputs.version }}"
-          git push
-          git push --tags
+          git push -u origin HEAD
+          gh pr create --fill

@@ -7,13 +7,13 @@ prefix="version="
 
 while getopts "r" o; do
   case "${o}" in
-  r)
-    prefix=""
-    ;;
-  *)
-    echo "fatal error: invalid arguments"
-    exit 1
-    ;;
+    r)
+      prefix=""
+      ;;
+    *)
+      echo "fatal error: invalid arguments"
+      exit 1
+      ;;
   esac
 done
 shift $((OPTIND - 1))
