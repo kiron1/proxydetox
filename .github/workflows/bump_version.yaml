@@ -31,23 +31,27 @@ jobs:
 
       - name: Bump version of proxydetox
         run: |
-          cargo set-version --bump ${{ github.event.inputs.release_kind }}
+          cargo set-version --bump "${KIND}"
+        env:
+          KIND: ${{ github.event.inputs.release_kind }}
 
       - name: Cargo update
         run: |
-          ./tools/repin
+          cargo update
 
       - name: Get new version
         id: new_version
         run: |
-          ./tools/version
+          ./tools/version | tee -a "${GITHUB_OUTPUT}"
 
       - name: Create PR
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
           git add .
-          git commit -m "Version ${{ steps.new_version.outputs.version }}"
-          git tag "v${{ steps.new_version.outputs.version }}"
-          git push
+          git commit -m "Version ${VERSION}"
+          git tag "v${VERSION}"
           git push --tags
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.new_version.outputs.version }}

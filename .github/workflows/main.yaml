@@ -39,11 +39,11 @@ jobs:
       - name: Version
         id: version
         run: |
-          ./tools/version | tee -a $GITHUB_OUTPUT
+          ./tools/version | tee -a "${GITHUB_OUTPUT}"
       - name: Rev
         id: rev
         run: |
-          printf 'rev=%s\n' $(git rev-parse --short HEAD) | tee -a $GITHUB_OUTPUT
+          printf 'rev=%s\n' "$(git rev-parse --short HEAD)" | tee -a "${GITHUB_OUTPUT}"
 
   bazel_test:
     name: Bazel test
