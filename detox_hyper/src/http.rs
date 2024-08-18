@@ -1,9 +1,9 @@
-use bytes::{Buf, Bytes};
+use bytes::Bytes;
 use detox_net::HostAndPort;
 use http::header::{CONTENT_LENGTH, LOCATION};
 use http::{Request, Response, StatusCode, Uri};
 use http_body_util::{BodyExt, Empty};
-use std::io::{Error, Read};
+use std::io::Error;
 use std::sync::Arc;
 
 use crate::conn::Connection;
@@ -52,23 +52,31 @@ pub async fn http_file(
 
         let progress = HttpGetProgress::from_response(response)?;
         match progress {
-            HttpGetProgress::Complete(response) => {
-                let (response, body) = response.into_parts();
+            HttpGetProgress::Complete(mut response) => {
                 let size = response
-                    .headers
+                    .headers()
                     .get(CONTENT_LENGTH)
-                    .and_then(|h| h.to_str().ok().and_then(|s| s.parse::<u64>().ok()))
-                    .ok_or_else(|| Error::other("Unknown size".to_owned()))?;
-                if size > MAX_SIZE {
-                    return Err(Error::other(format!("Size to large: {size} > {MAX_SIZE}")));
+                    .and_then(|h| h.to_str().ok().and_then(|s| s.parse::<u64>().ok()));
+                if let Some(size) = size {
+                    if size > MAX_SIZE {
+                        return Err(Error::other(format!("Size to large: {size} > {MAX_SIZE}")));
+                    }
                 }
-                let body = body
-                    .collect()
-                    .await
-                    .map_err(|e| Error::other(format!("Failed to receive body: {e}")))?
-                    .aggregate();
                 let mut data = Vec::new();
-                body.reader().read_to_end(&mut data)?;
+
+                while let Some(next) = response.frame().await {
+                    let frame = next.map_err(|e| Error::other(format!("frameing error: {e}")))?;
+                    if let Some(chunk) = frame.data_ref() {
+                        data.extend_from_slice(chunk);
+                        if data.len() > MAX_SIZE as usize {
+                            return Err(Error::other(format!(
+                                "Size to large: {} > {MAX_SIZE}",
+                                data.len()
+                            )));
+                        }
+                    }
+                }
+
                 let data = String::from_utf8(data)
                     .map_err(|e| Error::other(format!("Invalid UTF-8 data: {e}")))?;
                 break Ok(data);
