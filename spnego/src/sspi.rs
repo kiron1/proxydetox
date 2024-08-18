@@ -1,7 +1,7 @@
 use std::ffi::c_void;
 
-pub use windows::core::{Error, HRESULT, PCWSTR};
-pub use windows::Win32::Security::{
+use windows::core::PCWSTR;
+use windows::Win32::Security::{
     Authentication::Identity::{
         AcquireCredentialsHandleW, InitializeSecurityContextW, SecBuffer, SecBufferDesc,
         ISC_REQ_MUTUAL_AUTH, SECBUFFER_TOKEN, SECBUFFER_VERSION, SECPKG_CRED_OUTBOUND,
@@ -15,7 +15,7 @@ type TimeStamp = i64;
 // https://github.com/java-native-access/jna/issues/261
 const MAX_TOKEN_SIZE: usize = 48 * 1024;
 
-pub struct Context {
+pub(super) struct Context {
     cx: SecHandle,
     cred: SecHandle,
     target: String,
@@ -42,7 +42,10 @@ fn to_utf16(value: &str) -> Vec<u16> {
 }
 
 impl Context {
-    pub fn new(service: &str, proxy_fqdn: &str) -> Result<Self, Error> {
+    pub(super) fn new(
+        service: &str,
+        proxy_fqdn: &str,
+    ) -> std::result::Result<Self, windows::core::Error> {
         let target = format!("{service}/{proxy_fqdn}");
         let spn = to_utf16(&target);
 
@@ -76,14 +79,13 @@ impl Context {
         })
     }
 
-    pub fn target_name(&self) -> &str {
-        &self.target
-    }
-
     // TODO: server token is not used right now.
     // https://docs.microsoft.com/en-us/openspecs/office_protocols/ms-grvhenc/b9e676e7-e787-4020-9840-7cfe7c76044a?redirectedfrom=MSDN
     // https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2003/cc772815(v=ws.10)
-    pub fn step(&mut self, _server_token: Option<&[u8]>) -> Result<Option<Vec<u8>>, Error> {
+    pub(super) fn step(
+        &mut self,
+        _server_token: Option<&[u8]>,
+    ) -> std::result::Result<Option<Vec<u8>>, windows::core::Error> {
         let mut buf = Vec::with_capacity(MAX_TOKEN_SIZE);
         buf.resize(MAX_TOKEN_SIZE, 0);
         let mut sec_buffer = [SecBuffer {
