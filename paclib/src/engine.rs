@@ -15,7 +15,7 @@ pub struct Engine<'a> {
 }
 
 impl<'a> Engine<'a> {
-    pub fn new() -> Self {
+    fn mkjs() -> Context<'a> {
         let mut js = Context::default();
 
         js.register_global_class::<DnsCache>().unwrap();
@@ -49,8 +49,11 @@ impl<'a> Engine<'a> {
             .expect("eval pac_utils.js");
         js.eval(Source::from_bytes(crate::DEFAULT_PAC_SCRIPT))
             .expect("eval default PAC script");
+        js
+    }
 
-        Self { js }
+    pub fn new() -> Self {
+        Self { js: Self::mkjs() }
     }
 
     pub fn with_pac_script(pac_script: &str) -> Result<Self, PacScriptError> {
@@ -60,6 +63,7 @@ impl<'a> Engine<'a> {
     }
 
     pub fn set_pac_script(&mut self, pac_script: Option<&str>) -> Result<(), PacScriptError> {
+        self.js = Self::mkjs();
         let pac_script = pac_script.unwrap_or(crate::DEFAULT_PAC_SCRIPT);
         self.js
             .eval(Source::from_bytes(pac_script))
