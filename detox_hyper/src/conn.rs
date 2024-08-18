@@ -21,7 +21,7 @@ use hyper::{
     upgrade::Upgraded,
 };
 use hyper_util::rt::TokioIo;
-use paclib::Proxy;
+use paclib::{Proxy, ProxyOrDirect};
 use pin_project::pin_project;
 use tokio::{
     io::{AsyncRead, AsyncWrite},
@@ -73,7 +73,7 @@ pub struct Connection {
     #[pin]
     inner: AnyStream,
     host: Option<String>,
-    proxy: Option<HostAndPort>,
+    proxy: ProxyOrDirect,
     auth: Option<Box<dyn Authenticator>>,
 }
 
@@ -101,7 +101,7 @@ where
     sender: http1::SendRequest<B>,
     conn: http1::Connection<TokioIo<AnyStream>, B>,
     host: Option<String>,
-    proxy: Option<HostAndPort>,
+    proxy: ProxyOrDirect,
     auth: Option<Box<dyn Authenticator>>,
 }
 
@@ -179,7 +179,7 @@ impl Connection {
         })
     }
 
-    pub fn proxy(&self) -> &Option<HostAndPort> {
+    pub fn proxy(&self) -> &ProxyOrDirect {
         &self.proxy
     }
 }
@@ -193,12 +193,19 @@ impl std::fmt::Debug for Connection {
 }
 
 impl ConnectionBuilder {
-    pub fn proxy(&self) -> Option<Proxy> {
+    pub fn proxy(&self) -> ProxyOrDirect {
         match &self.kind {
-            ConnectionKind::Http(_) => None,
-            ConnectionKind::Https(_, _) => None,
-            ConnectionKind::HttpProxy(p, _, _) => Some(p.clone()),
-            ConnectionKind::HttpTunnel(p, _, _, _) => Some(p.clone()),
+            ConnectionKind::Http(_) => ProxyOrDirect::Direct,
+            ConnectionKind::Https(_, _) => ProxyOrDirect::Direct,
+            ConnectionKind::HttpProxy(p, _, _) => ProxyOrDirect::Proxy(p.clone()),
+            ConnectionKind::HttpTunnel(p, _, _, _) => ProxyOrDirect::Proxy(p.clone()),
+        }
+    }
+
+    pub fn with_tcp_keepalive(self, ka: TcpKeepAlive) -> Self {
+        Self {
+            kind: self.kind,
+            tcp_keepalive: Some(ka),
         }
     }
 }
@@ -238,15 +245,6 @@ impl AsyncRead for Connection {
     }
 }
 
-impl ConnectionBuilder {
-    pub fn with_tcp_keepalive(self, ka: TcpKeepAlive) -> Self {
-        Self {
-            kind: self.kind,
-            tcp_keepalive: Some(ka),
-        }
-    }
-}
-
 impl std::future::IntoFuture for ConnectionBuilder {
     type Output = std::io::Result<Connection>;
 
@@ -264,7 +262,7 @@ impl std::future::IntoFuture for ConnectionBuilder {
                 Ok(Connection {
                     inner: AnyStream::Http(stream),
                     host: Some(dst.host().to_owned()),
-                    proxy: None,
+                    proxy: ProxyOrDirect::Direct,
                     auth: None,
                 })
             }
@@ -286,7 +284,7 @@ impl std::future::IntoFuture for ConnectionBuilder {
                 Ok(Connection {
                     inner: AnyStream::Https(tls),
                     host: Some(dst.host().to_owned()),
-                    proxy: None,
+                    proxy: ProxyOrDirect::Direct,
                     auth: None,
                 })
             }
@@ -306,7 +304,7 @@ impl std::future::IntoFuture for ConnectionBuilder {
                     Ok(Connection {
                         inner: AnyStream::HttpProxy(stream),
                         host: None,
-                        proxy: Some(proxy),
+                        proxy: ProxyOrDirect::Proxy(Proxy::Http(proxy)),
                         auth: Some(auth),
                     })
                 }
@@ -333,7 +331,7 @@ impl std::future::IntoFuture for ConnectionBuilder {
                     Ok(Connection {
                         inner: AnyStream::HttpsProxy(tls),
                         host: None,
-                        proxy: Some(proxy),
+                        proxy: ProxyOrDirect::Proxy(Proxy::Https(proxy)),
                         auth: Some(auth),
                     })
                 }
@@ -350,7 +348,7 @@ impl std::future::IntoFuture for ConnectionBuilder {
                     Ok(Connection {
                         inner: AnyStream::HttpTunnel(TokioIo::new(stream)),
                         host: Some(dst.host().to_owned()),
-                        proxy: Some(proxy),
+                        proxy: ProxyOrDirect::Proxy(Proxy::Http(proxy)),
                         auth: None,
                     })
                 }
@@ -374,7 +372,7 @@ impl std::future::IntoFuture for ConnectionBuilder {
                     Ok(Connection {
                         inner: AnyStream::HttpTunnel(TokioIo::new(stream)),
                         host: Some(dst.host().to_owned()),
-                        proxy: Some(proxy),
+                        proxy: ProxyOrDirect::Proxy(Proxy::Https(proxy)),
                         auth: None,
                     })
                 }
@@ -457,20 +455,23 @@ where
             auth,
         } = self;
 
-        if proxy.is_some() {
-            if let Some(auth) = auth {
-                let auth_headers = auth.step(None)?;
-                req.headers_mut().extend(auth_headers);
+        match proxy {
+            ProxyOrDirect::Proxy(_) => {
+                if let Some(auth) = auth {
+                    let auth_headers = auth.step(None)?;
+                    req.headers_mut().extend(auth_headers);
+                }
             }
-        } else {
-            // if not proxied, remove the authority part of the URI
-            if req.method() != http::Method::CONNECT {
-                let uri = req
-                    .uri()
-                    .path_and_query()
-                    .cloned()
-                    .unwrap_or_else(|| PathAndQuery::from_static("/"));
-                *req.uri_mut() = Uri::from(uri);
+            ProxyOrDirect::Direct => {
+                // if not proxied, remove the authority part of the URI
+                if req.method() != http::Method::CONNECT {
+                    let uri = req
+                        .uri()
+                        .path_and_query()
+                        .cloned()
+                        .unwrap_or_else(|| PathAndQuery::from_static("/"));
+                    *req.uri_mut() = Uri::from(uri);
+                }
             }
         }
 
@@ -479,13 +480,14 @@ where
                 req.headers_mut().insert(HOST, HeaderValue::from_str(host)?);
             }
         }
+
         // We do not support connection pooling as of now.
         req.headers_mut()
             .insert(CONNECTION, HeaderValue::from_static("close"));
 
         tokio::spawn(async move {
-            if let Err(e) = conn.await {
-                eprintln!("Error in connection: {}", e);
+            if let Err(cause) = conn.await {
+                tracing::error!(%cause, "connection error");
             }
         });
 
@@ -501,45 +503,27 @@ async fn http_connect<T: AsyncRead + AsyncWrite + Send + Unpin + 'static>(
     auth: &AuthenticatorFactory,
     dst: &HostAndPort,
 ) -> std::io::Result<Upgraded> {
-    let (mut request_sender, connection) =
-        http1::handshake(TokioIo::new(stream)).await.map_err(|e| {
-            std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("HTTP handshake error: {e}"),
-            )
-        })?;
+    let (mut request_sender, connection) = http1::handshake(TokioIo::new(stream))
+        .await
+        .map_err(|e| std::io::Error::other(format!("HTTP handshake error: {e}")))?;
 
     let dst_uri = Uri::builder()
         .authority(dst.to_string())
         .build()
-        .map_err(|e| {
-            std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Invalid authority '{dst}': {e}"),
-            )
-        })?;
+        .map_err(|e| std::io::Error::other(format!("Invalid authority '{dst}': {e}")))?;
     let mut request = Request::connect(dst_uri).header(HOST, dst.host());
     let auth = auth.make(proxy.host()).map_err(|e| {
-        std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!("Unable to build authenticator for '{proxy}': {e}"),
-        )
+        std::io::Error::other(format!("Unable to build authenticator for '{proxy}': {e}"))
     })?;
     let auth_headers = auth.step(None).map_err(|e| {
-        std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!("Unable to step authenticator for '{proxy}': {e}"),
-        )
+        std::io::Error::other(format!("Unable to step authenticator for '{proxy}': {e}"))
     })?;
     if let Some(headers) = request.headers_mut() {
         headers.extend(auth_headers)
     }
-    let request = request.body(Empty::<Bytes>::new()).map_err(|e| {
-        std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!("Invalid HTTP request: {e}"),
-        )
-    })?;
+    let request = request
+        .body(Empty::<Bytes>::new())
+        .map_err(|e| std::io::Error::other(format!("Invalid HTTP request: {e}")))?;
 
     let send_request = async move {
         let response = request_sender.send_request(request).await.map_err(|e| {
