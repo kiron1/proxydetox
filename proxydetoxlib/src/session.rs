@@ -1,14 +1,14 @@
-use crate::body;
 use crate::context::Context;
+use crate::{accesslog, body};
 use bytes::Bytes;
 use detox_net::{copy_bidirectional, HostAndPort};
 use futures_util::{stream, FutureExt, StreamExt};
 use http::header::{
-    CACHE_CONTROL, CONTENT_TYPE, HOST, PROXY_AUTHENTICATE, PROXY_AUTHORIZATION, TE, TRAILER,
-    TRANSFER_ENCODING, UPGRADE,
+    CACHE_CONTROL, CONNECTION, CONTENT_LENGTH, CONTENT_TYPE, HOST, PROXY_AUTHENTICATE,
+    PROXY_AUTHORIZATION, TE, TRAILER, TRANSFER_ENCODING, UPGRADE, USER_AGENT,
 };
-use http::HeaderName;
 use http::Uri;
+use http::{HeaderMap, HeaderName};
 use http::{HeaderValue, Response};
 use http_body_util::combinators::BoxBody;
 use http_body_util::{BodyExt, StreamBody};
@@ -16,7 +16,7 @@ use hyper::body::Frame;
 use hyper_util::rt::TokioIo;
 use lazy_static::lazy_static;
 use paclib::proxy::Proxy;
-use paclib::Proxies;
+use paclib::{Proxies, ProxyOrDirect};
 use std::convert::Infallible;
 use std::fmt::Write;
 use std::future::Future;
@@ -143,9 +143,35 @@ impl Inner {
 
     async fn proxy_request(
         &self,
-        req: http::Request<hyper::body::Incoming>,
+        mut req: http::Request<hyper::body::Incoming>,
     ) -> Result<http::Response<BoxBody<Bytes, hyper::Error>>> {
-        let proxies = self.context.find_proxy(req.uri().clone()).await;
+        let access = accesslog::Entry::begin(
+            self.addr,
+            req.method().clone(),
+            req.uri().clone(),
+            req.version(),
+            req.headers()
+                .get(USER_AGENT)
+                .and_then(|v| v.to_str().ok())
+                .map(|s| s.to_owned()),
+        );
+        remove_hop_by_hop_headers(req.headers_mut());
+        let uri = if req.uri().scheme().is_some() {
+            req.uri().clone()
+        } else {
+            Uri::builder()
+                .scheme(http::uri::Scheme::HTTP)
+                .authority(req.uri().authority().cloned().expect("URI with authority"))
+                .path_and_query(
+                    req.uri()
+                        .path_and_query()
+                        .cloned()
+                        .unwrap_or(http::uri::PathAndQuery::from_static("/")),
+                )
+                .build()
+                .expect("URI")
+        };
+        let proxies = self.context.find_proxy(uri).await;
         let conn = proxies.clone().into_iter().map({
             let cx = self.context.clone();
             let method = req.method();
@@ -178,10 +204,12 @@ impl Inner {
             let mut conn = Box::pin(conn);
             conn.next().await
         };
+        let proxy = conn
+            .as_ref()
+            .map(|c| c.proxy().to_owned())
+            .unwrap_or(ProxyOrDirect::Direct);
 
-        let proxy = conn.as_ref().and_then(|c| c.proxy().to_owned());
-
-        if let Some(mut conn) = conn {
+        let resp = if let Some(mut conn) = conn {
             let resp = if req.method() == hyper::Method::CONNECT {
                 tokio::task::spawn(async move {
                     match hyper::upgrade::on(req).await {
@@ -198,21 +226,29 @@ impl Inner {
                 Ok(Response::new(body::empty()))
             } else {
                 let conn = conn.handshake().await?;
-                let resp = conn.send_request(req).await?;
+                let mut resp = conn.send_request(req).await?;
+                remove_hop_by_hop_headers(resp.headers_mut());
                 Ok(resp.map(|b| b.boxed()))
             };
 
             match resp {
                 Ok(resp) => {
-                    match (proxy, resp.status()) {
-                        (Some(proxy), http::StatusCode::PROXY_AUTHENTICATION_REQUIRED) => {
+                    match (&proxy, resp.status()) {
+                        (
+                            ProxyOrDirect::Proxy(proxy),
+                            http::StatusCode::PROXY_AUTHENTICATION_REQUIRED,
+                        ) => {
                             tracing::error!(%proxy, "407 proxy authentication required");
-                            Err(Error::ProxyAuthenticationRequired(proxy.to_owned()))
+                            Err(Error::ProxyAuthenticationRequired(
+                                proxy.endpoint().to_owned(),
+                            ))
                         }
-                        (None, http::StatusCode::PROXY_AUTHENTICATION_REQUIRED) => {
+                        (
+                            ProxyOrDirect::Direct,
+                            http::StatusCode::PROXY_AUTHENTICATION_REQUIRED,
+                        ) => {
                             // illegal case, we should never get this reposinse from a non-proxy connection.
                             tracing::error!(status = %resp.status(), "invalid status code from direct connection");
-
                             Err(Error::InvalidStatusCode(resp.status()))
                         }
                         _ => Ok(resp),
@@ -222,7 +258,24 @@ impl Inner {
             }
         } else {
             Err(Error::ConnectionFailed(proxies, req.uri().clone()))
-        }
+        };
+
+        let entry = {
+            match &resp {
+                Ok(res) => access.success(
+                    proxy,
+                    res.status(),
+                    res.headers()
+                        .get(CONTENT_LENGTH)
+                        .and_then(|v| v.to_str().ok())
+                        .and_then(|s| s.parse::<u64>().ok()),
+                ),
+                Err(cause) => access.error(Some(proxy.clone()), cause),
+            }
+        };
+        self.context.accesslog_tx.send(entry).ok();
+
+        resp
     }
 
     async fn management_console(
@@ -312,8 +365,7 @@ fn make_error_html(
 ) -> Response<BoxBody<Bytes, hyper::Error>> {
     let body = format!(
         include_str!("error.html"),
-        code = status.as_u16(),
-        status = status.as_str(),
+        status = status,
         message = message.as_ref(),
         name = env!("CARGO_PKG_NAME"),
         version = *crate::VERSION_STR,
@@ -360,13 +412,46 @@ fn proxy_pac(host: Option<&HeaderValue>) -> std::result::Result<Response<Body>, 
     Ok(resp)
 }
 
+fn remove_hop_by_hop_headers(headers: &mut HeaderMap) {
+    // Remove hop-by-hop headers which must not be forwarded.
+    if let Some(connection) = headers.remove(CONNECTION) {
+        if let Ok(connection) = connection.to_str() {
+            let iter = connection
+                .split(',')
+                .map(|h| h.trim())
+                .filter(|h| !h.is_empty());
+            for name in iter {
+                headers.remove(name.trim());
+            }
+        }
+    }
+    for header in HOP_BY_HOP_HEADERS.iter() {
+        headers.remove(*header);
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::make_error_response;
+    use super::*;
 
     #[test]
     fn test_error_response() {
         let resp = make_error_response(&super::Error::InvalidUri);
         assert_ne!(resp.status(), http::StatusCode::OK);
+    }
+
+    #[test]
+    fn remove_hop_by_hop_headers_1() {
+        let keep_alive: HeaderName = HeaderName::from_static("keep-alive");
+        let mut headers = HeaderMap::new();
+        headers.insert(&HOST, HeaderValue::from_static("example.org"));
+        headers.insert(&*PROXY_CONNECTION, HeaderValue::from_static("Close"));
+        headers.insert(&CONNECTION, HeaderValue::from_static("Keep-Alive"));
+        headers.insert(&keep_alive, HeaderValue::from_static("max=1"));
+        remove_hop_by_hop_headers(&mut headers);
+        assert!(headers.contains_key(&HOST));
+        assert!(!headers.contains_key(&*PROXY_CONNECTION));
+        assert!(!headers.contains_key(&CONNECTION));
+        assert!(!headers.contains_key(&keep_alive));
     }
 }

@@ -130,15 +130,26 @@ impl Context {
         let auth = self.auth.clone();
         let connect_timeout = self.connect_timeout;
 
-        let conn = match proxy {
+        let (tag, conn) = match proxy {
             ProxyOrDirect::Proxy(ref proxy) => {
                 if tunnel {
-                    Connection::http_tunnel(proxy.clone(), tls_config.clone(), auth.clone(), dst)
+                    (
+                        "tunnel",
+                        Connection::http_tunnel(
+                            proxy.clone(),
+                            tls_config.clone(),
+                            auth.clone(),
+                            dst,
+                        ),
+                    )
                 } else {
-                    Connection::http_proxy(proxy.clone(), tls_config.clone(), auth.clone())
+                    (
+                        "proxy",
+                        Connection::http_proxy(proxy.clone(), tls_config.clone(), auth.clone()),
+                    )
                 }
             }
-            ProxyOrDirect::Direct => Connection::http(dst),
+            ProxyOrDirect::Direct => ("http", Connection::http(dst)),
         };
         let conn = conn.with_tcp_keepalive(self.client_tcp_keepalive.clone());
 
@@ -149,6 +160,7 @@ impl Context {
             .await
             .map_err(move |_| Error::ConnectTimeout(proxy, uri))??;
         tracing::Span::current().record("duration", debug(&start.elapsed()));
+        tracing::debug!("{}", tag);
 
         Ok(conn)
     }

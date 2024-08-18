@@ -10,17 +10,18 @@ bytes.workspace = true
 detox_auth.workspace = true
 detox_net.workspace = true
 futures-util.workspace = true
-http.workspace = true
-http-body.workspace = true
 http-body-util.workspace = true
-hyper.workspace = true
+http-body.workspace = true
+http.workspace = true
 hyper-util.workspace = true
+hyper.workspace = true
 paclib.workspace = true
 pin-project.workspace = true
 rustls.workspace = true
 thiserror.workspace = true
 tokio-rustls.workspace = true
 tokio.workspace = true
+tracing.workspace = true
 
 [lib]
 doctest = false
