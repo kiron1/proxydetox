@@ -481,7 +481,7 @@ dependencies = [
 
 [[package]]
 name = "detox_auth"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "base64",
  "http",
@@ -493,14 +493,14 @@ dependencies = [
 
 [[package]]
 name = "detox_futures"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "tokio",
 ]
 
 [[package]]
 name = "detox_hyper"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "bytes",
  "detox_auth",
@@ -522,7 +522,7 @@ dependencies = [
 
 [[package]]
 name = "detox_net"
-version = "0.1.6"
+version = "0.1.7"
 dependencies = [
  "http",
  "socket2",
@@ -587,7 +587,7 @@ dependencies = [
 
 [[package]]
 name = "dnsdetox"
-version = "0.1.6"
+version = "0.1.7"
 dependencies = [
  "clap",
  "detox_auth",
@@ -1081,9 +1081,9 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "libc"
-version = "0.2.157"
+version = "0.2.158"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "374af5f94e54fa97cf75e945cce8a6b201e88a1a07e688b47dfd2a59c66dbd86"
+checksum = "d8adc4bb1803a324070e64a98ae98f38934d91957a99cfb3a43dcbc01bc56439"
 
 [[package]]
 name = "libgssapi"
@@ -1366,7 +1366,7 @@ checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 
 [[package]]
 name = "paceval"
-version = "0.1.6"
+version = "0.1.7"
 dependencies = [
  "clap",
  "http",
@@ -1375,7 +1375,7 @@ dependencies = [
 
 [[package]]
 name = "paclib"
-version = "0.3.6"
+version = "0.3.7"
 dependencies = [
  "boa_engine",
  "boa_gc",
@@ -1551,7 +1551,7 @@ dependencies = [
 
 [[package]]
 name = "proxydetox"
-version = "0.8.1"
+version = "0.8.2"
 dependencies = [
  "clap",
  "detox_auth",
@@ -1575,7 +1575,7 @@ dependencies = [
 
 [[package]]
 name = "proxydetoxlib"
-version = "0.8.1"
+version = "0.8.2"
 dependencies = [
  "bytes",
  "chrono",
@@ -1954,7 +1954,7 @@ checksum = "6980e8d7511241f8acf4aebddbb1ff938df5eebe98691418c4468d0b72a96a67"
 
 [[package]]
 name = "spnego"
-version = "0.1.6"
+version = "0.1.7"
 dependencies = [
  "libgssapi",
  "windows 0.58.0",
