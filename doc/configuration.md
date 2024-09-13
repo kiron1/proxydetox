@@ -46,7 +46,7 @@ command line to `proxydetox`.
 ### Example
 
 ```sh
-proxydeox --negotiate --port 8080 --pac-file http://example.org/proxy.pac
+proxydetox --negotiate --listen 127.0.0.1:8080 --pac-file http://example.org/proxy.pac
 ```
 
 Is equivalent with a `proxydetoxrc` file at one of the well known locations
@@ -54,7 +54,7 @@ listed above with the following content:
 
 ```
 --negotiate
---port 8080
+--listen 127.0.0.1:8080
 --pac-file http://example.org/proxy.pac
 ```
 
@@ -90,11 +90,11 @@ internet browser.
 
 ### Examples
 
-```
+```sh
 proxydetox --pac-file http://example.org/proxy.pac
 ```
 
-```
+```sh
 proxydetox --pac-file /tmp/test.pac
 ```
 
