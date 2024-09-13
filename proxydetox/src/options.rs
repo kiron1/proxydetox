@@ -326,8 +326,8 @@ impl From<ArgMatches> for Options {
                 .cloned()
                 .or_else(|| which_pac_file().map(PathOrUri::Path)),
             authorization,
-            always_use_connect: m.contains_id("always_use_connect"),
-            direct_fallback: m.contains_id("direct_fallback"),
+            always_use_connect: m.get_flag("always_use_connect"),
+            direct_fallback: m.get_flag("direct_fallback"),
             connect_timeout: m
                 .get_one::<f64>("connect_timeout")
                 .map(|s| Duration::from_millis((*s * 1000.0) as u64))
@@ -433,6 +433,24 @@ mod tests {
         assert!(is_file_or_http_uri("http://example.org/").is_ok());
         assert!(is_file_or_http_uri("https://example.org/").is_ok());
         assert!(is_file_or_http_uri("/does/not/exist").is_err());
+    }
+
+    #[test]
+    fn test_default() {
+        let args = Options::parse_args(&["proxydetox".into()]);
+        assert_eq!(args.direct_fallback, false);
+        assert_eq!(args.always_use_connect, false);
+    }
+
+    #[test]
+    fn test_not_default() {
+        let args = Options::parse_args(&[
+            "proxydetox".into(),
+            "--direct-fallback".into(),
+            "--always-use-connect".into(),
+        ]);
+        assert_eq!(args.direct_fallback, true);
+        assert_eq!(args.always_use_connect, true);
     }
 
     #[test]
