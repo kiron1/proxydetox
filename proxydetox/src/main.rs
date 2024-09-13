@@ -136,9 +136,8 @@ async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
         socket::activate_socket(name)?
             .take()
             .into_iter()
-            .map(|s: std::net::TcpListener| {
+            .inspect(|s: &std::net::TcpListener| {
                 s.set_nonblocking(true).expect("nonblocking");
-                s
             })
             .map(tokio::net::TcpListener::from_std)
             .collect::<Result<Vec<_>, _>>()?
