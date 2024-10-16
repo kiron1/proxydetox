@@ -184,23 +184,13 @@ impl Inner {
         let conn = if self.context.race_connect {
             let conn = conn
                 .buffer_unordered(self.context.parallel_connect)
-                .filter_map(|c| async move {
-                    if let Err(cause) = &c {
-                        tracing::warn!(%cause, "connection error");
-                    }
-                    c.ok()
-                });
+                .filter_map(|c| async move { c.ok() });
             let mut conn = Box::pin(conn);
             conn.next().await
         } else {
             let conn = conn
                 .buffered(self.context.parallel_connect)
-                .filter_map(|c| async move {
-                    if let Err(cause) = &c {
-                        tracing::warn!(%cause, "connection error");
-                    }
-                    c.ok()
-                });
+                .filter_map(|c| async move { c.ok() });
             let mut conn = Box::pin(conn);
             conn.next().await
         };

@@ -35,8 +35,8 @@ pub enum Error {
         #[source]
         hyper::Error,
     ),
-    #[error("connect error reaching {1}: {0}")]
-    Connect(#[source] tokio::io::Error, Uri),
+    #[error("connect error reaching {2} via {1}: {0}")]
+    Connect(#[source] tokio::io::Error, ProxyOrDirect, Uri),
     #[error("upstream proxy ({0}) requires authentication")]
     ProxyAuthenticationRequired(ProxyOrDirect),
     #[error("http error: {0}")]
@@ -44,12 +44,6 @@ pub enum Error {
         #[source]
         #[from]
         http::Error,
-    ),
-    #[error("I/O error: {0}")]
-    Io(
-        #[from]
-        #[source]
-        std::io::Error,
     ),
     #[error("unable to establish connection: {0}")]
     UnableToEstablishConnection(Uri),
@@ -130,26 +124,15 @@ impl Context {
         let auth = self.auth.clone();
         let connect_timeout = self.connect_timeout;
 
-        let (tag, conn) = match proxy {
+        let conn = match proxy {
             ProxyOrDirect::Proxy(ref proxy) => {
                 if tunnel {
-                    (
-                        "tunnel",
-                        Connection::http_tunnel(
-                            proxy.clone(),
-                            tls_config.clone(),
-                            auth.clone(),
-                            dst,
-                        ),
-                    )
+                    Connection::http_tunnel(proxy.clone(), tls_config.clone(), auth.clone(), dst)
                 } else {
-                    (
-                        "proxy",
-                        Connection::http_proxy(proxy.clone(), tls_config.clone(), auth.clone()),
-                    )
+                    Connection::http_proxy(proxy.clone(), tls_config.clone(), auth.clone())
                 }
             }
-            ProxyOrDirect::Direct => ("http", Connection::http(dst)),
+            ProxyOrDirect::Direct => Connection::http(dst),
         };
         let conn = conn.with_tcp_keepalive(self.client_tcp_keepalive.clone());
 
@@ -158,9 +141,14 @@ impl Context {
             .into_future()
             .timeout(connect_timeout * if tunnel { 2 } else { 1 })
             .await
-            .map_err(move |_| Error::ConnectTimeout(proxy, uri))??;
+            .map_err({
+                let proxy = proxy.clone();
+                let uri = uri.clone();
+                move |_| Error::ConnectTimeout(proxy, uri)
+            })?
+            .map_err(move |e| Error::Connect(e, proxy, uri))?;
         tracing::Span::current().record("duration", debug(&start.elapsed()));
-        tracing::debug!("{}", tag);
+        tracing::debug!("connect");
 
         Ok(conn)
     }
