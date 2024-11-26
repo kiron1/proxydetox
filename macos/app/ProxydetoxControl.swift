@@ -1,5 +1,17 @@
 import Foundation
 
+private enum State {
+  case initial
+  case running(Process, Date)
+  case stopped(TimeInterval)
+  case error(Int, TimeInterval)
+}
+
+private enum DesiredState {
+  case running
+  case stopped
+}
+
 public class ProxydetoxControl {
   static let autostartKey = "Autostart"
   static let portKey = "Port"
@@ -15,6 +27,9 @@ public class ProxydetoxControl {
   private var proxydetoxUrl: URL
   private var proxydetoxProcess: Process?
 
+  private var state: State = .initial
+  private var desiredState: DesiredState = .running
+
   init() {
     let path = Bundle.main.bundlePath as NSString
     var components = path.pathComponents
@@ -24,34 +39,59 @@ public class ProxydetoxControl {
     self.proxydetoxUrl = URL(fileURLWithPath: NSString.path(withComponents: components))
     print("proxydetoxcli \(self.proxydetoxUrl)")
 
-    let applicationSupportURL = FileManager.default.urls(
-      for: .applicationSupportDirectory, in: .userDomainMask
-    ).first
-    print("applicationSupportURL \(applicationSupportURL)")
+    // let applicationSupportURL = FileManager.default.urls(
+    //   for: .applicationSupportDirectory, in: .userDomainMask
+    // ).first
+    // print("applicationSupportURL \(applicationSupportURL)")
 
-    var proxyPacPath = FileManager.default.urls(
-      for: .applicationSupportDirectory, in: .userDomainMask
-    ).first!
-    proxyPacPath.appendPathComponent("Proxydetox")
+    // var proxyPacPath = FileManager.default.urls(
+    //   for: .applicationSupportDirectory, in: .userDomainMask
+    // ).first!
+    // proxyPacPath.appendPathComponent("Proxydetox")
 
-    if !FileManager.default.fileExists(atPath: proxyPacPath.path) {
-      do {
-        try FileManager.default.createDirectory(
-          atPath: proxyPacPath.path, withIntermediateDirectories: true, attributes: nil)
-      } catch {
-        NSLog("\(error.localizedDescription)")
-      }
-    }
-    proxyPacPath.appendPathComponent("proxy.pac")
+    // if !FileManager.default.fileExists(atPath: proxyPacPath.path) {
+    //   do {
+    //     try FileManager.default.createDirectory(
+    //       atPath: proxyPacPath.path, withIntermediateDirectories: true, attributes: nil)
+    //   } catch {
+    //     NSLog("\(error.localizedDescription)")
+    //   }
+    // }
+    // proxyPacPath.appendPathComponent("proxy.pac")
 
     UserDefaults.standard.register(defaults: [
       ProxydetoxControl.autostartKey: false,
       ProxydetoxControl.portKey: 8080,
-      ProxydetoxControl.pacFileKey: proxyPacPath.relativePath,
+      // ProxydetoxControl.pacFileKey: proxyPacPath.relativePath,
       ProxydetoxControl.negotiateKey: false,
       ProxydetoxControl.alwaysUseConnectKey: false,
       ProxydetoxControl.directFallbackKey: false,
     ])
+  }
+
+  func ensureDesiredState() {
+    switch (state, desiredState) {
+      case (.running, .initial):
+        start()
+      case (.running, .running(let proc)):
+        return
+      case (.running, .stopped(let dt)):
+        if dt > 10 {
+          start()
+        }
+      case (.running, .error(let rc, let dt)):
+        if dt > 10 {
+          start()
+        }
+      case (.stopped, .initial):
+        return
+      case (.stopped, .running(let proc)):
+        stop()
+      case (.stopped, .stopped(let dt)):
+        return
+      case (.stopped, .error(let rc, let dt)):
+        return
+    }
   }
 
   var isRunning: Bool {
