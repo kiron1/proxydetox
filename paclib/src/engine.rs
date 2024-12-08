@@ -111,7 +111,7 @@ impl<'a> Engine<'a> {
     }
 }
 
-impl<'a> Default for Engine<'a> {
+impl Default for Engine<'_> {
     fn default() -> Self {
         Self::new()
     }
