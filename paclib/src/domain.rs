@@ -60,7 +60,7 @@ where
 
 struct Domain<'a>(&'a str);
 
-impl<'a> Domain<'a> {
+impl Domain<'_> {
     fn parts(&self) -> impl Iterator<Item = &str> {
         self.0
             .trim_matches(|c: char| c.is_ascii_whitespace() || c == '.')
