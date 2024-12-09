@@ -438,8 +438,8 @@ mod tests {
     #[test]
     fn test_default() {
         let args = Options::parse_args(&["proxydetox".into()]);
-        assert_eq!(args.direct_fallback, false);
-        assert_eq!(args.always_use_connect, false);
+        assert!(!args.direct_fallback);
+        assert!(!args.always_use_connect);
     }
 
     #[test]
@@ -449,8 +449,8 @@ mod tests {
             "--direct-fallback".into(),
             "--always-use-connect".into(),
         ]);
-        assert_eq!(args.direct_fallback, true);
-        assert_eq!(args.always_use_connect, true);
+        assert!(args.direct_fallback);
+        assert!(args.always_use_connect);
     }
 
     #[test]

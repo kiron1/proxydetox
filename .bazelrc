@@ -14,6 +14,12 @@ build --incompatible_merge_fixed_and_default_shell_env
 
 build --enable_platform_specific_config
 
+build:clippy --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
+build:clippy --output_groups=+clippy_checks
+
+build:format --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
+build:format --output_groups=+rustfmt_checks
+
 build:macos --apple_crosstool_top=@local_config_apple_cc//:toolchain
 build:macos --crosstool_top=@local_config_apple_cc//:toolchain
 build:macos --host_crosstool_top=@local_config_apple_cc//:toolchain
