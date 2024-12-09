@@ -481,7 +481,7 @@ dependencies = [
 
 [[package]]
 name = "detox_auth"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "base64",
  "http",
@@ -493,14 +493,14 @@ dependencies = [
 
 [[package]]
 name = "detox_futures"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "tokio",
 ]
 
 [[package]]
 name = "detox_hyper"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "bytes",
  "detox_auth",
@@ -522,7 +522,7 @@ dependencies = [
 
 [[package]]
 name = "detox_net"
-version = "0.1.10"
+version = "0.1.11"
 dependencies = [
  "http",
  "socket2",
@@ -587,7 +587,7 @@ dependencies = [
 
 [[package]]
 name = "dnsdetox"
-version = "0.1.10"
+version = "0.1.11"
 dependencies = [
  "clap",
  "detox_auth",
@@ -1372,7 +1372,7 @@ checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 
 [[package]]
 name = "paceval"
-version = "0.1.10"
+version = "0.1.11"
 dependencies = [
  "clap",
  "http",
@@ -1381,7 +1381,7 @@ dependencies = [
 
 [[package]]
 name = "paclib"
-version = "0.3.10"
+version = "0.3.11"
 dependencies = [
  "boa_engine",
  "boa_gc",
@@ -1558,7 +1558,7 @@ dependencies = [
 
 [[package]]
 name = "proxydetox"
-version = "0.8.5"
+version = "0.8.6"
 dependencies = [
  "clap",
  "detox_auth",
@@ -1582,7 +1582,7 @@ dependencies = [
 
 [[package]]
 name = "proxydetoxlib"
-version = "0.8.5"
+version = "0.8.6"
 dependencies = [
  "bytes",
  "chrono",
@@ -1761,15 +1761,15 @@ checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
 
 [[package]]
 name = "rustix"
-version = "0.38.41"
+version = "0.38.42"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7f649912bc1495e167a6edee79151c84b1bad49748cb4f1f1167f459f6224f6"
+checksum = "f93dc38ecbab2eb790ff964bb77fa94faf256fd3e73285fd7ba0903b76bedb85"
 dependencies = [
  "bitflags 2.6.0",
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1961,7 +1961,7 @@ checksum = "6980e8d7511241f8acf4aebddbb1ff938df5eebe98691418c4468d0b72a96a67"
 
 [[package]]
 name = "spnego"
-version = "0.1.10"
+version = "0.1.11"
 dependencies = [
  "libgssapi",
  "windows 0.58.0",
