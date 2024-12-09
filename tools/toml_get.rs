@@ -38,10 +38,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         };
     }
     let value = match value {
-        Value::String(v) => format!("{v}"),
-        Value::Integer(v) => format!("{v}"),
-        Value::Float(v) => format!("{v}"),
-        Value::Boolean(v) => format!("{v}"),
+        Value::String(v) => v.to_string(),
+        Value::Integer(v) => v.to_string(),
+        Value::Float(v) => v.to_string(),
+        Value::Boolean(v) => v.to_string(),
         x => format!("{x}"),
     };
     let stdout = std::io::stdout();

@@ -70,7 +70,7 @@ impl Environment {
         assert!(h.is_none());
 
         let (response, connection) = tokio::join!(request_sender.send_request(request), connection);
-        let _ = connection.unwrap();
+        connection.unwrap();
         response.unwrap()
     }
 

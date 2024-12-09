@@ -112,6 +112,8 @@ jobs:
           bazel
           test
           --config=ci
+          --config=clippy
+          --config=format
           --//:version=${{ needs.version.outputs.version }}
           --//:rev=${{ needs.version.outputs.rev }}
           ${{ matrix.buildflags }}
@@ -295,31 +297,6 @@ jobs:
           REPO: ${{ github.repository }}
           VERSION: v${{ needs.version.outputs.version }}
 
-  format_check:
-    name: Rust lint
-    runs-on: ubuntu-20.04
-
-    strategy:
-      matrix:
-        lint: [clippy, fmt]
-        include:
-          - lint: clippy
-            flags: --all
-          - lint: fmt
-            flags: --all -- --check
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Rustup
-        run: |
-          rustup update --no-self-update stable
-          rustup component add clippy rustfmt
-      - name: Install Linux dependency
-        run: sudo apt-get install libkrb5-dev
-        if: ${{ matrix.lint == 'clippy' }}
-      - name: Lint check
-        run: cargo ${{ matrix.lint }} ${{ matrix.flags }}
-
   # The success job is here to consolidate the total success/failure state of
   # all other jobs. This job is then included in the GitHub branch protection
   # rule which prevents merges unless all other jobs are passing. This makes
@@ -331,7 +308,6 @@ jobs:
     needs:
       - bazel_build
       - cargo_build_and_test
-      - format_check
     runs-on: ubuntu-latest
     steps:
       - run: jq --exit-status 'all(.result == "success")' <<< '${{ toJson(needs) }}'
