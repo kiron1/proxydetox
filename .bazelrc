@@ -28,11 +28,11 @@ build:aarch64_apple_darwin --cpu=darwin_arm64
 
 build:release --compilation_mode=opt
 build:release --strip=always
-build:release --@rules_rust//:extra_rustc_flag=-Cstrip=debuginfo
-build:release --@rules_rust//:extra_rustc_flag=-Copt-level=z
-build:release --@rules_rust//:extra_rustc_flag=-Cdebuginfo=0
-build:release --@rules_rust//:extra_rustc_flag=-Clto=true
-build:release --@rules_rust//:extra_rustc_flag=-Ccodegen-units=1
+build:release --@rules_rust//rust/settings:extra_rustc_flag=-Cstrip=debuginfo
+build:release --@rules_rust//rust/settings:extra_rustc_flag=-Copt-level=z
+build:release --@rules_rust//rust/settings:extra_rustc_flag=-Cdebuginfo=0
+build:release --@rules_rust//rust/settings:extra_rustc_flag=-Clto=true
+build:release --@rules_rust//rust/settings:extra_rustc_flag=-Ccodegen-units=1
 
 # Always display the flags being used
 common:ci --announce_rc
