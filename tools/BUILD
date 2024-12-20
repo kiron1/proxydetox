@@ -7,7 +7,7 @@ rust_binary(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "@crate_index_tools//:clap",
-        "@crate_index_tools//:toml",
+        "@crate_index//:clap",
+        "@crate_index//:toml",
     ],
 )

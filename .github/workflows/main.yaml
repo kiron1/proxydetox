@@ -95,7 +95,7 @@ jobs:
           path: |
             ~/.cache/bazel_build_cache
             ~/.cache/bazel_repo_cache
-          key: ${{ runner.os }}-${{ env.OS_VER }}-bazel-test-${{ hashFiles('Cargo.Bazel.lock', 'WORKSPACE') }}
+          key: ${{ runner.os }}-${{ env.OS_VER }}-bazel-test-${{ hashFiles('Cargo.lock', 'MODULE.bazel.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ env.OS_VER }}-bazel-test-
       - name: Setup Windows Bazelrc
@@ -112,8 +112,6 @@ jobs:
           bazel
           test
           --config=ci
-          --config=clippy
-          --config=format
           --//:version=${{ needs.version.outputs.version }}
           --//:rev=${{ needs.version.outputs.rev }}
           ${{ matrix.buildflags }}
@@ -131,12 +129,53 @@ jobs:
           "//..."
         if: runner.os != 'Windows'
 
+  bazel_check:
+    name: Bazel check
+    runs-on: ubuntu-24.04
+
+    needs: bazel_test
+
+    strategy:
+      matrix:
+        check:
+          - clippy
+          - format
+        include:
+          - check: "clippy"
+            aspect: "@rules_rust//rust:defs.bzl%rust_clippy_aspect"
+            output_groups: "clippy_checks"
+          - check: "format"
+            aspect: "@rules_rust//rust:defs.bzl%rust_clippy_aspect"
+            output_groups: "rustfmt_checks"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Install Linux dependency
+        run: sudo apt-get install libkrb5-dev
+        if: runner.os == 'Linux'
+      - name: Run check
+        run: >
+          bazel
+          build
+          --config=ci
+          --aspects=${{ matrix.aspect }}
+          --output_groups=${{ matrix.output_groups }}
+          --
+          //...
+          -//macos/...
+          -//pkg/macos/...
+          -//proxydetox:proxydetoxcli
+
   bazel_build:
     name: Package
     runs-on: ${{ matrix.os }}
 
     needs:
       - bazel_test
+      - bazel_check
       - version
 
     strategy:
@@ -193,7 +232,7 @@ jobs:
           path: |
             ~/.cache/bazel_build_cache
             ~/.cache/bazel_repo_cache
-          key: ${{ runner.os }}-${{ env.OS_VER }}-bazel-build-${{ hashFiles('Cargo.Bazel.lock', 'WORKSPACE') }}
+          key: ${{ runner.os }}-${{ env.OS_VER }}-bazel-build-${{ hashFiles('Cargo.lock', 'MODULE.bazel.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ env.OS_VER }}-bazel-build-
       - name: Setup Windows Bazelrc
@@ -205,16 +244,7 @@ jobs:
       - name: Install Linux dependency
         run: sudo apt-get install libkrb5-dev
         if: startswith(matrix.os, 'ubuntu')
-      - name: Build package
-        run: >
-          bazel build
-          --config=ci
-          --config=release
-          --//:version=${{ needs.version.outputs.version }}
-          --//:rev=${{ needs.version.outputs.rev }}
-          ${{ matrix.buildflags }}
-          "//pkg"
-      - name: Copy package
+      - name: Make package
         run: >
           bazel
           run
@@ -253,14 +283,14 @@ jobs:
       #  see https://github.com/rust-lang/rust-bindgen/issues/1797
       - name: Install Windows dependency (LLVM)
         uses: KyleMayes/install-llvm-action@v2.0.3
-        if: startswith(runner.os, 'windows')
+        if: runner.os == 'Windows'
         with:
           version: "11.0"
           directory: ${{ runner.temp }}/llvm
       - name: Set LIBCLANG_PATH
         run: echo "LIBCLANG_PATH=$((gcm clang).source -replace "clang.exe")" >> $env:GITHUB_ENV
         shell: pwsh
-        if: startswith(runner.os, 'windows')
+        if: runner.os == 'Windows'
       - name: Run cargo test
         run: cargo test
       - name: Build Release Package
