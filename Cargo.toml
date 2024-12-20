@@ -18,6 +18,7 @@ members = [
     "proxydetox",
     "proxydetoxlib",
     "spnego",
+    "tools",
 ]
 default-members = [
     "paceval",
