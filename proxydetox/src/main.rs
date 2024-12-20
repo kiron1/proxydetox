@@ -128,6 +128,8 @@ async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
         .authenticator_factory(Some(auth))
         .proxytunnel(config.proxytunnel)
         .connect_timeout(config.connect_timeout)
+        .race_connect(config.race_connect)
+        .parallel_connect(config.parallel_connect)
         .direct_fallback(config.direct_fallback)
         .client_tcp_keepalive(config.client_tcp_keepalive.clone())
         .build();

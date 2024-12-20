@@ -30,6 +30,8 @@ pub struct Options {
     pub pac_file: Option<PathOrUri>,
     pub authorization: Authorization,
     pub connect_timeout: Duration,
+    pub race_connect: bool,
+    pub parallel_connect: usize,
     pub direct_fallback: bool,
     pub proxytunnel: bool,
     pub activate_socket: Option<String>,
@@ -197,6 +199,21 @@ impl Options {
                     .default_value("10"),
             )
             .arg(
+                Arg::new("race_connect")
+                    .long("race-connect")
+                    .help("Race multiple connections at the same time")
+                    .action(ArgAction::SetTrue),
+            )
+            .arg(
+                Arg::new("parallel_connect")
+                    .long("parallel-connect:")
+                    .help("Number of connect attempts to perform in parallel")
+                    .value_name("NUM")
+                    .value_parser(clap::value_parser!(usize))
+                    .action(ArgAction::Set)
+                    .default_value("1"),
+            )
+            .arg(
                 Arg::new("client_tcp_keepalive_time")
                     .long("client-tcp-keepalive-time")
                     .help("TCP keep alive setting for client sockets")
@@ -332,6 +349,11 @@ impl From<ArgMatches> for Options {
                 .get_one::<f64>("connect_timeout")
                 .map(|s| Duration::from_millis((*s * 1000.0) as u64))
                 .expect("default value for connect_timeout"),
+            race_connect: m.get_flag("race_connect"),
+            parallel_connect: m
+                .get_one::<usize>("parallel_connect")
+                .copied()
+                .expect("default value for parallel_connect"),
             activate_socket: m.get_one::<String>("activate_socket").cloned(),
             listen,
             client_tcp_keepalive,
