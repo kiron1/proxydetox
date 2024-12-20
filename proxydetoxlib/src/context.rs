@@ -55,7 +55,7 @@ pub enum Error {
 pub struct Context {
     pub(super) eval: paclib::Evaluator,
     pub(super) auth: AuthenticatorFactory,
-    pub(super) always_use_connect: bool,
+    pub(super) proxytunnel: bool,
     pub(super) race_connect: bool,
     pub(super) parallel_connect: usize,
     pub(super) direct_fallback: bool,
@@ -119,7 +119,7 @@ impl Context {
         uri: http::Uri,
     ) -> Result<Connection, Error> {
         let dst = HostAndPort::try_from_uri(&uri)?;
-        let tunnel = method == hyper::Method::CONNECT || self.always_use_connect;
+        let tunnel = method == hyper::Method::CONNECT || self.proxytunnel;
         let tls_config = self.tls_config.clone();
         let auth = self.auth.clone();
         let connect_timeout = self.connect_timeout;

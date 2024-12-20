@@ -31,7 +31,7 @@ pub struct Options {
     pub authorization: Authorization,
     pub connect_timeout: Duration,
     pub direct_fallback: bool,
-    pub always_use_connect: bool,
+    pub proxytunnel: bool,
     pub activate_socket: Option<String>,
     pub listen: Vec<SocketAddr>,
     pub client_tcp_keepalive: TcpKeepAlive,
@@ -173,7 +173,7 @@ impl Options {
             )
             .arg(netrc_arg)
             .arg(
-                Arg::new("always_use_connect")
+                Arg::new("proxytunnel")
                     .short('C')
                     .long("always-use-connect")
                     .help("Always use CONNECT method even for http:// resources")
@@ -326,7 +326,7 @@ impl From<ArgMatches> for Options {
                 .cloned()
                 .or_else(|| which_pac_file().map(PathOrUri::Path)),
             authorization,
-            always_use_connect: m.get_flag("always_use_connect"),
+            proxytunnel: m.get_flag("proxytunnel"),
             direct_fallback: m.get_flag("direct_fallback"),
             connect_timeout: m
                 .get_one::<f64>("connect_timeout")
@@ -439,7 +439,7 @@ mod tests {
     fn test_default() {
         let args = Options::parse_args(&["proxydetox".into()]);
         assert!(!args.direct_fallback);
-        assert!(!args.always_use_connect);
+        assert!(!args.proxytunnel);
     }
 
     #[test]
@@ -450,7 +450,7 @@ mod tests {
             "--always-use-connect".into(),
         ]);
         assert!(args.direct_fallback);
-        assert!(args.always_use_connect);
+        assert!(args.proxytunnel);
     }
 
     #[test]

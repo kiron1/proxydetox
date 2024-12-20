@@ -113,7 +113,7 @@ impl Environment {
 pub(crate) struct Builder {
     pac_script: Option<String>,
     netrc_content: Option<String>,
-    always_use_connect: bool,
+    proxytunnel: bool,
 }
 
 impl Builder {
@@ -139,7 +139,7 @@ impl Builder {
                     .unwrap_or_else(|| proxydetoxlib::DEFAULT_PAC_SCRIPT.to_string()),
             )
             .authenticator_factory(auth)
-            .always_use_connect(self.always_use_connect)
+            .proxytunnel(self.proxytunnel)
             .build();
 
         let listener = TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], 0)))

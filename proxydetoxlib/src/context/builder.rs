@@ -11,7 +11,7 @@ pub struct Builder {
     pac_file: Option<PathOrUri>,
     pac_script: Option<String>,
     auth: Option<AuthenticatorFactory>,
-    always_use_connect: bool,
+    proxytunnel: bool,
     direct_fallback: bool,
     tls_config: Option<Arc<rustls::ClientConfig>>,
     connect_timeout: Option<Duration>,
@@ -40,8 +40,8 @@ impl Builder {
     }
 
     /// use the CONNECT method even for HTTP requests.
-    pub fn always_use_connect(mut self, yesno: bool) -> Self {
-        self.always_use_connect = yesno;
+    pub fn proxytunnel(mut self, yesno: bool) -> Self {
+        self.proxytunnel = yesno;
         self
     }
 
@@ -91,7 +91,7 @@ impl Builder {
         let context = Context {
             eval,
             auth,
-            always_use_connect: self.always_use_connect,
+            proxytunnel: self.proxytunnel,
             race_connect: false, // TODO: make it a config option
             parallel_connect: 1, // TODO: make it a config option
             direct_fallback: self.direct_fallback,
