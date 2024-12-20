@@ -126,7 +126,7 @@ async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
     let context = proxydetoxlib::Context::builder()
         .pac_file(config.pac_file.clone())
         .authenticator_factory(Some(auth))
-        .always_use_connect(config.always_use_connect)
+        .proxytunnel(config.proxytunnel)
         .connect_timeout(config.connect_timeout)
         .direct_fallback(config.direct_fallback)
         .client_tcp_keepalive(config.client_tcp_keepalive.clone())
