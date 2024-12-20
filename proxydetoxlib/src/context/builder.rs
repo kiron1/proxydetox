@@ -15,6 +15,8 @@ pub struct Builder {
     direct_fallback: bool,
     tls_config: Option<Arc<rustls::ClientConfig>>,
     connect_timeout: Option<Duration>,
+    race_connect: bool,
+    parallel_connect: usize,
     client_tcp_keepalive: TcpKeepAlive,
 }
 
@@ -63,6 +65,17 @@ impl Builder {
         self
     }
 
+    /// Race connects in parallel.
+    pub fn race_connect(mut self, race: bool) -> Self {
+        self.race_connect = race;
+        self
+    }
+
+    /// Number of connects to run in parallel.
+    pub fn parallel_connect(mut self, num: usize) -> Self {
+        self.parallel_connect = num;
+        self
+    }
     /// TCP keep alive settings for client sockets.
     pub fn client_tcp_keepalive(mut self, keepalive: TcpKeepAlive) -> Self {
         self.client_tcp_keepalive = keepalive;
@@ -92,8 +105,8 @@ impl Builder {
             eval,
             auth,
             proxytunnel: self.proxytunnel,
-            race_connect: false, // TODO: make it a config option
-            parallel_connect: 1, // TODO: make it a config option
+            race_connect: self.race_connect,
+            parallel_connect: self.parallel_connect.max(1),
             direct_fallback: self.direct_fallback,
             tls_config,
             connect_timeout: self.connect_timeout.unwrap_or(Duration::new(30, 0)),
