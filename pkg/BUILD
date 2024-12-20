@@ -46,5 +46,4 @@ sh_binary(
     srcs = ["copy.sh"],
     data = [":pkg"],
     env = {"PKG": "$(location :pkg)"},
-    deps = ["@bazel_tools//tools/bash/runfiles"],
 )
