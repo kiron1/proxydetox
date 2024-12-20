@@ -17,17 +17,10 @@ on:
       - main
   workflow_dispatch:
 
-env:
-  # https://github.com/bazelbuild/bazel/issues/3001
-  # MSYS2_ARG_CONV_EXCL: "*"
-  # MSYS_NO_PATHCONV: 1
-  RUSTFLAGS: -Dwarnings
-
 jobs:
-
   version:
     name: Current version
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.version.outputs.version }}
       rev: ${{ steps.rev.outputs.rev }}
@@ -56,8 +49,6 @@ jobs:
         build:
           - macos
           - ubuntu-20.04
-          # - ubuntu-22.04
-          # - ubuntu-24.04
           # - windows
         include:
           - build: macos
@@ -66,12 +57,6 @@ jobs:
           - build: ubuntu-20.04
             os: ubuntu-20.04
             buildflags: --features=negotiate
-          # - build: ubuntu-22.04
-          #   os: ubuntu-22.04
-          #   buildflags: --features=negotiate
-          # - build: ubuntu-24.04
-          #   os: ubuntu-24.04
-          #   buildflags: --features=negotiate
           # - build: windows
           #   os: windows-latest
           #   buildflags: --features=negotiate
@@ -115,7 +100,8 @@ jobs:
           --//:version=${{ needs.version.outputs.version }}
           --//:rev=${{ needs.version.outputs.rev }}
           ${{ matrix.buildflags }}
-          "//..."
+          --
+          //...
         shell: cmd
         if: runner.os == 'Windows'
       - name: Run tests
@@ -126,14 +112,16 @@ jobs:
           --//:version=${{ needs.version.outputs.version }}
           --//:rev=${{ needs.version.outputs.rev }}
           ${{ matrix.buildflags }}
-          "//..."
+          --
+          //...
+          ${{ runner.os != 'macOS' && '-//macos/... -//pkg/macos/... -//proxydetox:proxydetoxcli' || '' }}
         if: runner.os != 'Windows'
 
   bazel_check:
     name: Bazel check
     runs-on: ubuntu-24.04
 
-    needs: bazel_test
+    needs: version
 
     strategy:
       matrix:
@@ -305,7 +293,7 @@ jobs:
 
   mkrelease:
     name: Create Release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs:
       - version
       - bazel_build
@@ -338,7 +326,7 @@ jobs:
     needs:
       - bazel_build
       - cargo_build_and_test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - run: jq --exit-status 'all(.result == "success")' <<< '${{ toJson(needs) }}'
       - name: Done

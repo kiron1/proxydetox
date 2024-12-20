@@ -37,8 +37,9 @@ build:release --strip=always
 build:release --@rules_rust//rust/settings:extra_rustc_flag=-Cstrip=debuginfo
 build:release --@rules_rust//rust/settings:extra_rustc_flag=-Copt-level=z
 build:release --@rules_rust//rust/settings:extra_rustc_flag=-Cdebuginfo=0
-build:release --@rules_rust//rust/settings:extra_rustc_flag=-Clto=true
+# build:release --@rules_rust//rust/settings:extra_rustc_flag=-Clto=true
 build:release --@rules_rust//rust/settings:extra_rustc_flag=-Ccodegen-units=1
+build:release --@rules_rust//rust/settings:extra_rustc_flag=-Dwarnings
 
 # Always display the flags being used
 common:ci --announce_rc
