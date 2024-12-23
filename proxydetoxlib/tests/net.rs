@@ -11,21 +11,45 @@ use http::{header::LOCATION, Response, StatusCode};
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn http_file_too_many_redirects() {
-    let http1 = httpd::Server::new(|r| {
-        assert_eq!(r.method(), http::method::Method::GET);
-        Response::builder()
-            .status(StatusCode::PERMANENT_REDIRECT)
-            .header(LOCATION, "http://example.org/next.html")
-            .body(crate::environment::empty())
-            .unwrap()
+    let server_origin = Arc::new(Mutex::new(Option::<String>::None));
+    let counter = Arc::new(AtomicUsize::new(1));
+    let http1 = httpd::Server::new({
+        let uri = server_origin.clone();
+        let counter = counter.clone();
+        move |r| {
+            let k = counter.fetch_add(1, Ordering::SeqCst);
+            assert_eq!(r.method(), http::method::Method::GET);
+            Response::builder()
+                .status(StatusCode::PERMANENT_REDIRECT)
+                .header(
+                    LOCATION,
+                    format!("http://{}/{}", uri.lock().unwrap().as_ref().unwrap(), k),
+                )
+                .body(crate::environment::empty())
+                .unwrap()
+        }
     })
     .await;
+
+    *server_origin.lock().unwrap() = Some(
+        http1
+            .uri()
+            .path_and_query("/")
+            .build()
+            .unwrap()
+            .authority()
+            .unwrap()
+            .as_str()
+            .to_owned(),
+    );
 
     let file = http_file(
         http1.uri().path_and_query("/text1.html").build().unwrap(),
         default_tls_config(),
     )
     .await;
+
+    assert!(counter.load(Ordering::SeqCst) > 8);
 
     assert!(file.is_err());
 
