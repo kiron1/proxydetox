@@ -237,7 +237,7 @@ impl Inner {
                             ProxyOrDirect::Direct,
                             http::StatusCode::PROXY_AUTHENTICATION_REQUIRED,
                         ) => {
-                            // illegal case, we should never get this reposinse from a non-proxy connection.
+                            // illegal case, we should never get this response from a non-proxy connection.
                             tracing::error!(status = %resp.status(), "invalid status code from direct connection");
                             Err(Error::InvalidStatusCode(resp.status()))
                         }
