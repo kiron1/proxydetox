@@ -26,7 +26,7 @@ default-members = [
 exclude = ["tools"]
 
 [workspace.package]
-version = "0.8.6"
+version = "0.9.0"
 edition = "2021"
 homepage = "https://proxydetox.colorto.cc/"
 
