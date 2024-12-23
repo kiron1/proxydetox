@@ -176,10 +176,8 @@ impl Options {
             .arg(netrc_arg)
             .arg(
                 Arg::new("proxytunnel")
-                    .short('C')
-                    .long("always-use-connect")
-                    .help("Always use CONNECT method even for http:// resources")
-                    .value_name("SECONDS")
+                    .long("proxytunnel")
+                    .help("Always use CONNECT method even for http resources")
                     .action(ArgAction::SetTrue),
             )
             .arg(
@@ -206,7 +204,7 @@ impl Options {
             )
             .arg(
                 Arg::new("parallel_connect")
-                    .long("parallel-connect:")
+                    .long("parallel-connect")
                     .help("Number of connect attempts to perform in parallel")
                     .value_name("NUM")
                     .value_parser(clap::value_parser!(usize))
@@ -469,7 +467,7 @@ mod tests {
         let args = Options::parse_args(&[
             "proxydetox".into(),
             "--direct-fallback".into(),
-            "--always-use-connect".into(),
+            "--proxytunnel".into(),
         ]);
         assert!(args.direct_fallback);
         assert!(args.proxytunnel);
