@@ -111,7 +111,7 @@ impl Context {
     /// In case of `CONNECT` the connesction will be established so far that `CONNECT` request is
     /// send, but not the client request.
     /// For upstream servers which can be connected directly a TCP connection will be established.
-    #[instrument(level = "debug", skip(self, method, uri), err, fields(proxy = %proxy, duration))]
+    #[instrument(level = "debug", skip(self, method, uri), fields(proxy = %proxy, duration))]
     pub(super) async fn connect(
         self: Arc<Self>,
         proxy: ProxyOrDirect,

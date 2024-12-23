@@ -176,7 +176,21 @@ impl Inner {
             let cx = self.context.clone();
             let method = req.method();
             let uri = req.uri();
-            move |p| cx.clone().connect(p, method.clone(), uri.clone())
+            move |p| {
+                let cx = cx.clone();
+                let race = cx.race_connect;
+                async move {
+                    let r = cx.connect(p, method.clone(), uri.clone()).await;
+                    if let Err(ref cause) = r {
+                        if race {
+                            tracing::debug!(%cause, "unable to connect");
+                        } else {
+                            tracing::warn!(%cause, "unable to connect");
+                        }
+                    }
+                    r
+                }
+            }
         });
 
         let conn = Box::pin(stream::iter(conn));
