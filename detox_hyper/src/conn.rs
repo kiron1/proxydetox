@@ -530,6 +530,11 @@ async fn http_connect<T: AsyncRead + AsyncWrite + Send + Unpin + 'static>(
             std::io::Error::other(format!("send request error from {proxy} for {dst}: {e}"))
         })?;
         let status = response.status();
+        if !status.is_success() {
+            return Err(std::io::Error::other(format!(
+                "HTTP {status} from {proxy} for {dst}"
+            )));
+        }
         hyper::upgrade::on(response).await.map_err(|e| {
             std::io::Error::other(format!("HTTP {status} from {proxy} for {dst} error: {e}"))
         })
