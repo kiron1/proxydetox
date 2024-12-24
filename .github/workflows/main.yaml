@@ -49,7 +49,7 @@ jobs:
         build:
           - macos
           - ubuntu-20.04
-          # - windows
+          - windows
         include:
           - build: macos
             os: macos-latest
@@ -57,9 +57,9 @@ jobs:
           - build: ubuntu-20.04
             os: ubuntu-20.04
             buildflags: --features=negotiate
-          # - build: windows
-          #   os: windows-latest
-          #   buildflags: --features=negotiate
+          - build: windows
+            os: windows-latest
+            buildflags: --features=negotiate
 
     steps:
       - name: Checkout repository
@@ -67,13 +67,25 @@ jobs:
         with:
           fetch-depth: 1
       - name: macOS version
-        if: ${{ runner.os == 'macOS' }}
+        if: runner.os == 'macOS'
         run: |
           printf 'OS_VER=%s\n' "$(sw_vers --productVersion)" | tee -a $GITHUB_ENV
       - name: Linux version
-        if: ${{ runner.os == 'Linux' }}
+        if: runner.os == 'Linux'
         run: |
           printf 'OS_VER=%s\n' "$(lsb_release --short --release)" | tee -a $GITHUB_ENV
+      - name: Windows version
+        if: runner.os == 'Windows'
+        run: |
+          Write-Output "OS_VER=10" | Out-File -Path "$env:GITHUB_ENV" -Encoding utf8 -Append
+        shell: pwsh
+      - name: Install Swift for Windows
+        if: runner.os == 'Windows'
+        run: |
+          (New-Object System.Net.WebClient).DownloadFile("https://download.swift.org/swift-6.0.3-release/windows10/swift-6.0.3-RELEASE/swift-6.0.3-RELEASE-windows10.exe", "swift-windows10.exe")
+          Start-Process -FilePath "swift-windows10.exe" -ArgumentList /quiet -Wait -PassThru -Verb RunAs
+          Get-ChildItem -Recurse %LocalAppData%\Programs\Swift
+        shell: pwsh
       - name: Bazel cache
         uses: actions/cache@v4
         with:
@@ -102,6 +114,9 @@ jobs:
           ${{ matrix.buildflags }}
           --
           //...
+          -//macos/...
+          -//pkg/macos/...
+          -//proxydetox:proxydetoxcli
         shell: cmd
         if: runner.os == 'Windows'
       - name: Run tests
@@ -174,7 +189,7 @@ jobs:
           - ubuntu-20.04
           - ubuntu-22.04
           - ubuntu-24.04
-          # - windows
+          - windows
         include:
           - build: macos-aarch64
             os: macos-latest
@@ -196,10 +211,10 @@ jobs:
             os: ubuntu-24.04
             buildflags: --features=negotiate
             pkgfile: proxydetox-${{ needs.version.outputs.version }}-noble_amd64.deb
-          # - build: windows
-          #   os: windows-latest
-          #   buildflags: --features=negotiate
-          #   pkgfile: proxydetox-${{ needs.version.outputs.version }}-windows-x86_64.zip
+          - build: windows
+            os: windows-latest
+            buildflags: --features=negotiate
+            pkgfile: proxydetox-${{ needs.version.outputs.version }}-windows-x86_64.zip
 
     steps:
       - name: Checkout repository
@@ -250,54 +265,12 @@ jobs:
           name: pkg-bazel-${{ matrix.build }}
           path: ./${{ matrix.pkgfile }}
 
-  cargo_build_and_test:
-    name: Cargo build and test
-    runs-on: windows-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
-      - uses: Swatinem/rust-cache@v2
-        with:
-          key: ${{ runner.os }}
-      #  see https://github.com/rust-lang/rust-bindgen/issues/1797
-      - name: Install Windows dependency (LLVM)
-        uses: KyleMayes/install-llvm-action@v2.0.3
-        if: runner.os == 'Windows'
-        with:
-          version: "11.0"
-          directory: ${{ runner.temp }}/llvm
-      - name: Set LIBCLANG_PATH
-        run: echo "LIBCLANG_PATH=$((gcm clang).source -replace "clang.exe")" >> $env:GITHUB_ENV
-        shell: pwsh
-        if: runner.os == 'Windows'
-      - name: Run cargo test
-        run: cargo test
-      - name: Build Release Package
-        id: buildpkg
-        run: ./tools/mkzip.ps1
-        shell: pwsh
-      - name: Upload package artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: pkg-cargo-windows
-          path: ./${{ steps.buildpkg.outputs.pkgfile }}
-
   mkrelease:
     name: Create Release
     runs-on: ubuntu-24.04
     needs:
       - version
       - bazel_build
-      - cargo_build_and_test
     steps:
       - name: Download pkg artifact
         uses: actions/download-artifact@v4
@@ -325,7 +298,6 @@ jobs:
     if: always()
     needs:
       - bazel_build
-      - cargo_build_and_test
     runs-on: ubuntu-24.04
     steps:
       - run: jq --exit-status 'all(.result == "success")' <<< '${{ toJson(needs) }}'
