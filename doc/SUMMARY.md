@@ -15,4 +15,8 @@
 
 ---
 
+- [Command Line Reference](cliref.md)
+
+---
+
 [Alternatives](alternatives.md)

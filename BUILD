@@ -5,6 +5,7 @@ exports_files(
     [
         ".cargo/config.toml",
         "Cargo.toml",
+        "book.toml",
     ],
     visibility = ["//visibility:public"],
 )
@@ -16,7 +17,7 @@ string_flag(
 )
 
 string_flag(
-    name = "rev", # `git rev-parse --short=10 HEAD`
+    name = "rev",  # `git rev-parse --short=10 HEAD`
     build_setting_default = "unknown",
     visibility = ["//visibility:public"],
 )
@@ -51,8 +52,8 @@ platform(
 
 native_binary(
     name = "current_version",
-    out = "current_version",
     src = "//tools:toml_get",
+    out = "current_version",
     args = [
         "-f$(location //:Cargo.toml)",
         "-nversion",
