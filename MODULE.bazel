@@ -13,6 +13,7 @@ bazel_dep(name = "platforms", version = "0.0.10")
 bazel_dep(name = "rules_cc", version = "0.1.0")
 bazel_dep(name = "rules_pkg", version = "1.0.1")
 bazel_dep(name = "rules_rust", version = "0.56.0")
+bazel_dep(name = "rules_rust_mdbook", version = "0.56.0")
 
 apple_cc_configure = use_extension(
     "@build_bazel_apple_support//crosstool:setup.bzl",
