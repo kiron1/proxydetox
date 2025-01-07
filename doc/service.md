@@ -44,6 +44,6 @@ To revert the above changes (i.e. you want to uninstall proxydetox), run the fol
 {{#include launchctl.sh:uninstall}}
 ```
 
-[service]: https://github.com/kiron1/proxydetox/blob/main/debian/proxydetox.service "proxydetox.service file"
+[service]: https://github.com/kiron1/proxydetox/blob/main/pkg/deb/proxydetox.service "proxydetox.service file"
 [execstart]: https://man7.org/linux/man-pages/man5/systemd.service.5.html "man 5 systemd.service"
 [plist]: https://github.com/kiron1/proxydetox/blob/main/pkg/macos/cc.colorto.proxydetox.plist "proxydetox launchd plist file"
