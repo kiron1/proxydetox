@@ -1,6 +1,6 @@
-load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("@rules_pkg//:pkg.bzl", "pkg_zip")
 
-pkg_tar(
+pkg_zip(
     name = "www",
     srcs = [
         "bootstrap.min.css",
@@ -11,5 +11,4 @@ pkg_tar(
         "popper.min.js",
         "//doc",
     ],
-    extension = "tar.gz",
 )
