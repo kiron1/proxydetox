@@ -1,7 +1,3 @@
-common --enable_bzlmod
-
-build --verbose_failures
-
 build --flag_alias=features=//:features
 
 build --verbose_failures
