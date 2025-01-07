@@ -3,7 +3,7 @@ name: pages
 on:
   push:
     branches:
-      - 'main'
+      - "main"
   workflow_dispatch:
 
 jobs:
@@ -13,11 +13,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Install mdbook
-        run: |
-          curl -sSfLo mdbook.tar.gz https://github.com/rust-lang/mdBook/releases/download/v0.4.36/mdbook-v0.4.36-x86_64-unknown-linux-musl.tar.gz
-          tar xzf mdbook.tar.gz
-          ./mdbook --version
       - name: Build pages
         run: |
           MDBOOK=$(pwd)/mdbook make pages

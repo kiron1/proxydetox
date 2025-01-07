@@ -2,5 +2,8 @@
 title = "Proxydetox"
 src = "doc/"
 
+[build]
+create-missing = false
+
 [output.html]
 default-theme = "rust"
