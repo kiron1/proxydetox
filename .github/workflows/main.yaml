@@ -11,7 +11,7 @@ on:
     branches:
       - main
     tags:
-      - 'v*'
+      - "v*"
   pull_request:
     branches:
       - main
@@ -31,12 +31,10 @@ jobs:
           fetch-depth: 1
       - name: Version
         id: version
-        run: |
-          ./tools/version | tee -a "${GITHUB_OUTPUT}"
+        run: ./tools/version | tee -a "${GITHUB_OUTPUT}"
       - name: Rev
         id: rev
-        run: |
-          printf 'rev=%s\n' "$(git rev-parse --short HEAD)" | tee -a "${GITHUB_OUTPUT}"
+        run: printf 'rev=%s\n' "$(git rev-parse --short HEAD)" | tee -a "${GITHUB_OUTPUT}"
 
   bazel_test:
     name: Bazel test
@@ -102,20 +100,9 @@ jobs:
           ${{ matrix.buildflags }}
           --
           //...
-        shell: cmd
-        if: runner.os == 'Windows'
-      - name: Run tests
-        run: >
-          bazel
-          test
-          --config=ci
-          --//:version=${{ needs.version.outputs.version }}
-          --//:rev=${{ needs.version.outputs.rev }}
-          ${{ matrix.buildflags }}
-          --
-          //...
+          -//doc/...
+          -//www/...
           ${{ runner.os != 'macOS' && '-//macos/... -//pkg/macos/... -//proxydetox:proxydetoxcli' || '' }}
-        if: runner.os != 'Windows'
 
   bazel_check:
     name: Bazel check
@@ -156,6 +143,43 @@ jobs:
           -//macos/...
           -//pkg/macos/...
           -//proxydetox:proxydetoxcli
+          -//doc/...
+          -//www/...
+
+  bazel_www:
+    name: Bazel www
+    runs-on: ubuntu-24.04
+
+    needs:
+      - bazel_check
+      - bazel_test
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Install Linux dependency
+        run: sudo apt-get install libkrb5-dev
+      - name: Linux version
+        run: |
+          printf 'OS_VER=%s\n' "$(lsb_release --short --release)" | tee -a $GITHUB_ENV
+      - name: Bazel cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/bazel_build_cache
+            ~/.cache/bazel_repo_cache
+          key: ${{ runner.os }}-${{ env.OS_VER }}-bazel-test-${{ hashFiles('Cargo.lock', 'MODULE.bazel.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.OS_VER }}-bazel-test-
+      - name: Run build
+        run: bazel build --config=ci -- //www
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-pages
+          path: bazel-bin/www/www.tar.gz
 
   bazel_build:
     name: Package
@@ -250,9 +274,11 @@ jobs:
           name: pkg-bazel-${{ matrix.build }}
           path: ./${{ matrix.pkgfile }}
 
-  cargo_build_and_test:
-    name: Cargo build and test
+  cargo_test:
+    name: Cargo test
     runs-on: windows-latest
+
+    needs: version
 
     steps:
       - name: Checkout repository
@@ -267,20 +293,48 @@ jobs:
           override: true
       - uses: Swatinem/rust-cache@v2
         with:
-          key: ${{ runner.os }}
+          key: ${{ runner.os }}-test
       #  see https://github.com/rust-lang/rust-bindgen/issues/1797
       - name: Install Windows dependency (LLVM)
         uses: KyleMayes/install-llvm-action@v2.0.3
-        if: runner.os == 'Windows'
         with:
           version: "11.0"
           directory: ${{ runner.temp }}/llvm
       - name: Set LIBCLANG_PATH
         run: echo "LIBCLANG_PATH=$((gcm clang).source -replace "clang.exe")" >> $env:GITHUB_ENV
         shell: pwsh
-        if: runner.os == 'Windows'
       - name: Run cargo test
         run: cargo test
+
+  cargo_build:
+    name: Cargo build
+    runs-on: windows-latest
+
+    needs: cargo_test
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ runner.os }}-build
+      #  see https://github.com/rust-lang/rust-bindgen/issues/1797
+      - name: Install Windows dependency (LLVM)
+        uses: KyleMayes/install-llvm-action@v2.0.3
+        with:
+          version: "11.0"
+          directory: ${{ runner.temp }}/llvm
+      - name: Set LIBCLANG_PATH
+        run: echo "LIBCLANG_PATH=$((gcm clang).source -replace "clang.exe")" >> $env:GITHUB_ENV
+        shell: pwsh
       - name: Build Release Package
         id: buildpkg
         run: ./tools/mkzip.ps1
@@ -294,10 +348,13 @@ jobs:
   mkrelease:
     name: Create Release
     runs-on: ubuntu-24.04
+
     needs:
-      - version
       - bazel_build
-      - cargo_build_and_test
+      - bazel_www
+      - cargo_build
+      - version
+
     steps:
       - name: Download pkg artifact
         uses: actions/download-artifact@v4
@@ -307,13 +364,36 @@ jobs:
       - name: Show downloaded artifacts
         run: find . -name '*.deb' -o -name '*.pkg' -o -name '*.zip'
       - name: Create Release
-        if: ${{ github.event_name == 'push' && startswith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
+        if: ${{ github.event_name == 'push' && startswith(github.ref, 'refs/tags/') }}
         run: |
           gh --repo "${REPO}" release create "${VERSION}" --generate-notes *.deb *.pkg *.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           VERSION: v${{ needs.version.outputs.version }}
+
+  pages:
+    if: ${{ github.event_name == 'push' && startswith(github.ref, 'refs/tags/') }}
+
+    needs:
+      - bazel_www
+      - mkrelease
+
+    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
+    permissions:
+      pages: write
+      id-token: write
+
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
   # The success job is here to consolidate the total success/failure state of
   # all other jobs. This job is then included in the GitHub branch protection
@@ -324,8 +404,13 @@ jobs:
     name: Success gate
     if: always()
     needs:
-      - bazel_build
-      - cargo_build_and_test
+      - bazel_test
+      - bazel_check
+      - bazel_www
+      - cargo_build
+      - cargo_test
+      - mkrelease
+      - version
     runs-on: ubuntu-24.04
     steps:
       - run: jq --exit-status 'all(.result == "success")' <<< '${{ toJson(needs) }}'
