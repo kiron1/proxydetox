@@ -23,6 +23,9 @@ use tracing_subscriber::filter::EnvFilter;
 #[no_mangle]
 pub extern "C" fn main() {
     let config = Options::load_without_rcfile();
+
+    setup_tracing(&config.log_level);
+
     if let Err(error) = run(config) {
         tracing::error!(%error, "fatal error");
         write_error(&mut std::io::stderr(), error).ok();
@@ -33,11 +36,65 @@ pub extern "C" fn main() {
 #[cfg(not(static_library))]
 fn main() {
     let config = Options::load();
+
+    setup_tracing(&config.log_level);
+
     if let Err(error) = run(config) {
         tracing::error!(%error, "fatal error");
         write_error(&mut std::io::stderr(), error).ok();
         std::process::exit(1);
     }
+}
+
+fn setup_tracing(log_level: &tracing::level_filters::LevelFilter) {
+    let env_name = format!("{}_LOG", env!("CARGO_PKG_NAME").to_uppercase());
+
+    let filter = if let Ok(filter) = EnvFilter::try_from_env(&env_name) {
+        filter
+    } else {
+        EnvFilter::default()
+            .add_directive(
+                format!("detox_auth={0}", log_level)
+                    .parse()
+                    .expect("directive"),
+            )
+            .add_directive(
+                format!("detox_hyper={0}", log_level)
+                    .parse()
+                    .expect("directive"),
+            )
+            .add_directive(
+                format!("detox_net={0}", log_level)
+                    .parse()
+                    .expect("directive"),
+            )
+            .add_directive(
+                format!("proxydetox={0}", log_level)
+                    .parse()
+                    .expect("directive"),
+            )
+            .add_directive(
+                format!("proxydetoxlib={0}", log_level)
+                    .parse()
+                    .expect("directive"),
+            )
+            .add_directive(
+                format!("paclib={0}", log_level)
+                    .parse()
+                    .expect("directive"),
+            )
+            .add_directive(
+                format!("proxy_client={0}", log_level)
+                    .parse()
+                    .expect("directive"),
+            )
+    };
+
+    tracing_subscriber::fmt()
+        .compact()
+        .with_timer(tracing_subscriber::fmt::time::uptime())
+        .with_env_filter(filter)
+        .init();
 }
 
 fn write_error<W, E>(writer: &mut W, error: E) -> std::io::Result<()>
@@ -57,55 +114,6 @@ where
 
 #[tokio::main]
 async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
-    let env_name = format!("{}_LOG", env!("CARGO_PKG_NAME").to_uppercase());
-
-    let filter = if let Ok(filter) = EnvFilter::try_from_env(&env_name) {
-        filter
-    } else {
-        EnvFilter::default()
-            .add_directive(
-                format!("detox_auth={0}", config.log_level)
-                    .parse()
-                    .expect("directive"),
-            )
-            .add_directive(
-                format!("detox_hyper={0}", config.log_level)
-                    .parse()
-                    .expect("directive"),
-            )
-            .add_directive(
-                format!("detox_net={0}", config.log_level)
-                    .parse()
-                    .expect("directive"),
-            )
-            .add_directive(
-                format!("proxydetox={0}", config.log_level)
-                    .parse()
-                    .expect("directive"),
-            )
-            .add_directive(
-                format!("proxydetoxlib={0}", config.log_level)
-                    .parse()
-                    .expect("directive"),
-            )
-            .add_directive(
-                format!("paclib={0}", config.log_level)
-                    .parse()
-                    .expect("directive"),
-            )
-            .add_directive(
-                format!("proxy_client={0}", config.log_level)
-                    .parse()
-                    .expect("directive"),
-            )
-    };
-
-    tracing_subscriber::fmt()
-        .compact()
-        .with_timer(tracing_subscriber::fmt::time::uptime())
-        .with_env_filter(filter)
-        .init();
-
     let auth = match &config.authorization {
         #[cfg(feature = "negotiate")]
         Authorization::Negotiate(ref negotiate) => {
