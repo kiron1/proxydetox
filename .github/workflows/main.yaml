@@ -179,7 +179,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: github-pages
-          path: bazel-bin/www/www.tar.gz
+          path: bazel-bin/www/www.zip
+          if-no-files-found: "error"
 
   bazel_build:
     name: Package
@@ -273,6 +274,7 @@ jobs:
         with:
           name: pkg-bazel-${{ matrix.build }}
           path: ./${{ matrix.pkgfile }}
+          if-no-files-found: "error"
 
   cargo_test:
     name: Cargo test
@@ -344,6 +346,7 @@ jobs:
         with:
           name: pkg-cargo-windows
           path: ./${{ steps.buildpkg.outputs.pkgfile }}
+          if-no-files-found: "error"
 
   mkrelease:
     name: Create Release
