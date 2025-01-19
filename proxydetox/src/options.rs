@@ -27,6 +27,7 @@ pub enum Authorization {
 #[derive(Debug)]
 pub struct Options {
     pub log_level: LevelFilter,
+    pub log_filepath: Option<PathBuf>,
     pub pac_file: Option<PathOrUri>,
     pub my_ip_address: Option<IpAddr>,
     pub authorization: Authorization,
@@ -146,6 +147,14 @@ impl Options {
                     .long("quiet")
                     .action(ArgAction::Count)
                     .help("Decreases verbosity level"),
+            )
+            .arg(
+                Arg::new("log_filepath")
+                    .long("logfile")
+                    .value_name("FILEPATH")
+                    .help("Log to file instead of stderr")
+                    .value_parser(clap::value_parser!(PathBuf))
+                    .action(clap::ArgAction::Set)
             )
             .arg(
                  Arg::new("activate_socket")
@@ -346,6 +355,7 @@ impl From<ArgMatches> for Options {
 
         Self {
             log_level,
+            log_filepath: m.get_one("log_filepath").cloned(),
             pac_file: m
                 .get_one::<PathOrUri>("pac_file")
                 .cloned()

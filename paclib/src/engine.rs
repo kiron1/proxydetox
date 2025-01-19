@@ -68,10 +68,7 @@ impl<'a> Engine<'a> {
             )
             .expect("register_global_property");
         }
-        Self {
-            js,
-            my_ip_addr,
-        }
+        Self { js, my_ip_addr }
     }
 
     pub fn with_pac_script(pac_script: &str) -> Result<Self, PacScriptError> {
