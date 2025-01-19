@@ -35,6 +35,16 @@ pub extern "C" fn main() {
 fn main() {
     let config = Options::load();
 
+    #[cfg(target_family = "windows")]
+    if config.attach_console {
+        unsafe {
+            windows::Win32::System::Console::AttachConsole(
+                windows::Win32::System::Console::ATTACH_PARENT_PROCESS,
+            )
+            .unwrap();
+        }
+    }
+
     if let Err(error) = run(config) {
         tracing::error!(%error, "fatal error");
         write_error(&mut std::io::stderr(), error).ok();
