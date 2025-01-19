@@ -5,6 +5,7 @@
 - [Installation](installation.md)
 - [Configuration](configuration.md)
 - [Usage](usage.md)
+  - [Windows users](windows.md)
 
 ---
 

@@ -26,6 +26,8 @@ pub enum Authorization {
 
 #[derive(Debug)]
 pub struct Options {
+    #[cfg(target_family = "windows")]
+    pub attach_console: bool,
     pub log_level: LevelFilter,
     pub log_filepath: Option<PathBuf>,
     pub pac_file: Option<PathOrUri>,
@@ -112,6 +114,14 @@ impl Options {
             .version(*proxydetoxlib::VERSION_STR)
             .about("A small proxy to relieve the pain of some corporate proxies")
             .args_override_self(true);
+
+        #[cfg(target_family = "windows")]
+        let app = app.arg(
+            Arg::new("attach_console")
+                .long("attach-console")
+                .help("Attache to the console of the parent process")
+                .action(ArgAction::SetTrue),
+        );
 
         #[cfg(feature = "negotiate")]
         let app = app.arg(
@@ -354,6 +364,8 @@ impl From<ArgMatches> for Options {
             .with_retries(m.get_one::<u32>("server_tcp_keepalive_retries").cloned());
 
         Self {
+            #[cfg(target_family = "windows")]
+            attach_console: m.get_flag("attach_console"),
             log_level,
             log_filepath: m.get_one("log_filepath").cloned(),
             pac_file: m

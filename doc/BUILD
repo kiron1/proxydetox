@@ -22,6 +22,7 @@ mdbook(
         "service.md",
         "transparent_proxy.md",
         "usage.md",
+        "windows.md",
         ":proxydetox_help",
     ],
     book = "//:book.toml",
