@@ -1,6 +1,6 @@
-load("@rules_pkg//:pkg.bzl", "pkg_zip")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
-pkg_zip(
+pkg_tar(
     name = "www",
     srcs = [
         "bootstrap.min.css",
@@ -11,4 +11,12 @@ pkg_zip(
         "popper.min.js",
         "//doc",
     ],
+    extension = ".tar.gz",
+)
+
+sh_binary(
+    name = "copy",
+    srcs = ["copy.sh"],
+    data = [":www"],
+    env = {"WWW_TARBALL": "$(location :www)"},
 )
