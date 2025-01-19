@@ -24,8 +24,6 @@ use tracing_subscriber::filter::EnvFilter;
 pub extern "C" fn main() {
     let config = Options::load_without_rcfile();
 
-    setup_tracing(&config.log_level);
-
     if let Err(error) = run(config) {
         tracing::error!(%error, "fatal error");
         write_error(&mut std::io::stderr(), error).ok();
@@ -37,8 +35,6 @@ pub extern "C" fn main() {
 fn main() {
     let config = Options::load();
 
-    setup_tracing(&config.log_level);
-
     if let Err(error) = run(config) {
         tracing::error!(%error, "fatal error");
         write_error(&mut std::io::stderr(), error).ok();
@@ -46,7 +42,7 @@ fn main() {
     }
 }
 
-fn setup_tracing(log_level: &tracing::level_filters::LevelFilter) {
+fn setup_tracing(log_level: &tracing::level_filters::LevelFilter, logfile: Option<File>) {
     let env_name = format!("{}_LOG", env!("CARGO_PKG_NAME").to_uppercase());
 
     let filter = if let Ok(filter) = EnvFilter::try_from_env(&env_name) {
@@ -78,11 +74,7 @@ fn setup_tracing(log_level: &tracing::level_filters::LevelFilter) {
                     .parse()
                     .expect("directive"),
             )
-            .add_directive(
-                format!("paclib={0}", log_level)
-                    .parse()
-                    .expect("directive"),
-            )
+            .add_directive(format!("paclib={0}", log_level).parse().expect("directive"))
             .add_directive(
                 format!("proxy_client={0}", log_level)
                     .parse()
@@ -90,11 +82,15 @@ fn setup_tracing(log_level: &tracing::level_filters::LevelFilter) {
             )
     };
 
-    tracing_subscriber::fmt()
+    let fmt = tracing_subscriber::fmt()
         .compact()
         .with_timer(tracing_subscriber::fmt::time::uptime())
-        .with_env_filter(filter)
-        .init();
+        .with_env_filter(filter);
+    if let Some(f) = logfile {
+        fmt.with_writer(f).init();
+    } else {
+        fmt.with_writer(std::io::stderr).init();
+    }
 }
 
 fn write_error<W, E>(writer: &mut W, error: E) -> std::io::Result<()>
@@ -114,6 +110,9 @@ where
 
 #[tokio::main]
 async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
+    let logfile = config.log_filepath.as_ref().map(File::create).transpose()?;
+
+    setup_tracing(&config.log_level, logfile);
     let auth = match &config.authorization {
         #[cfg(feature = "negotiate")]
         Authorization::Negotiate(ref negotiate) => {
