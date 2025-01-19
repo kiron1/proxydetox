@@ -479,7 +479,7 @@ dependencies = [
 
 [[package]]
 name = "detox_auth"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "base64",
  "http",
@@ -491,14 +491,14 @@ dependencies = [
 
 [[package]]
 name = "detox_futures"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "tokio",
 ]
 
 [[package]]
 name = "detox_hyper"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "bytes",
  "detox_auth",
@@ -520,7 +520,7 @@ dependencies = [
 
 [[package]]
 name = "detox_net"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "http",
  "socket2",
@@ -585,7 +585,7 @@ dependencies = [
 
 [[package]]
 name = "dnsdetox"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "clap",
  "detox_auth",
@@ -1339,7 +1339,7 @@ checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 
 [[package]]
 name = "paceval"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "clap",
  "http",
@@ -1348,7 +1348,7 @@ dependencies = [
 
 [[package]]
 name = "paclib"
-version = "0.4.4"
+version = "0.4.5"
 dependencies = [
  "boa_engine",
  "boa_gc",
@@ -1524,7 +1524,7 @@ dependencies = [
 
 [[package]]
 name = "proxydetox"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "clap",
  "default-net",
@@ -1550,7 +1550,7 @@ dependencies = [
 
 [[package]]
 name = "proxydetoxlib"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "bytes",
  "chrono",
@@ -1937,7 +1937,7 @@ checksum = "6980e8d7511241f8acf4aebddbb1ff938df5eebe98691418c4468d0b72a96a67"
 
 [[package]]
 name = "spnego"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "libgssapi",
  "windows 0.58.0",
@@ -2196,7 +2196,7 @@ dependencies = [
 
 [[package]]
 name = "toml_get"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "clap",
  "toml",
