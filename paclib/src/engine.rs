@@ -19,7 +19,7 @@ pub struct Engine<'a> {
 }
 
 impl<'a> Engine<'a> {
-    fn mkjs() -> Context<'a> {
+    fn mkjs(my_ip_addr: Arc<Mutex<IpAddr>>) -> Context<'a> {
         let mut js = Context::default();
 
         js.register_global_class::<DnsCache>().unwrap();
@@ -32,6 +32,20 @@ impl<'a> Engine<'a> {
             NativeFunction::from_fn_ptr(dns_resolve),
         )
         .expect("register_global_property");
+
+        // # Safety
+        // We do not capture any varaibles which would require tracing.
+        unsafe {
+            js.register_global_builtin_callable(
+                "myIpAddress",
+                0,
+                NativeFunction::from_closure({
+                    let ip = my_ip_addr.clone();
+                    move |this, args, ctx| my_ip_address(&ip, this, args, ctx)
+                }),
+            )
+            .expect("register_global_property");
+        }
 
         let dns_cache = js
             .eval(Source::from_bytes("new _DnsCache();"))
@@ -54,20 +68,8 @@ impl<'a> Engine<'a> {
         let my_ip_addr = Arc::new(Mutex::new(IpAddr::from(std::net::Ipv4Addr::new(
             127, 0, 0, 1,
         ))));
-        let mut js = Self::mkjs();
-        // # Safety
-        // We do not capture any varaibles which would require tracing.
-        unsafe {
-            js.register_global_builtin_callable(
-                "myIpAddress",
-                0,
-                NativeFunction::from_closure({
-                    let ip = my_ip_addr.clone();
-                    move |this, args, ctx| my_ip_address(&ip, this, args, ctx)
-                }),
-            )
-            .expect("register_global_property");
-        }
+        let js = Self::mkjs(my_ip_addr.clone());
+
         Self { js, my_ip_addr }
     }
 
@@ -78,7 +80,7 @@ impl<'a> Engine<'a> {
     }
 
     pub fn set_pac_script(&mut self, pac_script: Option<&str>) -> Result<(), PacScriptError> {
-        self.js = Self::mkjs();
+        self.js = Self::mkjs(self.my_ip_addr.clone());
         let pac_script = pac_script.unwrap_or(crate::DEFAULT_PAC_SCRIPT);
         self.js
             .eval(Source::from_bytes(pac_script))
