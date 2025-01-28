@@ -8,6 +8,13 @@ extern "C" {
     ) -> libc::c_int;
 }
 
+use std::net::SocketAddr;
+
+#[cfg(unix)]
+use std::os::unix::io::AsFd;
+#[cfg(windows)]
+use std::os::windows::io::AsSocket as AsFd;
+
 #[cfg(target_family = "unix")]
 type RawSocket = std::os::unix::io::RawFd;
 #[cfg(target_family = "windows")]
@@ -125,6 +132,66 @@ fn listenfds(
         .filter_map(|(fd, n)| if n == name { Some(fd) } else { None })
         .collect();
     Ok(result)
+}
+
+#[cfg(target_os = "linux")]
+pub fn original_destination_address(socket: &tokio::net::TcpStream) -> td::io::Result<SocketAddr> {
+    use std::os::fd::AsRawFd;
+
+    let fd = socket.as_fd().as_raw_fd();
+    let mut addr6: libc::sockaddr_in6 = unsafe { std::mem::zeroed() };
+
+    match socket.local_addr() {
+        Ok(SocketAddr::V4(_)) => {
+            let mut addr4: libc::sockaddr_in = unsafe { std::mem::zeroed() };
+            let mut optlen = std::mem::size_of_val(&addr4) as libc::socklen_t;
+            let rc = unsafe {
+                libc::getsockopt(
+                    fd,
+                    libc::SOL_IP,
+                    libc::SO_ORIGINAL_DST,
+                    &mut addr4 as *mut _ as *mut _,
+                    &mut optlen as *mut libc::socklen_t,
+                )
+            };
+            if rc == -1 {
+                None
+            } else {
+                let ip = std::net::Ipv4Addr::from_bits(u32::from_be(addr4.sin_addr.s_addr));
+                let port = u16::from_be(addr4.sin_port);
+
+                Some(SocketAddr::from((ip, port)))
+            }
+        }
+        Ok(std::net::SocketAddr::V6(_)) => {
+            let mut addr6: libc::sockaddr_in6 = unsafe { std::mem::zeroed() };
+            let mut optlen = std::mem::size_of_val(&addr6) as libc::socklen_t;
+            let rc = unsafe {
+                libc::getsockopt(
+                    fd,
+                    libc::SOL_IPV6,
+                    libc::SO_ORIGINAL_DST,
+                    &mut addr6 as *mut _ as *mut _,
+                    &mut optlen as *mut libc::socklen_t,
+                )
+            };
+            if rc == -1 {
+                None
+            } else {
+                let ip = std::net::Ipv6Addr::from_bits(u128::from_be(addr6.sin6_addr.s6_addr));
+                let port = u16::from_be(addr6.sin6_port);
+
+                Some(SocketAddr::from((ip, port)))
+            }
+        }
+        _ => None,
+    }
+}
+
+#[cfg(not(target_os = "linux"))]
+pub fn original_destination_address(_socket: &tokio::net::TcpStream) -> Option<SocketAddr> {
+    // Not implemented for this OS
+    None
 }
 
 #[cfg(test)]
