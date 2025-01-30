@@ -86,9 +86,11 @@ macos_command_line_application(
     # infoplists = ["Info.plist"],
     linkopts = [
         "-framework",
-        "Security",
+        "CoreFoundation",
         "-framework",
         "SystemConfiguration",
+        "-framework",
+        "Security",
     ] + select({
         "//:enable_negotiate": [
             "-framework",
@@ -96,7 +98,7 @@ macos_command_line_application(
         ],
         "//conditions:default": [],
     }),
-    minimum_os_version = "11.1",
+    minimum_os_version = "13.0",
     target_compatible_with = ["@platforms//os:macos"],
     visibility = ["//visibility:public"],
     deps = [

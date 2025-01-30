@@ -6,11 +6,11 @@ load("@rules_pkg//:pkg.bzl", "pkg_zip")
 swift_library(
     name = "Proxydetox",
     srcs = [
-        "AppDelegate.swift",
-        "InternalNetworkController.swift",
-        "ProxydetoxControl.swift",
-        "StatusItemController.swift",
-        "main.swift",
+        # "AppDelegate.swift",
+        # "InternalNetworkController.swift",
+        "ProxydetoxApp.swift",
+        # "ProxydetoxControl.swift",
+        # "StatusItemController.swift",
     ],
     target_compatible_with = ["@platforms//os:macos"],
     visibility = ["//visibility:private"],
@@ -26,7 +26,7 @@ macos_application(
     bundle_id = "cc.colorto.Proxydetox",
     entitlements = ":ProxydetoxApp.entitlements",
     infoplists = ["Info.plist"],
-    minimum_os_version = "11.1",
+    minimum_os_version = "13.0",
     target_compatible_with = ["@platforms//os:macos"],
     visibility = ["//visibility:public"],
     deps = [
