@@ -62,11 +62,10 @@ impl Client {
 fn default_tls_config() -> Arc<rustls::ClientConfig> {
     let mut roots = rustls::RootCertStore::empty();
     for cert in rustls_native_certs::load_native_certs().expect("load platform certs") {
-        roots.add(&rustls::Certificate(cert.0)).unwrap();
+        roots.add(cert).unwrap();
     }
 
     let config = rustls::ClientConfig::builder()
-        .with_safe_defaults()
         .with_root_certificates(roots)
         .with_no_client_auth();
 

@@ -1,12 +1,12 @@
 use std::{collections::HashMap, time::UNIX_EPOCH};
 
-use boa_engine::class::Class;
+use boa_engine::{class::Class, JsData};
 use boa_gc::{Finalize, Trace};
 use tracing::instrument;
 
 pub type DnsMap = HashMap<String, (Option<String>, u64)>;
 
-#[derive(Default, Debug, Trace, Finalize)]
+#[derive(Default, Debug, Trace, Finalize, JsData)]
 pub struct DnsCache {
     map: DnsMap,
     cleanup_ttl: u64,
@@ -63,7 +63,7 @@ impl DnsCache {
 impl Class for DnsCache {
     const NAME: &'static str = "_DnsCache";
 
-    fn constructor(
+    fn data_constructor(
         _this: &boa_engine::JsValue,
         _args: &[boa_engine::JsValue],
         _context: &mut boa_engine::Context,
