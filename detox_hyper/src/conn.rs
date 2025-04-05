@@ -23,6 +23,7 @@ use hyper::{
 use hyper_util::rt::TokioIo;
 use paclib::{Proxy, ProxyOrDirect};
 use pin_project::pin_project;
+use rustls::pki_types::ServerName;
 use tokio::{
     io::{AsyncRead, AsyncWrite},
     net::TcpStream,
@@ -268,19 +269,19 @@ impl std::future::IntoFuture for ConnectionBuilder {
             }
             .boxed(),
             Https(dst, tls_config) => async move {
-                let stream = TcpStream::connect(dst.to_pair()).await?;
-                stream.set_nodelay(true)?;
-                if let Some(ka) = self.tcp_keepalive {
-                    ka.apply(&stream)?;
-                }
-                let domain = rustls::ServerName::try_from(dst.host()).map_err(|e| {
+                let domain = ServerName::try_from(dst.host()).map_err(|e| {
                     std::io::Error::new(
                         std::io::ErrorKind::InvalidInput,
                         format!("invalid domain name: {e}"),
                     )
                 })?;
-                let tls = TlsConnector::from(tls_config);
-                let tls = tls.connect(domain, stream).await?;
+                let connector = TlsConnector::from(tls_config);
+                let stream = TcpStream::connect(dst.to_pair()).await?;
+                stream.set_nodelay(true)?;
+                if let Some(ka) = self.tcp_keepalive {
+                    ka.apply(&stream)?;
+                }
+                let tls = connector.connect(domain.to_owned(), stream).await?;
                 Ok(Connection {
                     inner: AnyStream::Https(tls),
                     host: Some(dst.host().to_owned()),
@@ -320,14 +321,14 @@ impl std::future::IntoFuture for ConnectionBuilder {
                     if let Some(ka) = self.tcp_keepalive {
                         ka.apply(&stream)?;
                     }
-                    let domain = rustls::ServerName::try_from(proxy.host()).map_err(|e| {
+                    let domain = ServerName::try_from(proxy.host()).map_err(|e| {
                         std::io::Error::new(
                             std::io::ErrorKind::InvalidInput,
                             format!("invalid domain name: {e}"),
                         )
                     })?;
                     let tls = TlsConnector::from(tls_config);
-                    let tls = tls.connect(domain, stream).await?;
+                    let tls = tls.connect(domain.to_owned(), stream).await?;
                     Ok(Connection {
                         inner: AnyStream::HttpsProxy(tls),
                         host: None,
@@ -359,14 +360,14 @@ impl std::future::IntoFuture for ConnectionBuilder {
                     if let Some(ka) = self.tcp_keepalive {
                         ka.apply(&stream)?;
                     }
-                    let domain = rustls::ServerName::try_from(proxy.host()).map_err(|e| {
+                    let domain = ServerName::try_from(proxy.host()).map_err(|e| {
                         std::io::Error::new(
                             std::io::ErrorKind::InvalidInput,
                             format!("Invalid domain name: {e}"),
                         )
                     })?;
                     let tls = TlsConnector::from(tls_config);
-                    let stream = tls.connect(domain, stream).await?;
+                    let stream = tls.connect(domain.to_owned(), stream).await?;
                     let stream = http_connect(stream, &proxy, &auth, &dst).await?;
 
                     Ok(Connection {

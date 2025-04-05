@@ -32,18 +32,18 @@ edition = "2021"
 homepage = "https://proxydetox.colorto.cc/"
 
 [workspace.dependencies]
-base64 = "0.21"
-boa_engine = { version = "0.17", features = ["annex-b"] }
-boa_gc = "0.17"
+base64 = "0.22"
+boa_engine = { version = "0.20", features = ["annex-b"] }
+boa_gc = "0.20"
 bytes = "1.1"
 chrono = "0.4"
 clap = { version = "4.1", features = ["derive", "env"] }
-default-net = { version = "0.17" }
+default-net = { version = "0.22" }
 detox_auth = { path = "detox_auth" }
 detox_futures = { path = "detox_futures" }
 detox_hyper = { path = "detox_hyper" }
 detox_net = { path = "detox_net" }
-dirs = "5.0"
+dirs = "6.0"
 futures-util = { version = "0.3", features = [ "alloc" ], default-features = false }
 gc = { version = "0.5", features = ["derive"] }
 http = "1"
@@ -57,14 +57,14 @@ netrc = { version = "0.4" }
 paclib = { path = "paclib" }
 pin-project = "1"
 proxydetoxlib = { path = "proxydetoxlib" }
-rustls = "0.21"
-rustls-native-certs = "0.6"
-rustls-pemfile = "1.0"
+rustls = { version = "0.23", features = ["ring"] }
+rustls-native-certs = "0.8"
+rustls-pemfile = "2.2"
 socket2 = { version = "0.5", features = ["all"] }
 spnego = { path = "spnego" }
-thiserror = "1.0"
+thiserror = "2.0"
 tokio = { version = "1", features = ["io-util", "rt-multi-thread", "net", "macros", "sync", "signal"] }
-tokio-rustls = "0.24"
+tokio-rustls = "0.26"
 tokio-stream = { version = "0.1", features = ["net", "sync"] }
 tokio-util = "0.7"
 tracing = "0.1"

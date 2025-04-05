@@ -140,7 +140,6 @@ async fn http_file_ok() {
 
 fn default_tls_config() -> Arc<rustls::ClientConfig> {
     let cfg = rustls::ClientConfig::builder()
-        .with_safe_defaults()
         .with_root_certificates(rustls::RootCertStore::empty())
         .with_no_client_auth();
     Arc::new(cfg)

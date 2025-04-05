@@ -1,4 +1,6 @@
-use boa_engine::{Context, JsNativeError, JsResult, JsString, JsValue, NativeFunction, Source};
+use boa_engine::{
+    js_string, Context, JsNativeError, JsResult, JsString, JsValue, NativeFunction, Source,
+};
 use http::Uri;
 use std::convert::Infallible;
 use std::net::IpAddr;
@@ -13,21 +15,25 @@ use crate::{FindProxyError, PacScriptError};
 
 const PAC_UTILS: &str = include_str!("pac_utils.js");
 
-pub struct Engine<'a> {
-    js: Context<'a>,
+pub struct Engine {
+    js: Context,
     my_ip_addr: Arc<Mutex<IpAddr>>,
 }
 
-impl<'a> Engine<'a> {
-    fn mkjs(my_ip_addr: Arc<Mutex<IpAddr>>) -> Context<'a> {
+impl Engine {
+    fn mkjs(my_ip_addr: Arc<Mutex<IpAddr>>) -> Context {
         let mut js = Context::default();
 
         js.register_global_class::<DnsCache>().unwrap();
         js.register_global_class::<domain::Table>().unwrap();
-        js.register_global_builtin_callable("alert", 1, NativeFunction::from_fn_ptr(alert))
-            .expect("register_global_property");
         js.register_global_builtin_callable(
-            "dnsResolve",
+            js_string!("alert"),
+            1,
+            NativeFunction::from_fn_ptr(alert),
+        )
+        .expect("register_global_property");
+        js.register_global_builtin_callable(
+            js_string!("dnsResolve"),
             1,
             NativeFunction::from_fn_ptr(dns_resolve),
         )
@@ -37,7 +43,7 @@ impl<'a> Engine<'a> {
         // We do not capture any varaibles which would require tracing.
         unsafe {
             js.register_global_builtin_callable(
-                "myIpAddress",
+                js_string!("myIpAddress"),
                 0,
                 NativeFunction::from_closure({
                     let ip = my_ip_addr.clone();
@@ -51,7 +57,7 @@ impl<'a> Engine<'a> {
             .eval(Source::from_bytes("new _DnsCache();"))
             .expect("new DnsCache()");
         js.register_global_property(
-            "_dnsCache",
+            js_string!("_dnsCache"),
             dns_cache,
             boa_engine::property::Attribute::all(),
         )
@@ -103,12 +109,12 @@ impl<'a> Engine<'a> {
         let find_proxy_fn = self
             .js
             .global_object()
-            .get("FindProxyForURL", &mut self.js)
+            .get(js_string!("FindProxyForURL"), &mut self.js)
             .map_err(|e| FindProxyError::InternalError(e.to_string()))?;
         let proxy = match find_proxy_fn {
             JsValue::Object(find_proxy_fn) => {
-                let uri = JsValue::from(uri.to_string());
-                let host = JsValue::from(host);
+                let uri = JsValue::from(JsString::from(uri.to_string()));
+                let host = JsValue::from(JsString::from(host));
                 find_proxy_fn
                     .call(&JsValue::Null, &[uri, host], &mut self.js)
                     .map_err(|e| FindProxyError::InternalError(e.to_string()))
@@ -135,7 +141,7 @@ impl<'a> Engine<'a> {
     }
 }
 
-impl Default for Engine<'_> {
+impl Default for Engine {
     fn default() -> Self {
         Self::new()
     }
@@ -158,7 +164,9 @@ fn alert(_this: &JsValue, args: &[JsValue], _ctx: &mut Context) -> JsResult<JsVa
 
 fn dns_resolve(_this: &JsValue, args: &[JsValue], context: &mut Context) -> JsResult<JsValue> {
     let global = context.global_object();
-    let dns_cache = global.get("_dnsCache", context).expect("_dnsCache");
+    let dns_cache = global
+        .get(js_string!("_dnsCache"), context)
+        .expect("_dnsCache");
     let dns_cache = dns_cache.as_object();
     let mut dns_cache = dns_cache
         .and_then(|obj| obj.try_borrow_mut().ok())

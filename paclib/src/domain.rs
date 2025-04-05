@@ -1,14 +1,16 @@
-use boa_engine::{class::Class, object::builtins::JsArray, JsError, JsNativeError};
+use boa_engine::{
+    class::Class, js_string, object::builtins::JsArray, JsData, JsError, JsNativeError,
+};
 use boa_gc::{Finalize, Trace};
 
 type Map = std::collections::HashMap<String, Entry>;
 
-#[derive(Debug, Default, Trace, Finalize)]
+#[derive(Debug, Default, Trace, Finalize, JsData)]
 pub(crate) struct Table {
     root: Map,
 }
 
-#[derive(Debug, Default, Trace, Finalize)]
+#[derive(Debug, Default, Trace, Finalize, JsData)]
 struct Entry {
     root: Map,
 }
@@ -72,7 +74,7 @@ impl Domain<'_> {
 impl Class for Table {
     const NAME: &'static str = "DomainTable";
 
-    fn constructor(
+    fn data_constructor(
         _this: &boa_engine::JsValue,
         args: &[boa_engine::JsValue],
         context: &mut boa_engine::Context,
@@ -113,7 +115,7 @@ impl Class for Table {
 
     fn init(class: &mut boa_engine::class::ClassBuilder) -> boa_engine::JsResult<()> {
         class.method(
-            "contains",
+            js_string!("contains"),
             1,
             boa_engine::NativeFunction::from_fn_ptr(|this, args, _ctx| {
                 let Some(object) = this.as_object() else {
