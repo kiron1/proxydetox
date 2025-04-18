@@ -46,14 +46,14 @@ jobs:
       matrix:
         build:
           - macos
-          - ubuntu-20.04
+          - ubuntu-24.04
           # - windows
         include:
           - build: macos
-            os: macos-latest
+            os: macos-15
             buildflags: --features=negotiate
-          - build: ubuntu-20.04
-            os: ubuntu-20.04
+          - build: ubuntu-24.04
+            os: ubuntu-24.04
             buildflags: --features=negotiate
           # - build: windows
           #   os: windows-latest
@@ -194,23 +194,18 @@ jobs:
         build:
           - macos-aarch64
           - macos-x86_64
-          - ubuntu-20.04
           - ubuntu-22.04
           - ubuntu-24.04
           # - windows
         include:
           - build: macos-aarch64
-            os: macos-latest
+            os: macos-15
             buildflags: --features=negotiate --config=aarch64_apple_darwin
             pkgfile: proxydetox-${{ needs.version.outputs.version }}-apple-darwin-aarch64.pkg
           - build: macos-x86_64
-            os: macos-latest
+            os: macos-15
             buildflags: --features=negotiate --config=x86_64_apple_darwin
             pkgfile: proxydetox-${{ needs.version.outputs.version }}-apple-darwin-x86_64.pkg
-          - build: ubuntu-20.04
-            os: ubuntu-20.04
-            buildflags: --features=negotiate
-            pkgfile: proxydetox-${{ needs.version.outputs.version }}-focal_amd64.deb
           - build: ubuntu-22.04
             os: ubuntu-22.04
             buildflags: --features=negotiate
