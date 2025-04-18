@@ -9,6 +9,8 @@ use crate::environment::httpd;
 use detox_hyper::http::http_file;
 use http::{header::LOCATION, Response, StatusCode};
 
+static INIT: std::sync::Once = std::sync::Once::new();
+
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn http_file_too_many_redirects() {
     let server_origin = Arc::new(Mutex::new(Option::<String>::None));
@@ -139,6 +141,12 @@ async fn http_file_ok() {
 }
 
 fn default_tls_config() -> Arc<rustls::ClientConfig> {
+    INIT.call_once(|| {
+        rustls::crypto::CryptoProvider::install_default(
+            rustls::crypto::aws_lc_rs::default_provider(),
+        )
+        .expect("CryptoProvider::install_default");
+    });
     let cfg = rustls::ClientConfig::builder()
         .with_root_certificates(rustls::RootCertStore::empty())
         .with_no_client_auth();

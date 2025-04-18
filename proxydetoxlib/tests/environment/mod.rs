@@ -23,6 +23,8 @@ use tokio_util::sync::CancellationToken;
 
 pub type Body = http_body_util::combinators::BoxBody<bytes::Bytes, hyper::Error>;
 
+static INIT: std::sync::Once = std::sync::Once::new();
+
 pub(crate) struct Environment {
     server_handle: task::JoinHandle<()>,
     shutdown_token: CancellationToken,
@@ -128,6 +130,13 @@ impl Builder {
     }
 
     pub(crate) async fn build(self) -> Environment {
+        INIT.call_once(|| {
+            rustls::crypto::CryptoProvider::install_default(
+                rustls::crypto::aws_lc_rs::default_provider(),
+            )
+            .expect("CryptoProvider::install_default");
+        });
+
         let auth = self
             .netrc_content
             .map(|n| netrc::Store::new(Cursor::new(n)).unwrap())
