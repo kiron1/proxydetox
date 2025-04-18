@@ -45,6 +45,9 @@ fn main() {
         }
     }
 
+    rustls::crypto::CryptoProvider::install_default(rustls::crypto::aws_lc_rs::default_provider())
+        .expect("CryptoProvider::install_default");
+
     if let Err(error) = run(config) {
         tracing::error!(%error, "fatal error");
         write_error(&mut std::io::stderr(), error).ok();
