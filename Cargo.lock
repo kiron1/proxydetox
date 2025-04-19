@@ -127,9 +127,9 @@ dependencies = [
 
 [[package]]
 name = "aws-lc-sys"
-version = "0.28.0"
+version = "0.28.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9f7720b74ed28ca77f90769a71fd8c637a0137f6fae4ae947e1050229cff57f"
+checksum = "0ddeb19ee86cb16ecfc871e5b0660aff6285760957aaedda6284cf0e790d3769"
 dependencies = [
  "bindgen 0.69.5",
  "cc",
@@ -444,9 +444,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.36"
+version = "4.5.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2df961d8c8a0d08aa9945718ccf584145eee3f3aa06cddbeac12933781102e04"
+checksum = "eccb054f56cbd38340b380d4a8e69ef1f02f1af43db2f0cc817a4774d80ae071"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -454,9 +454,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.5.36"
+version = "4.5.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "132dbda40fb6753878316a489d5a1242a8ef2f0d9e47ba01c951ea8aa7d013a5"
+checksum = "efd9466fac8543255d3b1fcad4762c5e116ffe808c8a3043d4263cd4fd4862a2"
 dependencies = [
  "anstream",
  "anstyle",
@@ -571,7 +571,7 @@ dependencies = [
 
 [[package]]
 name = "detox_auth"
-version = "0.1.6"
+version = "0.2.0"
 dependencies = [
  "base64",
  "http",
@@ -583,14 +583,14 @@ dependencies = [
 
 [[package]]
 name = "detox_futures"
-version = "0.1.6"
+version = "0.2.0"
 dependencies = [
  "tokio",
 ]
 
 [[package]]
 name = "detox_hyper"
-version = "0.1.6"
+version = "0.2.0"
 dependencies = [
  "bytes",
  "detox_auth",
@@ -612,7 +612,7 @@ dependencies = [
 
 [[package]]
 name = "detox_net"
-version = "0.2.6"
+version = "0.3.0"
 dependencies = [
  "http",
  "socket2",
@@ -677,7 +677,7 @@ dependencies = [
 
 [[package]]
 name = "dnsdetox"
-version = "0.2.6"
+version = "0.3.0"
 dependencies = [
  "clap",
  "detox_auth",
@@ -1536,7 +1536,7 @@ checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 
 [[package]]
 name = "paceval"
-version = "0.2.6"
+version = "0.3.0"
 dependencies = [
  "clap",
  "http",
@@ -1545,7 +1545,7 @@ dependencies = [
 
 [[package]]
 name = "paclib"
-version = "0.4.6"
+version = "0.5.0"
 dependencies = [
  "boa_engine",
  "boa_gc",
@@ -1723,7 +1723,7 @@ dependencies = [
 
 [[package]]
 name = "proxydetox"
-version = "0.9.6"
+version = "0.10.0"
 dependencies = [
  "clap",
  "default-net",
@@ -1749,7 +1749,7 @@ dependencies = [
 
 [[package]]
 name = "proxydetoxlib"
-version = "0.9.6"
+version = "0.10.0"
 dependencies = [
  "bytes",
  "chrono",
@@ -2150,7 +2150,7 @@ dependencies = [
 
 [[package]]
 name = "spnego"
-version = "0.2.6"
+version = "0.3.0"
 dependencies = [
  "libgssapi",
  "windows 0.61.1",
@@ -2457,7 +2457,7 @@ dependencies = [
 
 [[package]]
 name = "toml_get"
-version = "0.2.6"
+version = "0.3.0"
 dependencies = [
  "clap",
  "toml",
