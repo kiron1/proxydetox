@@ -65,6 +65,18 @@ fn is_file_or_http_uri(v: &str) -> Result<PathOrUri, String> {
     Ok(p)
 }
 
+fn is_valid_socket_addr(v: &str) -> Result<SocketAddr, String> {
+    let s = v.parse::<SocketAddr>().map_err(|e| e.to_string())?;
+    let unspecified = match s {
+        SocketAddr::V4(v4) => v4.ip().is_unspecified(),
+        SocketAddr::V6(v6) => v6.ip().is_unspecified(),
+    };
+    if unspecified {
+        return Err(format!("Unspecified addresses is not allowed: {s}"));
+    }
+    Ok(s)
+}
+
 fn which_pac_file() -> Option<PathBuf> {
     // For Windows, accept a proxy.pac file located next to the binary.
     #[cfg(target_family = "windows")]
@@ -179,7 +191,7 @@ impl Options {
                     .long("listen")
                     .value_name("INTERFACE:PORT")
                     .help("Listening interface (e.g. 127.0.0.1:3128)")
-                    .value_parser(clap::value_parser!(SocketAddr))
+                    .value_parser(is_valid_socket_addr)
                     .action(ArgAction::Append)
             )
             .arg(
