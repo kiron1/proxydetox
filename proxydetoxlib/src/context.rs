@@ -130,16 +130,22 @@ impl Context {
     ) -> Result<Connection, Error> {
         let dst = HostAndPort::try_from_uri(&uri)?;
         let tunnel = method == hyper::Method::CONNECT || self.proxytunnel;
-        let tls_config = self.tls_config.clone();
-        let auth = self.auth.clone();
-        let connect_timeout = self.connect_timeout;
 
         let conn = match proxy {
             ProxyOrDirect::Proxy(ref proxy) => {
                 if tunnel {
-                    Connection::http_tunnel(proxy.clone(), tls_config.clone(), auth.clone(), dst)
+                    Connection::http_tunnel(
+                        proxy.clone(),
+                        self.tls_config.clone(),
+                        self.auth.clone(),
+                        dst,
+                    )
                 } else {
-                    Connection::http_proxy(proxy.clone(), tls_config.clone(), auth.clone())
+                    Connection::http_proxy(
+                        proxy.clone(),
+                        self.tls_config.clone(),
+                        self.auth.clone(),
+                    )
                 }
             }
             ProxyOrDirect::Direct => Connection::http(dst),
@@ -149,7 +155,7 @@ impl Context {
         let start = Instant::now();
         let conn = conn
             .into_future()
-            .timeout(connect_timeout * if tunnel { 2 } else { 1 })
+            .timeout(self.connect_timeout * if tunnel { 2 } else { 1 })
             .await
             .map_err({
                 let proxy = proxy.clone();
