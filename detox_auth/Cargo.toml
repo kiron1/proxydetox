@@ -16,6 +16,6 @@ hyper.workspace = true
 netrc.workspace = true
 spnego = { workspace = true, optional = true }
 thiserror.workspace = true
-
+tokio.workspace = true
 [lib]
 doctest = false

@@ -78,7 +78,7 @@ pub struct Connection {
     inner: AnyStream,
     host: Option<String>,
     proxy: ProxyOrDirect,
-    auth: Option<Box<dyn Authenticator>>,
+    auth: Option<Authenticator>,
 }
 
 pub struct ConnectionBuilder {
@@ -106,7 +106,7 @@ where
     conn: http1::Connection<TokioIo<AnyStream>, B>,
     host: Option<String>,
     proxy: ProxyOrDirect,
-    auth: Option<Box<dyn Authenticator>>,
+    auth: Option<Authenticator>,
 }
 
 impl Connection {
@@ -464,7 +464,7 @@ where
             ProxyOrDirect::Proxy(_) => {
                 if let Some(auth) = auth {
                     let start = Instant::now();
-                    let auth_headers = auth.step(None)?;
+                    let auth_headers = auth.step(None).await?;
                     tracing::Span::current().record("duration", debug(&start.elapsed()));
                     tracing::debug!("auth");
                     req.headers_mut().extend(auth_headers);
@@ -523,7 +523,7 @@ async fn http_connect<T: AsyncRead + AsyncWrite + Send + Unpin + 'static>(
     let auth = auth.make(proxy.host()).map_err(|e| {
         std::io::Error::other(format!("Unable to build authenticator for '{proxy}': {e}"))
     })?;
-    let auth_headers = auth.step(None).map_err(|e| {
+    let auth_headers = auth.step(None).await.map_err(|e| {
         std::io::Error::other(format!("Unable to step authenticator for '{proxy}': {e}"))
     })?;
     if let Some(headers) = request.headers_mut() {
