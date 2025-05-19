@@ -608,6 +608,7 @@ dependencies = [
  "tokio",
  "tokio-rustls",
  "tracing",
+ "tracing-attributes",
 ]
 
 [[package]]
