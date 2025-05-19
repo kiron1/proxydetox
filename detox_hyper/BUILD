@@ -15,6 +15,7 @@ rust_library(
     visibility = ["//visibility:public"],
     deps = [
         "//detox_auth",
+        "//detox_futures",
         "//detox_net",
         "//paclib",
     ] + [

@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 bytes.workspace = true
 detox_auth.workspace = true
+detox_futures.workspace = true
 detox_net.workspace = true
 futures-util.workspace = true
 http-body-util.workspace = true

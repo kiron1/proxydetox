@@ -2,13 +2,14 @@ use std::{
     pin::Pin,
     sync::Arc,
     task::{self, Poll},
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 use bytes::Bytes;
 use detox_auth::{Authenticator, AuthenticatorFactory};
+use detox_futures::FutureExt as _;
 use detox_net::{HostAndPort, TcpKeepAlive};
-use futures_util::{future::BoxFuture, FutureExt};
+use futures_util::{future::BoxFuture, FutureExt as _};
 use http::{
     header::{CONNECTION, HOST},
     uri::PathAndQuery,
@@ -32,6 +33,8 @@ use tokio::{
 use tokio_rustls::{client::TlsStream, TlsConnector};
 use tracing::field::debug;
 use tracing_attributes::instrument;
+
+const AUTH_TIMEOUT: Duration = Duration::from_secs(2);
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -59,6 +62,8 @@ pub enum Error {
         #[source]
         detox_auth::Error,
     ),
+    #[error("Authentication timeout")]
+    AuthenticationTimeout,
 }
 
 #[derive(Debug)]
@@ -447,7 +452,7 @@ where
     B::Data: Send,
     B::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
 {
-    #[instrument(level = "debug", skip(self, req), fields(duration))]
+    #[instrument(level = "debug", skip(self, req), err, fields(duration))]
     pub async fn send_request(
         self,
         mut req: Request<B>,
@@ -464,10 +469,11 @@ where
             ProxyOrDirect::Proxy(_) => {
                 if let Some(auth) = auth {
                     let start = Instant::now();
-                    let auth_headers = auth.step(None).await?;
+                    let auth_headers = auth.step(None).timeout(AUTH_TIMEOUT).await;
                     tracing::Span::current().record("duration", debug(&start.elapsed()));
                     tracing::debug!("auth");
-                    req.headers_mut().extend(auth_headers);
+                    let auth_headers = auth_headers.map_err(|_| Error::AuthenticationTimeout)?;
+                    req.headers_mut().extend(auth_headers?);
                 }
             }
             ProxyOrDirect::Direct => {
@@ -505,6 +511,7 @@ where
     }
 }
 
+#[instrument(level = "debug", skip(stream, auth), err, fields(duration))]
 async fn http_connect<T: AsyncRead + AsyncWrite + Send + Unpin + 'static>(
     stream: T,
     proxy: &HostAndPort,
@@ -523,7 +530,14 @@ async fn http_connect<T: AsyncRead + AsyncWrite + Send + Unpin + 'static>(
     let auth = auth.make(proxy.host()).map_err(|e| {
         std::io::Error::other(format!("Unable to build authenticator for '{proxy}': {e}"))
     })?;
-    let auth_headers = auth.step(None).await.map_err(|e| {
+    let start = Instant::now();
+    let auth_headers = auth.step(None).timeout(AUTH_TIMEOUT).await;
+    tracing::Span::current().record("duration", debug(&start.elapsed()));
+    tracing::debug!("auth");
+    let auth_headers =
+        auth_headers.map_err(|_| std::io::Error::other(Error::AuthenticationTimeout))?;
+
+    let auth_headers = auth_headers.map_err(|e| {
         std::io::Error::other(format!("Unable to step authenticator for '{proxy}': {e}"))
     })?;
     if let Some(headers) = request.headers_mut() {
