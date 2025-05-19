@@ -22,6 +22,7 @@ thiserror.workspace = true
 tokio-rustls.workspace = true
 tokio.workspace = true
 tracing.workspace = true
+tracing-attributes.workspace = true
 
 [lib]
 doctest = false

@@ -2,6 +2,7 @@ use std::{
     pin::Pin,
     sync::Arc,
     task::{self, Poll},
+    time::Instant,
 };
 
 use bytes::Bytes;
@@ -29,6 +30,8 @@ use tokio::{
     net::TcpStream,
 };
 use tokio_rustls::{client::TlsStream, TlsConnector};
+use tracing::field::debug;
+use tracing_attributes::instrument;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -444,6 +447,7 @@ where
     B::Data: Send,
     B::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
 {
+    #[instrument(level = "debug", skip(self, req), fields(duration))]
     pub async fn send_request(
         self,
         mut req: Request<B>,
@@ -459,7 +463,10 @@ where
         match proxy {
             ProxyOrDirect::Proxy(_) => {
                 if let Some(auth) = auth {
+                    let start = Instant::now();
                     let auth_headers = auth.step(None)?;
+                    tracing::Span::current().record("duration", debug(&start.elapsed()));
+                    tracing::debug!("auth");
                     req.headers_mut().extend(auth_headers);
                 }
             }
