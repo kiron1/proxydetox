@@ -3,7 +3,6 @@ use http::{
     header::{PROXY_AUTHENTICATE, PROXY_AUTHORIZATION},
     HeaderValue,
 };
-use std::result::Result;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -19,40 +18,46 @@ pub struct NegotiateAuthenticator {
 }
 
 impl NegotiateAuthenticator {
-    pub fn new(proxy_fqdn: &str) -> Result<Self, Error> {
+    pub fn new(proxy_fqdn: &str) -> std::result::Result<Self, Error> {
         Ok(Self {
             proxy_fqdn: proxy_fqdn.to_owned(),
         })
     }
-}
 
-impl super::Authenticator for NegotiateAuthenticator {
-    fn step(&self, _last_headers: Option<hyper::HeaderMap>) -> crate::Result<hyper::HeaderMap> {
+    pub(crate) async fn step(
+        &self,
+        _last_headers: Option<hyper::HeaderMap>,
+    ) -> crate::Result<hyper::HeaderMap> {
         let mut headers = hyper::HeaderMap::new();
         // let challenge = last_headers.map(|h| server_token(&h)).flatten();
         // let challenge = challenge.as_deref();
-        let client_ctx = spnego::Context::new("HTTP", &self.proxy_fqdn);
+        let proxy_fqdn = self.proxy_fqdn.clone();
+        let headers: crate::Result<_> = tokio::task::spawn_blocking(move || {
+            let client_ctx = spnego::Context::new("HTTP", &proxy_fqdn);
 
-        match client_ctx {
-            Ok(mut cx) => match cx.step(None) {
-                Ok(Some(token)) => {
-                    let b64token = base64::engine::general_purpose::STANDARD.encode(&*token);
-                    let auth_str = format!("Negotiate {b64token}");
-                    headers.append(
-                        PROXY_AUTHORIZATION,
-                        HeaderValue::from_str(&auth_str).expect("valid header value"),
-                    );
-                }
-                Ok(None) => {}
+            match client_ctx {
+                Ok(mut cx) => match cx.step(None) {
+                    Ok(Some(token)) => {
+                        let b64token = base64::engine::general_purpose::STANDARD.encode(&*token);
+                        let auth_str = format!("Negotiate {b64token}");
+                        headers.append(
+                            PROXY_AUTHORIZATION,
+                            HeaderValue::from_str(&auth_str).expect("valid header value"),
+                        );
+                        return Ok(headers);
+                    }
+                    Ok(None) => return Ok(headers),
+                    Err(cause) => {
+                        return Err(cause.into());
+                    }
+                },
                 Err(cause) => {
                     return Err(cause.into());
                 }
-            },
-            Err(cause) => {
-                return Err(cause.into());
             }
-        }
-        Ok(headers)
+        })
+        .await?;
+        Ok(headers?)
     }
 }
 

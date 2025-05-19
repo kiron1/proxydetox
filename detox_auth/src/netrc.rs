@@ -27,10 +27,11 @@ impl BasicAuthenticator {
     pub fn new(token: String) -> Self {
         Self { token }
     }
-}
 
-impl super::Authenticator for BasicAuthenticator {
-    fn step(&self, _last_headers: Option<hyper::HeaderMap>) -> crate::Result<hyper::HeaderMap> {
+    pub(crate) async fn step(
+        &self,
+        _last_headers: Option<hyper::HeaderMap>,
+    ) -> crate::Result<hyper::HeaderMap> {
         let mut headers = hyper::HeaderMap::new();
         headers.append(
             PROXY_AUTHORIZATION,
