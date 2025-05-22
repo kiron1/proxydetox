@@ -32,25 +32,89 @@ pub struct Control {
     shutdown_complete_rx: tokio::sync::mpsc::Receiver<()>,
 }
 
-struct Handler {
+struct HttpHandler {
     addr: SocketAddr,
     conn: hyper::server::conn::http1::Connection<TokioIo<TcpStream>, Session>,
     shutdown_request: CancellationToken,
     shutdown_complete_tx: tokio::sync::mpsc::Sender<()>,
 }
 
-impl Handler {
+impl HttpHandler {
     #[instrument(skip(self), fields(peer = debug(self.addr)))]
     async fn run(self) {
-        let Handler {
+        let HttpHandler {
             addr: _,
             conn,
             shutdown_request,
             shutdown_complete_tx,
         } = self;
         let conn = conn.with_upgrades();
-        tracing::debug!("peer connected");
+        tracing::debug!("http peer connected");
         let mut conn = std::pin::pin!(conn);
+        loop {
+            select! {
+                c = conn.as_mut() => {
+                    if let Err(cause) = c {
+                        tracing::error!(%cause, "server connection error");
+                    }
+                    tracing::debug!("peer disconnected");
+                    break;
+                },
+                _ = shutdown_request.cancelled(), if !shutdown_request.is_cancelled() => {
+                    tracing::debug!("shutdown requested");
+                    conn.as_mut().graceful_shutdown();
+                }
+            }
+        }
+        drop(shutdown_complete_tx);
+    }
+}
+
+struct TcpHandler {
+    addr: SocketAddr,
+    dst: SocketAddr,
+    context: Arc<Context>,
+    shutdown_request: CancellationToken,
+    shutdown_complete_tx: tokio::sync::mpsc::Sender<()>,
+}
+
+impl TcpHandler {
+    #[instrument(skip(self), fields(peer = debug(self.addr)))]
+    async fn run(self) {
+        let TcpHandler {
+            addr: _,
+            dst,
+            context,
+            shutdown_request,
+            shutdown_complete_tx,
+        } = self;
+        tracing::debug!("tcp peer connected");
+        let uri = Uri::builder()
+            .scheme(http::uri::Scheme::HTTP)
+            .authority(dst.to_string().parse().expect("IP is valid authority"))
+            .build()
+            .expect("URI");
+        let proxies = context.find_proxy(uri).await;
+        let conn = proxies.clone().into_iter().map({
+            let cx = self.context.clone();
+            let method = req.method();
+            let uri = req.uri();
+            move |p| {
+                let cx = cx.clone();
+                let race = cx.race_connect;
+                async move {
+                    let r = cx.connect(p, method.clone(), uri.clone()).await;
+                    if let Err(ref cause) = r {
+                        if race {
+                            tracing::debug!(%cause, "unable to connect");
+                        } else {
+                            tracing::warn!(%cause, "unable to connect");
+                        }
+                    }
+                    r
+                }
+            }
+        });
         loop {
             select! {
                 c = conn.as_mut() => {
@@ -104,6 +168,40 @@ impl<A> Server<A>
 where
     A: futures_util::Stream<Item = std::io::Result<tokio::net::TcpStream>> + Send + Unpin + 'static,
 {
+    fn accept(&mut self, stream: std::io::Result<tokio::net::TcpStream>) -> std::io::Result<()> {
+        let stream = match stream {
+            Ok(stream) => stream,
+            Err(cause) => {
+                tracing::error!(%cause, "listener error");
+                return Err(cause);
+            }
+        };
+        let addr = stream.peer_addr().expect("peer_addr");
+        let orig_dst_addr = crate::socket::original_destination_address(&stream);
+        if let Some(dst) = orig_dst_addr {
+            let handler = TcpHandler {
+                addr,
+                dst,
+                context: self.context.clone(),
+                shutdown_request: self.shutdown_request.clone(),
+                shutdown_complete_tx: self.shutdown_complete_tx.clone(),
+            };
+            tokio::spawn(handler.run());
+        } else {
+            let conn = self.http_server.serve_connection(
+                TokioIo::new(stream),
+                Session::new(self.context.clone(), addr, orig_dst_addr),
+            );
+            let handler = HttpHandler {
+                addr,
+                conn,
+                shutdown_request: self.shutdown_request.clone(),
+                shutdown_complete_tx: self.shutdown_complete_tx.clone(),
+            };
+            tokio::spawn(handler.run());
+        }
+        Ok(())
+    }
     #[instrument(skip(self))]
     pub async fn run(&mut self) -> std::io::Result<()> {
         while !self.shutdown_request.is_cancelled() {
@@ -112,25 +210,7 @@ where
                     break;
                 },
                 stream = self.acceptor.next() => {
-                    let stream = match stream {
-                        Some(Ok(stream))=> {
-                            stream
-                        },
-                        Some(Err(cause)) => {
-                            tracing::error!(%cause, "listener error");
-                            return Err(cause);
-                        },
-                        None => unreachable!(),
-                    };
-                    let addr = stream.peer_addr().expect("peer_addr");
-                    let conn = self.http_server.serve_connection(TokioIo::new(stream), Session::new(self.context.clone(), addr));
-                    let handler = Handler {
-                        addr,
-                        conn,
-                        shutdown_request: self.shutdown_request.clone(),
-                        shutdown_complete_tx: self.shutdown_complete_tx.clone(),
-                    };
-                    tokio::spawn(handler.run());
+                    self.accept(stream.expect("infinite stream of TcpStream"))?
                 },
             }
         }

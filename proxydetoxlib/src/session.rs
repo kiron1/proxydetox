@@ -109,11 +109,16 @@ pub struct Session(Arc<Inner>);
 struct Inner {
     context: Arc<Context>,
     addr: SocketAddr,
+    orig_dst_addr: Option<SocketAddr>,
 }
 
 impl Session {
-    pub fn new(context: Arc<Context>, addr: SocketAddr) -> Self {
-        Self(Arc::new(Inner { context, addr }))
+    pub fn new(context: Arc<Context>, addr: SocketAddr, orig_dst_addr: Option<SocketAddr>) -> Self {
+        Self(Arc::new(Inner {
+            context,
+            addr,
+            orig_dst_addr,
+        }))
     }
 }
 
@@ -125,7 +130,9 @@ impl Inner {
     ) -> std::result::Result<http::Response<BoxBody<Bytes, hyper::Error>>, Infallible> {
         // TODO: management console must also be choosen, when authority is pointing to us
         // (or abort the connection), since otherwise we create an endless loop.
-        let res = if req.uri().authority().is_some() {
+        let res = if let Some(dst) = self.orig_dst_addr {
+            self.forward().await
+        } else if req.uri().authority().is_some() {
             self.proxy_request(req).await
         } else if req.method() != hyper::Method::CONNECT {
             self.management_console(req).await
