@@ -1,13 +1,13 @@
 mod environment;
 
 use std::sync::{
-    atomic::{AtomicUsize, Ordering},
     Arc, Mutex,
+    atomic::{AtomicUsize, Ordering},
 };
 
 use crate::environment::httpd;
 use detox_hyper::http::http_file;
-use http::{header::LOCATION, Response, StatusCode};
+use http::{Response, StatusCode, header::LOCATION};
 
 static INIT: std::sync::Once = std::sync::Once::new();
 

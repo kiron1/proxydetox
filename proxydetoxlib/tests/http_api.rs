@@ -5,8 +5,8 @@ use std::io::Read;
 use crate::environment::Environment;
 use bytes::Buf;
 use http::{
-    header::{CONTENT_TYPE, HOST},
     Request,
+    header::{CONTENT_TYPE, HOST},
 };
 use http_body_util::BodyExt;
 

@@ -1,10 +1,10 @@
+use Result;
 use base64::Engine;
-use http::{header::PROXY_AUTHORIZATION, HeaderValue};
+use http::{HeaderValue, header::PROXY_AUTHORIZATION};
 use std::collections::HashMap;
 use std::io::BufRead;
 use std::sync::Arc;
 use std::sync::RwLock;
-use Result;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {

@@ -1,4 +1,4 @@
-extern "C" {
+unsafe extern "C" {
     // https://developer.apple.com/documentation/xpc/1505523-launch_activate_socket
     #[cfg(target_os = "macos")]
     fn launch_activate_socket(
@@ -139,9 +139,11 @@ mod tests {
         // Missmatch in process id is an error
         assert!(listenfds("test", Some(1), Some(1), Some("test".into())).is_err());
         // socket not found by name
-        assert!(listenfds("test", None, Some(1), Some("mismatch".into()))
-            .unwrap()
-            .is_empty());
+        assert!(
+            listenfds("test", None, Some(1), Some("mismatch".into()))
+                .unwrap()
+                .is_empty()
+        );
         // mismatch in length
         assert!(listenfds("test", None, Some(2), Some("test".into())).is_err());
     }

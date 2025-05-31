@@ -1,6 +1,6 @@
 mod environment;
 
-use crate::environment::{tcp, Environment};
+use crate::environment::{Environment, tcp};
 use http::Request;
 use hyper_util::rt::TokioIo;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};

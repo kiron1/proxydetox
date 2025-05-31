@@ -22,9 +22,9 @@ impl Authenticator {
     pub async fn step(&self, last_headers: Option<hyper::HeaderMap>) -> Result<hyper::HeaderMap> {
         match self {
             Self::None => Ok(Default::default()),
-            Self::Basic(ref basic) => basic.step(last_headers).await,
+            Self::Basic(basic) => basic.step(last_headers).await,
             #[cfg(feature = "negotiate")]
-            Self::Negotiate(ref spnego) => spnego.step(last_headers).await,
+            Self::Negotiate(spnego) => spnego.step(last_headers).await,
         }
     }
 }
@@ -54,12 +54,12 @@ impl AuthenticatorFactory {
     pub fn make(&self, proxy_fqdn: &str) -> Result<Authenticator> {
         match self {
             Self::None => Ok(Authenticator::None),
-            Self::Basic(ref store) => {
+            Self::Basic(store) => {
                 let token = store.get(proxy_fqdn)?;
                 Ok(Authenticator::Basic(BasicAuthenticator::new(token)))
             }
             #[cfg(feature = "negotiate")]
-            Self::Negotiate(ref hosts) => {
+            Self::Negotiate(hosts) => {
                 if hosts.is_empty() || hosts.iter().any(|k| k == proxy_fqdn) {
                     // if the lists of hosts is empty, negotiate with all hosts
                     // otherwise only use negotiate for hosts in the allow list

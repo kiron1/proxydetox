@@ -4,7 +4,9 @@ use std::time::{Duration, Instant};
 use tokio::io::{AsyncRead, AsyncWrite};
 
 #[derive(thiserror::Error, Debug)]
-#[error("Error during bidirectional: {duration:?} sec, {upstream_in} upsteam in, {upstream_out} upstream out, {downstream_in} downstream in, {downstream_out} downstream out: {source}")]
+#[error(
+    "Error during bidirectional: {duration:?} sec, {upstream_in} upsteam in, {upstream_out} upstream out, {downstream_in} downstream in, {downstream_out} downstream out: {source}"
+)]
 struct BytesLost {
     duration: Duration,
     upstream_in: u64,

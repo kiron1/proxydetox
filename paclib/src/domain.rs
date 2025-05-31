@@ -1,5 +1,5 @@
 use boa_engine::{
-    class::Class, js_string, object::builtins::JsArray, JsData, JsError, JsNativeError,
+    JsData, JsError, JsNativeError, class::Class, js_string, object::builtins::JsArray,
 };
 use boa_gc::{Finalize, Trace};
 
