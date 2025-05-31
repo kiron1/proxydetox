@@ -57,10 +57,7 @@ pub fn activate_socket(name: &str) -> std::io::Result<ActivateSocket> {
     }
 
     if cnt == 0 {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "no socket found",
-        ));
+        return Err(std::io::Error::other("no socket found"));
     }
 
     let out = unsafe {
@@ -74,10 +71,7 @@ pub fn activate_socket(name: &str) -> std::io::Result<ActivateSocket> {
 
 #[cfg(target_family = "windows")]
 pub fn activate_socket(_name: &str) -> std::io::Result<ActivateSocket> {
-    Err(std::io::Error::new(
-        std::io::ErrorKind::Other,
-        "not implemented",
-    ))
+    Err(std::io::Error::other("not implemented"))
 }
 
 #[cfg(all(target_family = "unix", not(target_os = "macos")))]
@@ -103,20 +97,14 @@ fn listenfds(
 ) -> std::io::Result<Vec<std::os::unix::io::RawFd>> {
     const SD_LISTEN_FDS_START: std::os::unix::io::RawFd = 3;
 
-    let fds =
-        fds.ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "LISTEN_FDS missing"))?;
-    let names = names
-        .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "LISTEN_FDNAMES missing"))?;
+    let fds = fds.ok_or_else(|| std::io::Error::other("LISTEN_FDS missing"))?;
+    let names = names.ok_or_else(|| std::io::Error::other("LISTEN_FDNAMES missing"))?;
     if !pid.map(|p| p == std::process::id()).unwrap_or(true) {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "protocol error, PID does not match",
-        ));
+        return Err(std::io::Error::other("protocol error, PID does not match"));
     }
     let names = names.split(':').map(String::from).collect::<Vec<_>>();
     if names.len() != fds as usize {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
+        return Err(std::io::Error::other(
             "protocol error, LISTEN_FDNAMES length does not match",
         ));
     }
