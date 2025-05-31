@@ -8,7 +8,7 @@ use std::{
 };
 
 use bytes::Buf;
-use http::{HeaderMap, HeaderValue, StatusCode, header::CONNECTION};
+use http::{header::CONNECTION, HeaderMap, HeaderValue, StatusCode};
 use http_body_util::BodyExt;
 use hyper_util::rt::TokioIo;
 use tokio::{
@@ -16,7 +16,7 @@ use tokio::{
     task,
 };
 
-use detox_auth::{AuthenticatorFactory, netrc};
+use detox_auth::{netrc, AuthenticatorFactory};
 
 use tokio_stream::wrappers::TcpListenerStream;
 use tokio_util::sync::CancellationToken;
@@ -161,7 +161,7 @@ impl Builder {
         let server_handle = tokio::spawn({
             let shutdown_token = shutdown_token.clone();
             async move {
-                let (server, control) = proxydetoxlib::server::Proxy::new(listener, context);
+                let (server, control) = proxydetoxlib::server::Server::new(listener, context);
 
                 let mut server = std::pin::pin!(server);
                 tokio::select! {

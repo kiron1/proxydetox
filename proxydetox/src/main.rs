@@ -10,8 +10,7 @@ use detox_auth::netrc;
 use futures_util::future;
 use futures_util::stream;
 use options::{Authorization, Options};
-use proxydetoxlib::server::Proxy;
-use proxydetoxlib::socket;
+use proxydetoxlib::{server::Server, socket};
 use std::fs::File;
 use std::net::IpAddr;
 use std::result::Result;
@@ -185,7 +184,7 @@ async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
         .collect::<Vec<_>>();
 
     let listeners = stream::select_all(listeners);
-    let (server, control) = Proxy::new(listeners, context.clone());
+    let (server, control) = Server::new(listeners, context.clone());
 
     tracing::info!(listening=?addrs, pac_file=?config.pac_file, "starting");
 
