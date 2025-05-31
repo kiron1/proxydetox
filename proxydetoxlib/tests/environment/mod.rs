@@ -8,7 +8,7 @@ use std::{
 };
 
 use bytes::Buf;
-use http::{header::CONNECTION, HeaderMap, HeaderValue, StatusCode};
+use http::{HeaderMap, HeaderValue, StatusCode, header::CONNECTION};
 use http_body_util::BodyExt;
 use hyper_util::rt::TokioIo;
 use tokio::{
@@ -16,7 +16,7 @@ use tokio::{
     task,
 };
 
-use detox_auth::{netrc, AuthenticatorFactory};
+use detox_auth::{AuthenticatorFactory, netrc};
 
 use tokio_stream::wrappers::TcpListenerStream;
 use tokio_util::sync::CancellationToken;

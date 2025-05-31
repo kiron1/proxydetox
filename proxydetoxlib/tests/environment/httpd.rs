@@ -17,9 +17,9 @@ pub struct Server {
 impl Server {
     pub(crate) async fn new(
         handler: impl Fn(Request<hyper::body::Incoming>) -> Response<crate::environment::Body>
-            + Send
-            + Sync
-            + 'static,
+        + Send
+        + Sync
+        + 'static,
     ) -> Self {
         let handler = Arc::new(handler);
         let service = service_fn(move |r| {
