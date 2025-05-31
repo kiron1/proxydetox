@@ -15,8 +15,6 @@ pub enum WaitError {
     TimeoutExpired,
 }
 
-pub struct Proxy;
-
 #[derive(Clone)]
 pub struct Server<A> {
     acceptor: A,
@@ -70,12 +68,11 @@ impl Handler {
     }
 }
 
-impl Proxy {
-    #[allow(clippy::new_ret_no_self)]
-    pub fn new<A>(acceptor: A, context: Arc<Context>) -> (Server<A>, Control)
-    where
-        A: futures_util::Stream<Item = std::io::Result<TcpStream>>,
-    {
+impl<A> Server<A>
+where
+    A: futures_util::Stream<Item = std::io::Result<tokio::net::TcpStream>> + Send + Unpin + 'static,
+{
+    pub fn new(acceptor: A, context: Arc<Context>) -> (Server<A>, Control) {
         let http_server = {
             let mut b = http1::Builder::new();
             b.preserve_header_case(true);
@@ -98,12 +95,7 @@ impl Proxy {
         };
         (server, control)
     }
-}
 
-impl<A> Server<A>
-where
-    A: futures_util::Stream<Item = std::io::Result<tokio::net::TcpStream>> + Send + Unpin + 'static,
-{
     #[instrument(skip(self))]
     pub async fn run(&mut self) -> std::io::Result<()> {
         while !self.shutdown_request.is_cancelled() {

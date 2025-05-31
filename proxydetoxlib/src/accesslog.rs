@@ -205,10 +205,7 @@ mod tests {
             http::Version::HTTP_11,
             Some("curl/7.79.1".to_string()),
         );
-        let entry = entry.error(
-            Some(ProxyOrDirect::Direct),
-            &std::io::Error::new(std::io::ErrorKind::Other, "ERROR"),
-        );
+        let entry = entry.error(Some(ProxyOrDirect::Direct), &std::io::Error::other("ERROR"));
         let entry = entry.to_string();
 
         assert!(entry.contains("127.0.0.1:34524"));

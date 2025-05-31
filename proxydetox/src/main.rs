@@ -10,8 +10,7 @@ use detox_auth::AuthenticatorFactory;
 use futures_util::future;
 use futures_util::stream;
 use options::{Authorization, Options};
-use proxydetoxlib::server::Proxy;
-use proxydetoxlib::socket;
+use proxydetoxlib::{server::Server, socket};
 use std::fs::File;
 use std::net::IpAddr;
 use std::result::Result;
@@ -34,6 +33,14 @@ pub extern "C" fn main() {
 #[cfg(not(static_library))]
 fn main() {
     let config = Options::load();
+    let logfile = config
+        .log_filepath
+        .as_ref()
+        .map(File::create)
+        .transpose()
+        .unwrap_or_default();
+
+    setup_tracing(&config.log_level, logfile);
 
     #[cfg(target_family = "windows")]
     if config.attach_console {
@@ -123,9 +130,6 @@ where
 
 #[tokio::main]
 async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
-    let logfile = config.log_filepath.as_ref().map(File::create).transpose()?;
-
-    setup_tracing(&config.log_level, logfile);
     let auth = match &config.authorization {
         #[cfg(feature = "negotiate")]
         Authorization::Negotiate(ref negotiate) => {
@@ -186,7 +190,7 @@ async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
         .collect::<Vec<_>>();
 
     let listeners = stream::select_all(listeners);
-    let (server, control) = Proxy::new(listeners, context.clone());
+    let (server, control) = Server::new(listeners, context.clone());
 
     tracing::info!(listening=?addrs, pac_file=?config.pac_file, "starting");
 
