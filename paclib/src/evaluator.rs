@@ -1,12 +1,12 @@
 use http::Uri;
 use std::convert::Infallible;
 use std::net::IpAddr;
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use tokio::sync::oneshot;
 
-use crate::engine::Engine;
 use crate::Proxies;
+use crate::engine::Engine;
 use crate::{FindProxyError, PacScriptError};
 
 pub struct Evaluator {

@@ -142,9 +142,9 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use http::header::LOCATION;
     use http::Response;
     use http::StatusCode;
+    use http::header::LOCATION;
 
     #[test]
     fn http_get_progress_ok() {
