@@ -1,7 +1,7 @@
 use base64::Engine;
 use http::{
-    header::{PROXY_AUTHENTICATE, PROXY_AUTHORIZATION},
     HeaderValue,
+    header::{PROXY_AUTHENTICATE, PROXY_AUTHORIZATION},
 };
 
 #[derive(thiserror::Error, Debug)]

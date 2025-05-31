@@ -1,7 +1,7 @@
 mod environment;
 
-use crate::environment::{httpd, read_to_string, Environment};
-use http::{header::PROXY_AUTHORIZATION, Request, Response, Uri};
+use crate::environment::{Environment, httpd, read_to_string};
+use http::{Request, Response, Uri, header::PROXY_AUTHORIZATION};
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn http_get_via_proxy_request() {

@@ -1,7 +1,7 @@
 mod environment;
 
-use crate::environment::{httpd, Environment};
-use http::{header::PROXY_AUTHORIZATION, Request, Response, StatusCode};
+use crate::environment::{Environment, httpd};
+use http::{Request, Response, StatusCode, header::PROXY_AUTHORIZATION};
 use hyper_util::rt::TokioIo;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 

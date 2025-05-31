@@ -57,7 +57,7 @@ pub enum Error {
 
 pub(crate) mod body {
     use bytes::Bytes;
-    use http_body_util::{combinators::BoxBody, BodyExt};
+    use http_body_util::{BodyExt, combinators::BoxBody};
 
     pub(crate) fn empty() -> BoxBody<Bytes, hyper::Error> {
         http_body_util::Empty::new()

@@ -1,6 +1,6 @@
 use std::{collections::HashMap, time::UNIX_EPOCH};
 
-use boa_engine::{class::Class, JsData};
+use boa_engine::{JsData, class::Class};
 use boa_gc::{Finalize, Trace};
 use tracing::instrument;
 

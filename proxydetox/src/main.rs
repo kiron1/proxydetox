@@ -5,8 +5,8 @@
 
 mod options;
 
-use detox_auth::netrc;
 use detox_auth::AuthenticatorFactory;
+use detox_auth::netrc;
 use futures_util::future;
 use futures_util::stream;
 use options::{Authorization, Options};
@@ -20,7 +20,7 @@ use tokio_stream::wrappers::TcpListenerStream;
 use tracing_subscriber::filter::EnvFilter;
 
 #[cfg(static_library)]
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn main() {
     let config = Options::load_without_rcfile();
 
@@ -58,10 +58,9 @@ fn main() {
 fn setup_tracing(log_level: &tracing::level_filters::LevelFilter, logfile: Option<File>) {
     let env_name = format!("{}_LOG", env!("CARGO_PKG_NAME").to_uppercase());
 
-    let filter = if let Ok(filter) = EnvFilter::try_from_env(&env_name) {
-        filter
-    } else {
-        EnvFilter::default()
+    let filter = match EnvFilter::try_from_env(&env_name) {
+        Ok(filter) => filter,
+        _ => EnvFilter::default()
             .add_directive(
                 format!("detox_auth={0}", log_level)
                     .parse()
@@ -92,17 +91,20 @@ fn setup_tracing(log_level: &tracing::level_filters::LevelFilter, logfile: Optio
                 format!("proxy_client={0}", log_level)
                     .parse()
                     .expect("directive"),
-            )
+            ),
     };
 
     let fmt = tracing_subscriber::fmt()
         .compact()
         .with_timer(tracing_subscriber::fmt::time::uptime())
         .with_env_filter(filter);
-    if let Some(f) = logfile {
-        fmt.with_writer(f).init();
-    } else {
-        fmt.with_writer(std::io::stderr).init();
+    match logfile {
+        Some(f) => {
+            fmt.with_writer(f).init();
+        }
+        _ => {
+            fmt.with_writer(std::io::stderr).init();
+        }
     }
 }
 
@@ -128,16 +130,13 @@ async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
     setup_tracing(&config.log_level, logfile);
     let auth = match &config.authorization {
         #[cfg(feature = "negotiate")]
-        Authorization::Negotiate(ref negotiate) => {
-            AuthenticatorFactory::negotiate(negotiate.clone())
-        }
+        Authorization::Negotiate(negotiate) => AuthenticatorFactory::negotiate(negotiate.clone()),
         #[cfg(not(feature = "negotiate"))]
         Authorization::Negotiate(_) => unreachable!(),
         Authorization::Basic(netrc_file) => {
-            let store = if let Ok(file) = File::open(netrc_file) {
-                netrc::Store::new(std::io::BufReader::new(file))?
-            } else {
-                netrc::Store::default()
+            let store = match File::open(netrc_file) {
+                Ok(file) => netrc::Store::new(std::io::BufReader::new(file))?,
+                _ => netrc::Store::default(),
             };
             AuthenticatorFactory::basic(store)
         }
@@ -159,20 +158,19 @@ async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
         context.set_my_ip_address(my_ip).await?;
     }
 
-    let listeners = if let Some(name) = &config.activate_socket {
-        socket::activate_socket(name)?
+    let listeners = match &config.activate_socket {
+        Some(name) => socket::activate_socket(name)?
             .take()
             .into_iter()
             .inspect(|s: &std::net::TcpListener| {
                 s.set_nonblocking(true).expect("nonblocking");
             })
             .map(tokio::net::TcpListener::from_std)
-            .collect::<Result<Vec<_>, _>>()?
-    } else {
-        future::join_all(config.listen.iter().map(tokio::net::TcpListener::bind))
+            .collect::<Result<Vec<_>, _>>()?,
+        _ => future::join_all(config.listen.iter().map(tokio::net::TcpListener::bind))
             .await
             .into_iter()
-            .collect::<Result<Vec<_>, _>>()?
+            .collect::<Result<Vec<_>, _>>()?,
     };
 
     let addrs = listeners
@@ -231,12 +229,15 @@ async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
 
 #[cfg(unix)]
 async fn reload_trigger() {
-    use tokio::signal::unix::{signal, SignalKind};
+    use tokio::signal::unix::{SignalKind, signal};
     let sighup = signal(SignalKind::hangup());
-    if let Ok(mut sighup) = sighup {
-        sighup.recv().await;
-    } else {
-        future::pending::<Option<()>>().await;
+    match sighup {
+        Ok(mut sighup) => {
+            sighup.recv().await;
+        }
+        _ => {
+            future::pending::<Option<()>>().await;
+        }
     }
 }
 
@@ -247,12 +248,15 @@ async fn reload_trigger() {
 
 #[cfg(unix)]
 async fn direct_mode_trigger() {
-    use tokio::signal::unix::{signal, SignalKind};
+    use tokio::signal::unix::{SignalKind, signal};
     let sigusr1 = signal(SignalKind::user_defined1());
-    if let Ok(mut sigusr1) = sigusr1 {
-        sigusr1.recv().await;
-    } else {
-        future::pending::<Option<()>>().await;
+    match sigusr1 {
+        Ok(mut sigusr1) => {
+            sigusr1.recv().await;
+        }
+        _ => {
+            future::pending::<Option<()>>().await;
+        }
     }
 }
 
@@ -263,7 +267,7 @@ async fn direct_mode_trigger() {
 
 #[cfg(unix)]
 async fn shutdown_trigger() {
-    use tokio::signal::unix::{signal, SignalKind};
+    use tokio::signal::unix::{SignalKind, signal};
     let signals = vec![
         signal(SignalKind::interrupt()),
         signal(SignalKind::terminate()),

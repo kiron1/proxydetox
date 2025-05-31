@@ -1,5 +1,5 @@
 use boa_engine::{
-    js_string, Context, JsNativeError, JsResult, JsString, JsValue, NativeFunction, Source,
+    Context, JsNativeError, JsResult, JsString, JsValue, NativeFunction, Source, js_string,
 };
 use http::Uri;
 use std::convert::Infallible;
@@ -10,8 +10,8 @@ use std::time::Instant;
 use tracing::{field::debug, instrument};
 
 use crate::dns::DnsCache;
-use crate::{domain, Proxies};
 use crate::{FindProxyError, PacScriptError};
+use crate::{Proxies, domain};
 
 const PAC_UTILS: &str = include_str!("pac_utils.js");
 

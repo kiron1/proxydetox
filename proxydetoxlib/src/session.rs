@@ -1,13 +1,13 @@
 use crate::context::Context;
 use crate::{accesslog, body};
 use bytes::Bytes;
-use detox_net::{copy_bidirectional, HostAndPort};
-use futures_util::{stream, FutureExt, StreamExt};
+use detox_net::{HostAndPort, copy_bidirectional};
+use futures_util::{FutureExt, StreamExt, stream};
+use http::Uri;
 use http::header::{
     CACHE_CONTROL, CONNECTION, CONTENT_LENGTH, CONTENT_TYPE, HOST, PROXY_AUTHENTICATE,
     PROXY_AUTHORIZATION, TE, TRAILER, TRANSFER_ENCODING, UPGRADE, USER_AGENT,
 };
-use http::Uri;
 use http::{HeaderMap, HeaderName};
 use http::{HeaderValue, Response};
 use http_body_util::combinators::BoxBody;

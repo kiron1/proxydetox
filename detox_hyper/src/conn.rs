@@ -9,11 +9,11 @@ use bytes::Bytes;
 use detox_auth::{Authenticator, AuthenticatorFactory};
 use detox_futures::FutureExt as _;
 use detox_net::{HostAndPort, TcpKeepAlive};
-use futures_util::{future::BoxFuture, FutureExt as _};
+use futures_util::{FutureExt as _, future::BoxFuture};
 use http::{
+    HeaderValue, Request, Response, Uri,
     header::{CONNECTION, HOST},
     uri::PathAndQuery,
-    HeaderValue, Request, Response, Uri,
 };
 use http_body::Body;
 use http_body_util::Empty;
@@ -30,7 +30,7 @@ use tokio::{
     io::{AsyncRead, AsyncWrite},
     net::TcpStream,
 };
-use tokio_rustls::{client::TlsStream, TlsConnector};
+use tokio_rustls::{TlsConnector, client::TlsStream};
 use tracing::field::debug;
 use tracing_attributes::instrument;
 

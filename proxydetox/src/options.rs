@@ -337,21 +337,21 @@ impl From<ArgMatches> for Options {
             });
 
         #[cfg(feature = "negotiate")]
-        let authorization = if let Some(negotiate) = m.get_many::<String>("negotiate") {
-            Authorization::Negotiate(negotiate.cloned().collect())
-        } else {
-            Authorization::Basic(netrc_file)
+        let authorization = match m.get_many::<String>("negotiate") {
+            Some(negotiate) => Authorization::Negotiate(negotiate.cloned().collect()),
+            _ => Authorization::Basic(netrc_file),
         };
         #[cfg(not(feature = "negotiate"))]
         let authorization = Authorization::Basic(netrc_file);
 
-        let listen = if let Some(listen) = m.get_many::<SocketAddr>("listen") {
-            listen.cloned().collect()
-        } else {
-            vec![SocketAddr::new(
-                IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-                3128,
-            )]
+        let listen = match m.get_many::<SocketAddr>("listen") {
+            Some(listen) => listen.cloned().collect(),
+            _ => {
+                vec![SocketAddr::new(
+                    IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+                    3128,
+                )]
+            }
         };
 
         let client_tcp_keepalive = TcpKeepAlive::new()

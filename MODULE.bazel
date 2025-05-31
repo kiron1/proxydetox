@@ -29,7 +29,7 @@ register_toolchains("@local_config_cc_toolchains//:all")
 
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 rust.toolchain(
-    edition = "2021",
+    edition = "2024",
     extra_target_triples = [
         "aarch64-apple-darwin",
         "x86_64-apple-darwin",
