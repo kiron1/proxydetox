@@ -24,6 +24,8 @@ use tracing_subscriber::filter::EnvFilter;
 pub extern "C" fn main() {
     let config = Options::load_without_rcfile();
 
+    setup_tracing(&config.log_level, config.logfile());
+
     if let Err(error) = run(config) {
         tracing::error!(%error, "fatal error");
         write_error(&mut std::io::stderr(), error).ok();
@@ -34,6 +36,8 @@ pub extern "C" fn main() {
 #[cfg(not(static_library))]
 fn main() {
     let config = Options::load();
+
+    setup_tracing(&config.log_level, config.logfile());
 
     #[cfg(target_family = "windows")]
     if config.attach_console {
@@ -125,9 +129,6 @@ where
 
 #[tokio::main]
 async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
-    let logfile = config.log_filepath.as_ref().map(File::create).transpose()?;
-
-    setup_tracing(&config.log_level, logfile);
     let auth = match &config.authorization {
         #[cfg(feature = "negotiate")]
         Authorization::Negotiate(negotiate) => AuthenticatorFactory::negotiate(negotiate.clone()),

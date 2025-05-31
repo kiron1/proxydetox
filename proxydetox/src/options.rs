@@ -1,6 +1,6 @@
 use std::{
     ffi::OsString,
-    fs::read_to_string,
+    fs::{File, read_to_string},
     net::{IpAddr, Ipv4Addr, SocketAddr},
     path::{Path, PathBuf},
     sync::Arc,
@@ -119,6 +119,14 @@ impl Options {
         args.extend(std::env::args_os().take(1));
         args.extend(std::env::args_os().skip(1));
         Self::parse_args(&args)
+    }
+
+    pub fn logfile(&self) -> Option<File> {
+        self.log_filepath
+            .as_ref()
+            .map(File::create)
+            .transpose()
+            .unwrap_or_default()
     }
 
     fn parse_args(args: &[OsString]) -> Arc<Self> {
