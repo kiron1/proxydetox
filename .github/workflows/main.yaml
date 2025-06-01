@@ -88,7 +88,9 @@ jobs:
         shell: cmd
         if: runner.os == 'Windows'
       - name: Install Linux dependency
-        run: sudo apt-get install libkrb5-dev
+        run: |
+          sudo apt-get -qq update
+          sudo apt-get -qq install -y libkrb5-dev
         if: ${{ startswith(matrix.os, 'ubuntu') }}
       - name: Run tests
         run: >
@@ -129,7 +131,9 @@ jobs:
         with:
           fetch-depth: 1
       - name: Install Linux dependency
-        run: sudo apt-get install libkrb5-dev
+        run: |
+          sudo apt-get -qq update
+          sudo apt-get -qq install -y libkrb5-dev
         if: runner.os == 'Linux'
       - name: Run check
         run: >
@@ -160,7 +164,9 @@ jobs:
         with:
           fetch-depth: 1
       - name: Install Linux dependency
-        run: sudo apt-get install libkrb5-dev
+        run: |
+          sudo apt-get -qq update
+          sudo apt-get -qq install -y libkrb5-dev
       - name: Linux version
         run: |
           printf 'OS_VER=%s\n' "$(lsb_release --short --release)" | tee -a $GITHUB_ENV
@@ -248,7 +254,9 @@ jobs:
         shell: cmd
         if: runner.os == 'Windows'
       - name: Install Linux dependency
-        run: sudo apt-get install libkrb5-dev
+        run: |
+          sudo apt-get -qq update
+          sudo apt-get -qq install -y libkrb5-dev
         if: startswith(matrix.os, 'ubuntu')
       - name: Make package
         run: >
