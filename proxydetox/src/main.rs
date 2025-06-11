@@ -188,12 +188,9 @@ async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
 
     tracing::info!(listening=?addrs, pac_file=?config.pac_file, "starting");
 
-    // let server = std::pin::pin!(server);
-    let server = tokio::spawn({
-        let mut server = server;
-        async move { server.run().await }
-    });
-    while !control.is_shutdown() {
+    let server = tokio::spawn(async move { server.run().await });
+    tokio::pin!(server);
+    let joiner = loop {
         tokio::select! {
             _ = reload_trigger() => {
                 context.load_pac_file(&config.pac_file).await?;
@@ -206,22 +203,31 @@ async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
             _ = shutdown_trigger() => {
                 tracing::info!("shutdown requested");
                 control.shutdown();
-                break;
+            }
+            rc = &mut server => {
+                if let Err(cause) = &rc {
+                    tracing::error!(%cause, "server error");
+                }
+                break rc;
             }
         }
-    }
+    };
 
-    let wait = control
-        .wait_with_timeout(config.graceful_shutdown_timeout)
-        .await;
-
-    if let Err(cause) = server.await {
-        tracing::warn!(%cause, "clean shutdown failed")
-    }
-
-    match wait {
-        Ok(_) => tracing::info!("shutdown completed"),
-        Err(cause) => tracing::warn!(%cause, "clean shutdown failed"),
+    match joiner {
+        Ok(Ok(joiner)) => {
+            let wait = joiner
+                .wait_with_timeout(config.graceful_shutdown_timeout)
+                .await;
+            if let Err(cause) = wait {
+                tracing::error!(%cause, "graceful shutdown timeout");
+            }
+        }
+        Ok(Err(cause)) => {
+            tracing::error!(%cause, "server error");
+        }
+        Err(cause) => {
+            tracing::error!(%cause, "spawn error");
+        }
     }
 
     Ok(())

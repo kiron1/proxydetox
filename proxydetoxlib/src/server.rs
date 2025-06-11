@@ -1,5 +1,6 @@
 use std::{net::SocketAddr, sync::Arc};
 
+use detox_futures::FutureExt;
 use futures_util::StreamExt;
 use hyper::server::conn::http1;
 use hyper_util::rt::TokioIo;
@@ -15,18 +16,20 @@ pub enum WaitError {
     TimeoutExpired,
 }
 
-#[derive(Clone)]
 pub struct Server<A> {
     acceptor: A,
     http_server: http1::Builder,
     context: Arc<Context>,
     shutdown_request: CancellationToken,
     shutdown_complete_tx: tokio::sync::mpsc::Sender<()>,
+    shutdown_complete_rx: tokio::sync::mpsc::Receiver<()>,
 }
 
 pub struct Control {
     shutdown_request: CancellationToken,
-    shutdown_complete_tx: tokio::sync::mpsc::Sender<()>,
+}
+
+pub struct JoinHandle {
     shutdown_complete_rx: tokio::sync::mpsc::Receiver<()>,
 }
 
@@ -59,7 +62,7 @@ impl Handler {
                     break;
                 },
                 _ = shutdown_request.cancelled(), if !shutdown_request.is_cancelled() => {
-                    tracing::debug!("shutdown requested");
+                    tracing::debug!("handler received shutdown requested");
                     conn.as_mut().graceful_shutdown();
                 }
             }
@@ -87,23 +90,29 @@ where
             context,
             shutdown_request: shutdown_request.child_token(),
             shutdown_complete_tx: shutdown_complete_tx.clone(),
-        };
-        let control = Control {
-            shutdown_request,
             shutdown_complete_rx,
-            shutdown_complete_tx,
         };
+        let control = Control { shutdown_request };
         (server, control)
     }
 
     #[instrument(skip(self))]
-    pub async fn run(&mut self) -> std::io::Result<()> {
-        while !self.shutdown_request.is_cancelled() {
+    pub async fn run(self) -> std::io::Result<JoinHandle> {
+        let Self {
+            mut acceptor,
+            http_server,
+            context,
+            shutdown_request,
+            shutdown_complete_tx,
+            shutdown_complete_rx,
+        } = self;
+
+        while !shutdown_request.is_cancelled() {
             tokio::select! {
-                _ = self.shutdown_request.cancelled() => {
+                _ = shutdown_request.cancelled() => {
                     break;
                 },
-                stream = self.acceptor.next() => {
+                stream = acceptor.next() => {
                     let stream = match stream {
                         Some(Ok(stream))=> {
                             stream
@@ -115,18 +124,36 @@ where
                         None => unreachable!(),
                     };
                     let addr = stream.peer_addr().expect("peer_addr");
-                    let conn = self.http_server.serve_connection(TokioIo::new(stream), Session::new(self.context.clone(), addr));
+                    let conn = http_server.serve_connection(TokioIo::new(stream), Session::new(context.clone(), addr));
                     let handler = Handler {
                         addr,
                         conn,
-                        shutdown_request: self.shutdown_request.clone(),
-                        shutdown_complete_tx: self.shutdown_complete_tx.clone(),
+                        shutdown_request: shutdown_request.clone(),
+                        shutdown_complete_tx: shutdown_complete_tx.clone(),
                     };
                     tokio::spawn(handler.run());
                 },
             }
         }
 
+        drop(acceptor);
+
+        Ok(JoinHandle {
+            shutdown_complete_rx,
+        })
+    }
+}
+
+impl JoinHandle {
+    pub async fn wait_with_timeout(
+        mut self,
+        timeout: std::time::Duration,
+    ) -> std::result::Result<(), WaitError> {
+        self.shutdown_complete_rx
+            .recv()
+            .timeout(timeout)
+            .await
+            .map_err(|_| WaitError::TimeoutExpired)?;
         Ok(())
     }
 }
@@ -138,24 +165,5 @@ impl Control {
 
     pub fn is_shutdown(&self) -> bool {
         self.shutdown_request.is_cancelled()
-    }
-
-    pub async fn wait_with_timeout(
-        self,
-        timeout: std::time::Duration,
-    ) -> std::result::Result<(), WaitError> {
-        let Self {
-            mut shutdown_complete_rx,
-            shutdown_request: _,
-            shutdown_complete_tx,
-        } = self;
-        drop(shutdown_complete_tx);
-        select! {
-            _ = shutdown_complete_rx.recv() => {},
-            _ = tokio::time::sleep(timeout) => {
-                return Err(WaitError::TimeoutExpired);
-            }
-        }
-        Ok(())
     }
 }

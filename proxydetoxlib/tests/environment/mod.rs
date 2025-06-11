@@ -5,6 +5,7 @@ pub mod tcp;
 use std::{
     io::{Cursor, Read},
     net::SocketAddr,
+    time::Duration,
 };
 
 use bytes::Buf;
@@ -162,16 +163,23 @@ impl Builder {
             let shutdown_token = shutdown_token.clone();
             async move {
                 let (server, control) = proxydetoxlib::server::Server::new(listener, context);
-
-                let mut server = std::pin::pin!(server);
-                tokio::select! {
-                    s = server.run() => {
-                        s.unwrap();
-                    },
-                    _ = shutdown_token.cancelled() => {
-                        control.shutdown();
+                let server = tokio::spawn(async move { server.run().await });
+                tokio::pin!(server);
+                let j = loop {
+                    tokio::select! {
+                        j = &mut server => {
+                            break j;
+                        },
+                        _ = shutdown_token.cancelled(), if !shutdown_token.is_cancelled() => {
+                            control.shutdown();
+                        }
                     }
-                }
+                };
+                j.unwrap()
+                    .unwrap()
+                    .wait_with_timeout(Duration::from_secs(0))
+                    .await
+                    .unwrap();
             }
         });
 
