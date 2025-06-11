@@ -107,6 +107,8 @@ where
             shutdown_complete_rx,
         } = self;
 
+        let mut acceptor_errors = 0u32;
+
         while !shutdown_request.is_cancelled() {
             tokio::select! {
                 _ = shutdown_request.cancelled() => {
@@ -115,11 +117,33 @@ where
                 stream = acceptor.next() => {
                     let stream = match stream {
                         Some(Ok(stream))=> {
+                            acceptor_errors = 0;
                             stream
                         },
                         Some(Err(cause)) => {
-                            tracing::error!(%cause, "listener error");
-                            return Err(cause);
+                            tracing::error!(%cause, %acceptor_errors, "acceptor error");
+                            // not ideal, but the best we can do while staying portalbe
+                            // https://internals.rust-lang.org/t/insufficient-std-io-error/3597
+                            let retry = match cause.kind() {
+                                std::io::ErrorKind::OutOfMemory |
+                                std::io::ErrorKind::ConnectionAborted |
+                                std::io::ErrorKind::ConnectionReset => true,
+                                _ => {
+                                    acceptor_errors += 1;
+                                    // retry even for fatal errors up to N times
+                                    acceptor_errors < 32
+                                },
+                            };
+                            if retry  {
+                                // retry, but sleep a bit to not burn too much CPU time,
+                                // and give the system time to recover (e.g. when number of file handles is exhausted)
+                                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                                continue;
+                            } else {
+                                // notify all running sessions to shutdown
+                                shutdown_request.cancel();
+                                return Err(cause);
+                            }
                         },
                         None => unreachable!(),
                     };
