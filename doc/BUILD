@@ -21,6 +21,7 @@ mdbook(
         "installation.md",
         "introduction.md",
         "launchctl.sh",
+        "macos.md",
         "service.md",
         "transparent_proxy.md",
         "usage.md",
