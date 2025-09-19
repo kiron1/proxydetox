@@ -120,7 +120,7 @@ impl Context {
     /// In case of `CONNECT` the connesction will be established so far that `CONNECT` request is
     /// send, but not the client request.
     /// For upstream servers which can be connected directly a TCP connection will be established.
-    #[instrument(level = "debug", skip(self, method, uri), fields(proxy = %proxy, duration))]
+    #[instrument(level = "debug", skip(self, method), fields(proxy = %proxy, tunnel, duration))]
     pub(super) async fn connect(
         self: Arc<Self>,
         proxy: ProxyOrDirect,
@@ -129,6 +129,7 @@ impl Context {
     ) -> Result<Connection, Error> {
         let dst = HostAndPort::try_from_uri(&uri)?;
         let tunnel = method == hyper::Method::CONNECT || self.proxytunnel;
+        tracing::Span::current().record("tunnel", tunnel);
 
         let conn = match proxy {
             ProxyOrDirect::Proxy(ref proxy) => {

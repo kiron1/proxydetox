@@ -159,8 +159,12 @@ impl Inner {
         let uri = if req.uri().scheme().is_some() {
             req.uri().clone()
         } else {
+            let scheme = match req.uri().port_u16() {
+                Some(443u16) => http::uri::Scheme::HTTPS,
+                _ => http::uri::Scheme::HTTP,
+            };
             Uri::builder()
-                .scheme(http::uri::Scheme::HTTP)
+                .scheme(scheme)
                 .authority(req.uri().authority().cloned().expect("URI with authority"))
                 .path_and_query(
                     req.uri()
@@ -171,16 +175,16 @@ impl Inner {
                 .build()
                 .expect("URI")
         };
-        let proxies = self.context.find_proxy(uri).await;
+        let proxies = self.context.find_proxy(uri.clone()).await;
         let conn = proxies.clone().into_iter().map({
             let cx = self.context.clone();
             let method = req.method();
-            let uri = req.uri();
             move |p| {
                 let cx = cx.clone();
                 let race = cx.race_connect;
+                let uri = uri.clone();
                 async move {
-                    let r = cx.connect(p, method.clone(), uri.clone()).await;
+                    let r = cx.connect(p, method.clone(), uri).await;
                     if let Err(ref cause) = r {
                         if race {
                             tracing::debug!(%cause, "unable to connect");
