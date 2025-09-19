@@ -56,12 +56,8 @@ pub enum Error {
         #[source]
         http::header::InvalidHeaderValue,
     ),
-    #[error("Authentication error: {0}")]
-    Authentication(
-        #[from]
-        #[source]
-        detox_auth::Error,
-    ),
+    #[error("Authentication to {0} failed: {1}")]
+    AuthenticationFailed(HostAndPort, #[source] detox_auth::Error),
     #[error("Authentication timeout")]
     AuthenticationTimeout,
 }
@@ -86,11 +82,13 @@ pub struct Connection {
     auth: Option<Authenticator>,
 }
 
+#[derive(Debug)]
 pub struct ConnectionBuilder {
     kind: ConnectionKind,
     tcp_keepalive: Option<TcpKeepAlive>,
 }
 
+#[derive(Debug)]
 pub enum ConnectionKind {
     Http(HostAndPort),
     Https(HostAndPort, Arc<rustls::ClientConfig>),
@@ -466,14 +464,16 @@ where
         } = self;
 
         match proxy {
-            ProxyOrDirect::Proxy(_) => {
+            ProxyOrDirect::Proxy(p) => {
                 if let Some(auth) = auth {
                     let start = Instant::now();
                     let auth_headers = auth.step(None).timeout(AUTH_TIMEOUT).await;
                     tracing::Span::current().record("duration", debug(&start.elapsed()));
                     tracing::debug!("auth");
                     let auth_headers = auth_headers.map_err(|_| Error::AuthenticationTimeout)?;
-                    req.headers_mut().extend(auth_headers?);
+                    let auth_headers = auth_headers
+                        .map_err(|e| Error::AuthenticationFailed(p.endpoint().clone(), e))?;
+                    req.headers_mut().extend(auth_headers);
                 }
             }
             ProxyOrDirect::Direct => {
@@ -537,15 +537,12 @@ async fn http_connect<T: AsyncRead + AsyncWrite + Send + Unpin + 'static>(
     let auth_headers =
         auth_headers.map_err(|_| std::io::Error::other(Error::AuthenticationTimeout))?;
 
-    let auth_headers = auth_headers.map_err(|e| {
-        std::io::Error::other(format!("Unable to step authenticator for '{proxy}': {e}"))
-    })?;
+    let auth_headers = auth_headers
+        .map_err(|e| std::io::Error::other(Error::AuthenticationFailed(proxy.clone(), e)))?;
     if let Some(headers) = request.headers_mut() {
         headers.extend(auth_headers)
     }
-    let request = request
-        .body(Empty::<Bytes>::new())
-        .map_err(|e| std::io::Error::other(format!("Invalid HTTP request: {e}")))?;
+    let request = request.body(Empty::<Bytes>::new()).expect("empty request");
 
     let send_request = async move {
         let response = request_sender.send_request(request).await.map_err(|e| {
