@@ -121,7 +121,6 @@ where
                             stream
                         },
                         Some(Err(cause)) => {
-                            tracing::error!(%cause, %acceptor_errors, "acceptor error");
                             // not ideal, but the best we can do while staying portalbe
                             // https://internals.rust-lang.org/t/insufficient-std-io-error/3597
                             let retry = match cause.kind() {
@@ -129,6 +128,7 @@ where
                                 std::io::ErrorKind::ConnectionAborted |
                                 std::io::ErrorKind::ConnectionReset => true,
                                 _ => {
+                                    tracing::error!(%cause, %acceptor_errors, "acceptor error");
                                     acceptor_errors += 1;
                                     // retry even for fatal errors up to N times
                                     acceptor_errors < 32
