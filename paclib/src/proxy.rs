@@ -37,7 +37,7 @@ impl Proxies {
         self.0.first().unwrap().clone()
     }
 
-    pub fn iter(&self) -> std::slice::Iter<ProxyOrDirect> {
+    pub fn iter(&self) -> std::slice::Iter<'_, ProxyOrDirect> {
         self.0.iter()
     }
 
