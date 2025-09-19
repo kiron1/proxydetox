@@ -2,7 +2,7 @@ use clap::Parser;
 use std::fs::read_to_string;
 use std::io::Write;
 use std::path::PathBuf;
-use toml::Value;
+use toml::{Table, Value};
 
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
@@ -17,19 +17,26 @@ struct Args {
     file: PathBuf,
 
     /// Path of TOML object to retrive
+    #[arg(num_args(1..))]
     path: Vec<String>,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
-    let toml_str = read_to_string(&args.file).expect("reading Toml file");
+    let toml_str = read_to_string(&args.file).expect("reading TOML file");
 
-    let mut value = toml_str.parse::<Value>().expect("valid TOML content");
+    let document = toml_str.parse::<Table>().expect("valid TOML content");
+    let mut value = Value::from(document);
 
-    for p in args.path {
+    for p in args.path.iter() {
         value = match value {
-            Value::Table(t) => t.get(&p).expect("Table got entry").clone(),
+            Value::Table(t) => {
+                let keys = t.keys().map(String::from).reduce(|acc, s| format!("{acc}, {s}")).unwrap_or_default();
+                t.get(p)
+                    .expect(&format!("Table has no entry {p}, but have {keys}"))
+                    .clone()
+            }
             Value::Array(a) => a
                 .get(p.parse::<usize>().expect("Index into array"))
                 .expect("Valid index into array")
