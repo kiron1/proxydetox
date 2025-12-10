@@ -11,8 +11,8 @@ bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "rules_cc", version = "0.1.1")
 bazel_dep(name = "rules_pkg", version = "1.1.0")
-bazel_dep(name = "rules_rust", version = "0.61.0")
-bazel_dep(name = "rules_rust_mdbook", version = "0.61.0")
+bazel_dep(name = "rules_rust", version = "0.68.1")
+bazel_dep(name = "rules_rust_mdbook", version = "0.68.1")
 
 apple_cc_configure = use_extension(
     "@build_bazel_apple_support//crosstool:setup.bzl",
@@ -34,6 +34,7 @@ rust.toolchain(
         "aarch64-apple-darwin",
         "x86_64-apple-darwin",
     ],
+    versions = ["1.91.1"],
 )
 use_repo(rust, "rust_toolchains")
 
