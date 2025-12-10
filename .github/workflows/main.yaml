@@ -122,7 +122,7 @@ jobs:
             aspect: "@rules_rust//rust:defs.bzl%rust_clippy_aspect"
             output_groups: "clippy_checks"
           - check: "format"
-            aspect: "@rules_rust//rust:defs.bzl%rust_clippy_aspect"
+            aspect: "@rules_rust//rust:defs.bzl%rustfmt_aspect"
             output_groups: "rustfmt_checks"
 
     steps:
