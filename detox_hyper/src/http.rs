@@ -57,10 +57,10 @@ pub async fn http_file(
                     .headers()
                     .get(CONTENT_LENGTH)
                     .and_then(|h| h.to_str().ok().and_then(|s| s.parse::<u64>().ok()));
-                if let Some(size) = size {
-                    if size > MAX_SIZE {
-                        return Err(Error::other(format!("Size to large: {size} > {MAX_SIZE}")));
-                    }
+                if let Some(size) = size
+                    && size > MAX_SIZE
+                {
+                    return Err(Error::other(format!("Size to large: {size} > {MAX_SIZE}")));
                 }
                 let mut data = Vec::new();
 

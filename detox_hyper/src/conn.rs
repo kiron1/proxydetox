@@ -489,10 +489,10 @@ where
             }
         }
 
-        if !req.headers().contains_key(HOST) {
-            if let Some(host) = &host {
-                req.headers_mut().insert(HOST, HeaderValue::from_str(host)?);
-            }
+        if !req.headers().contains_key(HOST)
+            && let Some(host) = &host
+        {
+            req.headers_mut().insert(HOST, HeaderValue::from_str(host)?);
         }
 
         // We do not support connection pooling as of now.

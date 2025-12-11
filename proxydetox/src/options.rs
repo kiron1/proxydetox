@@ -57,10 +57,10 @@ fn is_file(v: &str) -> Result<PathBuf, String> {
 
 fn is_file_or_http_uri(v: &str) -> Result<PathOrUri, String> {
     let p = v.parse::<PathOrUri>().map_err(|e| e.to_string())?;
-    if let PathOrUri::Path(ref p) = p {
-        if !p.is_file() {
-            return Err(format!("path '{}' does not exist or is not a file", &v));
-        }
+    if let PathOrUri::Path(ref p) = p
+        && !p.is_file()
+    {
+        return Err(format!("path '{}' does not exist or is not a file", &v));
     }
     Ok(p)
 }
