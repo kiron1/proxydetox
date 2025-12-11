@@ -32,9 +32,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for p in args.path.iter() {
         value = match value {
             Value::Table(t) => {
-                let keys = t.keys().map(String::from).reduce(|acc, s| format!("{acc}, {s}")).unwrap_or_default();
+                let keys = t
+                    .keys()
+                    .map(String::from)
+                    .reduce(|acc, s| format!("{acc}, {s}"))
+                    .unwrap_or_default();
                 t.get(p)
-                    .expect(&format!("Table has no entry {p}, but have {keys}"))
+                    .ok_or_else(|| format!("Table has no entry {p}, but have {keys}"))
+                    .expect("Table access")
                     .clone()
             }
             Value::Array(a) => a

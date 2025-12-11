@@ -94,10 +94,10 @@ impl Builder {
         tokio::spawn(async move {
             loop {
                 let entry = accesslog_rx.recv().await;
-                if let Err(cause) = entry {
-                    if cause == broadcast::error::RecvError::Closed {
-                        break;
-                    }
+                if let Err(cause) = entry
+                    && cause == broadcast::error::RecvError::Closed
+                {
+                    break;
                 }
             }
         });

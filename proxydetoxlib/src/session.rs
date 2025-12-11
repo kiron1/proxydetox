@@ -68,9 +68,9 @@ pub enum Error {
         detox_net::host_and_port::Error,
     ),
     #[error("timeout when connecting to {1} via proxy {0}")]
-    ConnectTimeout(Proxy, Uri),
+    ConnectTimeout(Proxy, Box<Uri>),
     #[error("error when connecting to {1} via proxy {0}")]
-    ConnectionFailed(Proxies, Uri),
+    ConnectionFailed(Proxies, Box<Uri>),
     #[error("connetion error: {0}")]
     Connection(
         #[from]
@@ -84,7 +84,7 @@ pub enum Error {
         hyper::Error,
     ),
     #[error("connect error reaching {1}: {0}")]
-    Connect(#[source] tokio::io::Error, Uri),
+    Connect(#[source] tokio::io::Error, Box<Uri>),
     #[error("upstream proxy ({0}) requires authentication")]
     ProxyAuthenticationRequired(HostAndPort),
     #[error("received invalid status code: {0}")]
@@ -96,7 +96,7 @@ pub enum Error {
         http::Error,
     ),
     #[error("unable to establish connection: {0}")]
-    UnableToEstablishConnection(Uri),
+    UnableToEstablishConnection(Box<Uri>),
     #[error("handshake error")]
     Handshake,
 }
@@ -261,7 +261,10 @@ impl Inner {
                 Err(e) => Err(e),
             }
         } else {
-            Err(Error::ConnectionFailed(proxies, req.uri().clone()))
+            Err(Error::ConnectionFailed(
+                proxies,
+                Box::new(req.uri().clone()),
+            ))
         };
 
         let entry = {
@@ -418,15 +421,15 @@ fn proxy_pac(host: Option<&HeaderValue>) -> std::result::Result<Response<Body>, 
 
 fn remove_hop_by_hop_headers(headers: &mut HeaderMap) {
     // Remove hop-by-hop headers which must not be forwarded.
-    if let Some(connection) = headers.remove(CONNECTION) {
-        if let Ok(connection) = connection.to_str() {
-            let iter = connection
-                .split(',')
-                .map(|h| h.trim())
-                .filter(|h| !h.is_empty());
-            for name in iter {
-                headers.remove(name.trim());
-            }
+    if let Some(connection) = headers.remove(CONNECTION)
+        && let Ok(connection) = connection.to_str()
+    {
+        let iter = connection
+            .split(',')
+            .map(|h| h.trim())
+            .filter(|h| !h.is_empty());
+        for name in iter {
+            headers.remove(name.trim());
         }
     }
     for header in HOP_BY_HOP_HEADERS.iter() {
