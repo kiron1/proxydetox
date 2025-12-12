@@ -430,9 +430,9 @@ checksum = "a1d728cc89cf3aee9ff92b05e62b19ee65a02b5702cff7d5a377e32c6ae29d8d"
 
 [[package]]
 name = "cmake"
-version = "0.1.54"
+version = "0.1.55"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e7caa3f9de89ddbe2c607f4101924c5abec803763ae9534e4f4d7d8f84aa81f0"
+checksum = "d49d74c227b6cc9f3c51a2c7c667a05b6453f7f0f952a5f8e4493bb9e731d68e"
 dependencies = [
  "cc",
 ]
@@ -517,7 +517,7 @@ dependencies = [
 
 [[package]]
 name = "detox_auth"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "base64",
  "http",
@@ -530,14 +530,14 @@ dependencies = [
 
 [[package]]
 name = "detox_futures"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "tokio",
 ]
 
 [[package]]
 name = "detox_hyper"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "bytes",
  "detox_auth",
@@ -561,7 +561,7 @@ dependencies = [
 
 [[package]]
 name = "detox_net"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "http",
  "socket2 0.5.10",
@@ -626,7 +626,7 @@ dependencies = [
 
 [[package]]
 name = "dnsdetox"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "clap",
  "detox_auth",
@@ -1438,7 +1438,7 @@ checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
 
 [[package]]
 name = "paceval"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "clap",
  "http",
@@ -1447,7 +1447,7 @@ dependencies = [
 
 [[package]]
 name = "paclib"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "boa_engine",
  "boa_gc",
@@ -1625,7 +1625,7 @@ dependencies = [
 
 [[package]]
 name = "proxydetox"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "clap",
  "default-net",
@@ -1651,7 +1651,7 @@ dependencies = [
 
 [[package]]
 name = "proxydetoxlib"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "bytes",
  "chrono",
@@ -2036,7 +2036,7 @@ dependencies = [
 
 [[package]]
 name = "spnego"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "libgssapi",
  "windows 0.62.2",
@@ -2343,7 +2343,7 @@ dependencies = [
 
 [[package]]
 name = "toml_get"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "clap",
  "toml",
