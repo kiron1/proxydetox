@@ -46,6 +46,7 @@ detox_net = { path = "detox_net" }
 dirs = "6.0"
 futures-util = { version = "0.3", features = [ "alloc" ], default-features = false }
 gc = { version = "0.5", features = ["derive"] }
+glob = "0.3"
 http = "1"
 http-body = "1"
 http-body-util = "0.1"
