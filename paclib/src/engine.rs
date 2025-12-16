@@ -1,5 +1,5 @@
 use boa_engine::{
-    Context, JsNativeError, JsResult, JsString, JsValue, NativeFunction, Source, js_string,
+    Context, JsError, JsNativeError, JsResult, JsString, JsValue, NativeFunction, Source, js_string,
 };
 use http::Uri;
 use std::convert::Infallible;
@@ -31,13 +31,19 @@ impl Engine {
             1,
             NativeFunction::from_fn_ptr(alert),
         )
-        .expect("register_global_property");
+        .expect("register_global_builtin_callable alert");
         js.register_global_builtin_callable(
             js_string!("dnsResolve"),
             1,
             NativeFunction::from_fn_ptr(dns_resolve),
         )
-        .expect("register_global_property");
+        .expect("register_global_builtin_callable dnsResolve");
+        js.register_global_builtin_callable(
+            js_string!("shExpMatch"),
+            2,
+            NativeFunction::from_fn_ptr(sh_exp_match),
+        )
+        .expect("register_global_builtin_callable shExpMatch");
 
         // # Safety
         // We do not capture any varaibles which would require tracing.
@@ -192,6 +198,26 @@ fn dns_resolve(_this: &JsValue, args: &[JsValue], context: &mut Context) -> JsRe
     };
 
     Ok(value)
+}
+
+fn sh_exp_match(_this: &JsValue, args: &[JsValue], _ctx: &mut Context) -> JsResult<JsValue> {
+    let s = args
+        .first()
+        .ok_or(JsError::from_native(JsNativeError::typ()))?
+        .as_string()
+        .ok_or(JsError::from_native(JsNativeError::typ()))?
+        .to_std_string_lossy();
+    let pat = args
+        .get(1)
+        .ok_or(JsError::from_native(JsNativeError::typ()))?
+        .as_string()
+        .ok_or(JsError::from_native(JsNativeError::typ()))?
+        .to_std_string_lossy();
+
+    glob::Pattern::new(pat.as_str())
+        .map_err(|e| JsNativeError::error().with_message(e.to_string()).into())
+        .map(|p| p.matches(&s))
+        .map(JsValue::from)
 }
 
 fn my_ip_address(

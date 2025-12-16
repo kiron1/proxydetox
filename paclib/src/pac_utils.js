@@ -65,13 +65,6 @@ function localHostOrDomainIs(host, hostdom) {
         (hostdom.lastIndexOf(host + '.', 0) == 0);
 }
 
-function shExpMatch(url, pattern) {
-    pattern = pattern.replace(/\./g, '\\.');
-    pattern = pattern.replace(/\*/g, '.*');
-    pattern = pattern.replace(/\?/g, '.');
-    var newRe = new RegExp('^' + pattern + '$');
-    return newRe.test(url);
-}
 
 var wdays = { SUN: 0, MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6 };
 var months = { JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5, JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11 };
