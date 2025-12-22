@@ -44,27 +44,23 @@ impl NegotiateAuthenticator {
                             PROXY_AUTHORIZATION,
                             HeaderValue::from_str(&auth_str).expect("valid header value"),
                         );
-                        return Ok(headers);
+                        Ok(headers)
                     }
-                    Ok(None) => return Ok(headers),
-                    Err(cause) => {
-                        return Err(cause.into());
-                    }
+                    Ok(None) => Ok(headers),
+                    Err(cause) => Err(cause.into()),
                 },
-                Err(cause) => {
-                    return Err(cause.into());
-                }
+                Err(cause) => Err(cause.into()),
             }
         })
         .await?;
-        Ok(headers?)
+        headers
     }
 }
 
 // Extract the server token from "Proxy-Authenticate: Negotiate <base64>" header value
 #[allow(unused)]
 fn server_token(last_headers: &hyper::HeaderMap) -> Option<Vec<u8>> {
-    let server_tok = last_headers
+    last_headers
         .get_all(PROXY_AUTHENTICATE)
         .iter()
         .map(HeaderValue::to_str)
@@ -73,9 +69,7 @@ fn server_token(last_headers: &hyper::HeaderMap) -> Option<Vec<u8>> {
         .map(|mut i| (i.next(), i.next()))
         .filter_map(|k| if Some("Negotiate") == k.0 { k.1 } else { None })
         .map(|x| base64::engine::general_purpose::STANDARD.decode(x))
-        .find_map(std::result::Result::ok);
-
-    server_tok
+        .find_map(std::result::Result::ok)
 }
 
 #[cfg(test)]
