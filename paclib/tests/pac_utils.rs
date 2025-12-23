@@ -63,6 +63,20 @@ fn test_is_resolvable() {
 }
 
 #[test]
+fn test_sh_exp_match() {
+    find_proxy(
+        r#"shExpMatch(host, "*.example.net")"#,
+        "good.example.net",
+        "bad.local",
+    );
+
+    find_proxy(
+        r#"shExpMatch(host, "www?.example.net")"#,
+        "www1.example.net",
+        "bad.local",
+    );
+}
+#[test]
 fn test_my_ip_address() {
     let pac_script = r#"
         function FindProxyForURL(url, host) {{
