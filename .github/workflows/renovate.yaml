@@ -1,0 +1,37 @@
+---
+name: Renovate
+
+on:
+  pull_request:
+    paths:
+      - "renovate.json"
+      - ".github/workflows/renovate.yaml"
+  # trigger renovate post push to maain
+  # to give renovate a chance to update their PRs
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  schedule:
+    - cron: "42 11 * * 3"
+
+concurrency:
+  group: renovate
+
+jobs:
+  renovate:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+      - name: Self-hosted Renovate
+        uses: renovatebot/github-action@v46.1.10
+        with:
+          configurationFile: renovate.json
+          token: ${{ secrets.RENOVATE_TOKEN }}
+        env:
+          RENOVATE_DRY_RUN: ${{ github.event_name == 'pull_request' && 'full' || '' }}
+          # github.head_ref is only available in pull requests, in all other events use config from main branch
+          RENOVATE_BASE_BRANCH_PATTERNS: ${{ format('["{0}"]', github.head_ref || 'main') }}
+          RENOVATE_USE_BASE_BRANCH_CONFIG: ${{ github.event_name == 'pull_request' && 'merge' || 'none' }}
+          RENOVATE_REPOSITORIES: ${{ format('["{0}"]', github.repository) }}
