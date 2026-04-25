@@ -299,7 +299,7 @@ jobs:
           key: ${{ runner.os }}-test
       #  see https://github.com/rust-lang/rust-bindgen/issues/1797
       - name: Install Windows dependency (LLVM)
-        uses: KyleMayes/install-llvm-action@v2.0.3
+        uses: KyleMayes/install-llvm-action@v2.0.9
         with:
           version: "11.0"
           directory: ${{ runner.temp }}/llvm
@@ -331,7 +331,7 @@ jobs:
           key: ${{ runner.os }}-build
       #  see https://github.com/rust-lang/rust-bindgen/issues/1797
       - name: Install Windows dependency (LLVM)
-        uses: KyleMayes/install-llvm-action@v2.0.3
+        uses: KyleMayes/install-llvm-action@v2.0.9
         with:
           version: "11.0"
           directory: ${{ runner.temp }}/llvm
