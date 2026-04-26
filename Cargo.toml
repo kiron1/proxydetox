@@ -61,7 +61,7 @@ proxydetoxlib = { path = "proxydetoxlib" }
 rustls = { version = "0.23", features = ["ring"] }
 rustls-native-certs = "0.8"
 rustls-pemfile = "2.2"
-socket2 = { version = "0.5", features = ["all"] }
+socket2 = { version = "0.6", features = ["all"] }
 spnego = { path = "spnego" }
 thiserror = "2.0"
 tokio = { version = "1", features = ["io-util", "rt-multi-thread", "net", "macros", "sync", "signal"] }
