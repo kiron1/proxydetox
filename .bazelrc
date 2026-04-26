@@ -5,9 +5,6 @@ build --verbose_failures
 test --test_output=errors
 test --test_arg=--nocapture
 
-# Required for Bazel 6, see https://github.com/bazelbuild/rules_rust/issues/2665
-build --incompatible_merge_fixed_and_default_shell_env
-
 build --enable_platform_specific_config
 
 build:clippy --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect

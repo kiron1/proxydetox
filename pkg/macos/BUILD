@@ -2,6 +2,7 @@ load("@//bazel:pkgbuild.bzl", "pkgbuild")
 load("@build_bazel_rules_apple//apple:macos.bzl", "macos_command_line_application")
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 swift_library(
     name = "setproxylib",
