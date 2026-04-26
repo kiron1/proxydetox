@@ -1,4 +1,5 @@
 load("@//bazel:pkg.bzl", "pkg_variables")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 alias(
     name = "pkg",

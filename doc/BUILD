@@ -10,7 +10,6 @@ genrule(
 mdbook(
     name = "doc",
     srcs = [
-        ":proxydetox_help",
         "SUMMARY.md",
         "alternatives.md",
         "build.md",
@@ -26,6 +25,7 @@ mdbook(
         "transparent_proxy.md",
         "usage.md",
         "windows.md",
+        ":proxydetox_help",
     ],
     book = "//:book.toml",
     visibility = ["//www:__subpackages__"],
