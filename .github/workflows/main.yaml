@@ -73,7 +73,7 @@ jobs:
         run: |
           printf 'OS_VER=%s\n' "$(lsb_release --short --release)" | tee -a $GITHUB_ENV
       - name: Bazel cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/bazel_build_cache
@@ -171,7 +171,7 @@ jobs:
         run: |
           printf 'OS_VER=%s\n' "$(lsb_release --short --release)" | tee -a $GITHUB_ENV
       - name: Bazel cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/bazel_build_cache
@@ -239,7 +239,7 @@ jobs:
         run: |
           printf 'OS_VER=%s\n' "$(lsb_release --short --release)" | tee -a $GITHUB_ENV
       - name: Bazel cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/bazel_build_cache
