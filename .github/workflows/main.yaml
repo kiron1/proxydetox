@@ -7,14 +7,12 @@ defaults:
     shell: bash --noprofile --norc -euo pipefail {0}
 
 on:
-  push:
-    branches:
-      - main
-    tags:
-      - "v*"
   pull_request:
     branches:
       - main
+  release:
+    types:
+      - released
   workflow_dispatch:
 
 jobs:
@@ -368,16 +366,16 @@ jobs:
       - name: Show downloaded artifacts
         run: find . -name '*.deb' -o -name '*.pkg' -o -name '*.zip'
       - name: Create Release
-        if: ${{ github.event_name == 'push' && startswith(github.ref, 'refs/tags/') }}
+        if: ${{ github.event_name == 'release' }}
         run: |
-          gh --repo "${REPO}" release create "${VERSION}" --generate-notes *.deb *.pkg *.zip
+          gh --repo "${REPO}" release upload "v${VERSION}" *.deb *.pkg *.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
-          VERSION: v${{ needs.version.outputs.version }}
+          VERSION: ${{ needs.version.outputs.version }}
 
   pages:
-    if: ${{ github.event_name == 'push' && startswith(github.ref, 'refs/tags/') }}
+    if: ${{ github.event_name == 'release' }}
 
     needs:
       - bazel_www
