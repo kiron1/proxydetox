@@ -116,34 +116,30 @@ impl Engine {
             .js
             .global_object()
             .get(js_string!("FindProxyForURL"), &mut self.js)
-            .map_err(|e| FindProxyError::InternalError(e.to_string()))?;
-        let proxy = match find_proxy_fn {
-            JsValue::Object(find_proxy_fn) => {
-                let uri = JsValue::from(JsString::from(uri.to_string()));
-                let host = JsValue::from(JsString::from(host));
-                find_proxy_fn
-                    .call(&JsValue::Null, &[uri, host], &mut self.js)
-                    .map_err(|e| FindProxyError::InternalError(e.to_string()))
-            }
-            _ => Err(FindProxyError::FindProxyForURLMissing)?,
-        };
+            .map_err(|e| FindProxyError::InternalError(e.to_string()))?
+            .as_object()
+            .ok_or(FindProxyError::FindProxyForURLMissing)?;
+
+        let uri = JsValue::from(JsString::from(uri.to_string()));
+        let host = JsValue::from(JsString::from(host));
+        let proxy = find_proxy_fn
+            .call(&JsValue::null(), &[uri, host], &mut self.js)
+            .map_err(|e| FindProxyError::InternalError(e.to_string()));
         tracing::Span::current().record("duration", debug(&start.elapsed()));
 
         let proxy = proxy?;
-        match &proxy {
-            JsValue::String(proxies) => {
-                let proxies = proxies
-                    .to_std_string()
-                    .map_err(|_| FindProxyError::EmptyResult)?;
-                proxies
-                    .parse::<Proxies>()
-                    .map_err(|_| FindProxyError::InvalidResult(proxies))
-            }
-            _ => Err(FindProxyError::InvalidResultType(format!(
+        let Some(proxies) = proxy.as_string() else {
+            return Err(FindProxyError::InvalidResultType(format!(
                 "{:?}",
                 proxy.get_type()
-            ))),
-        }
+            )));
+        };
+        let proxies = proxies
+            .to_std_string()
+            .map_err(|_| FindProxyError::EmptyResult)?;
+        proxies
+            .parse::<Proxies>()
+            .map_err(|_| FindProxyError::InvalidResult(proxies))
     }
 }
 
@@ -173,11 +169,8 @@ fn dns_resolve(_this: &JsValue, args: &[JsValue], context: &mut Context) -> JsRe
     let dns_cache = global
         .get(js_string!("_dnsCache"), context)
         .expect("_dnsCache");
-    let dns_cache = dns_cache.as_object();
+    let dns_cache = dns_cache.as_object().expect("object DnsCache");
     let mut dns_cache = dns_cache
-        .and_then(|obj| obj.try_borrow_mut().ok())
-        .expect("mut DnsCache");
-    let dns_cache = dns_cache
         .downcast_mut::<DnsCache>()
         .expect("downcast_mut<DnsCache>");
 
