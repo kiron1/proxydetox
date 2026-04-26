@@ -21,6 +21,7 @@
     "cargo",
     "github-actions"
   ],
+  "minimumReleaseAgeBehaviour": "timestamp-optional",
   "packageRules": [
     {
       "matchManagers": [
