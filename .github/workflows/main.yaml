@@ -26,7 +26,7 @@ jobs:
       rev: ${{ steps.rev.outputs.rev }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 1
       - name: Version
@@ -61,7 +61,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 1
       - name: macOS version
@@ -73,7 +73,7 @@ jobs:
         run: |
           printf 'OS_VER=%s\n' "$(lsb_release --short --release)" | tee -a $GITHUB_ENV
       - name: Bazel cache
-        uses: actions/cache@v5
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
           path: |
             ~/.cache/bazel_build_cache
@@ -127,7 +127,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 1
       - name: Install Linux dependency
@@ -160,7 +160,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 1
       - name: Install Linux dependency
@@ -171,7 +171,7 @@ jobs:
         run: |
           printf 'OS_VER=%s\n' "$(lsb_release --short --release)" | tee -a $GITHUB_ENV
       - name: Bazel cache
-        uses: actions/cache@v5
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
           path: |
             ~/.cache/bazel_build_cache
@@ -227,7 +227,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 1
       - name: macOS version
@@ -239,7 +239,7 @@ jobs:
         run: |
           printf 'OS_VER=%s\n' "$(lsb_release --short --release)" | tee -a $GITHUB_ENV
       - name: Bazel cache
-        uses: actions/cache@v5
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
           path: |
             ~/.cache/bazel_build_cache
@@ -271,7 +271,7 @@ jobs:
           --
           ${{ matrix.pkgfile }}
       - name: Upload package artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: pkg-bazel-${{ matrix.build }}
           path: ./${{ matrix.pkgfile }}
@@ -285,21 +285,21 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 1
       - name: Install Rust
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # v1
         with:
           toolchain: stable
           profile: minimal
           override: true
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           key: ${{ runner.os }}-test
       #  see https://github.com/rust-lang/rust-bindgen/issues/1797
       - name: Install Windows dependency (LLVM)
-        uses: KyleMayes/install-llvm-action@v2.0.9
+        uses: KyleMayes/install-llvm-action@ebc0426251bc40c7cd31162802432c68818ab8f0 # v2.0.9
         with:
           version: "11.0"
           directory: ${{ runner.temp }}/llvm
@@ -317,21 +317,21 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 1
       - name: Install Rust
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # v1
         with:
           toolchain: stable
           profile: minimal
           override: true
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           key: ${{ runner.os }}-build
       #  see https://github.com/rust-lang/rust-bindgen/issues/1797
       - name: Install Windows dependency (LLVM)
-        uses: KyleMayes/install-llvm-action@v2.0.9
+        uses: KyleMayes/install-llvm-action@ebc0426251bc40c7cd31162802432c68818ab8f0 # v2.0.9
         with:
           version: "11.0"
           directory: ${{ runner.temp }}/llvm
@@ -343,7 +343,7 @@ jobs:
         run: ./tools/mkzip.ps1
         shell: pwsh
       - name: Upload package artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: pkg-cargo-windows
           path: ./${{ steps.buildpkg.outputs.pkgfile }}
@@ -361,7 +361,7 @@ jobs:
 
     steps:
       - name: Download pkg artifact
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           pattern: pkg-*
           merge-multiple: true
@@ -397,7 +397,7 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5
 
   # The success job is here to consolidate the total success/failure state of
   # all other jobs. This job is then included in the GitHub branch protection
