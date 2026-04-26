@@ -271,7 +271,7 @@ jobs:
           --
           ${{ matrix.pkgfile }}
       - name: Upload package artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pkg-bazel-${{ matrix.build }}
           path: ./${{ matrix.pkgfile }}
@@ -343,7 +343,7 @@ jobs:
         run: ./tools/mkzip.ps1
         shell: pwsh
       - name: Upload package artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pkg-cargo-windows
           path: ./${{ steps.buildpkg.outputs.pkgfile }}
