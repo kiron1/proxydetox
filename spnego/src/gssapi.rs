@@ -19,14 +19,14 @@ impl Context {
         let target = format!("{service}@{proxy_fqdn}");
         let service_name = target.as_bytes();
 
-        let name = Name::new(service_name, Some(&GSS_NT_HOSTBASED_SERVICE))?;
+        let name = Name::new(service_name, Some(GSS_NT_HOSTBASED_SERVICE))?;
         // let name = name.canonicalize(Some(&GSS_MECH_SPNEGO))?;
 
         let cx = ClientCtx::new(
             None,
             name,
             CtxFlags::GSS_C_MUTUAL_FLAG,
-            Some(&GSS_MECH_SPNEGO),
+            Some(GSS_MECH_SPNEGO),
         );
 
         Ok(Self { cx })
