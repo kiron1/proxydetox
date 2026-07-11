@@ -27,7 +27,7 @@ public class ProxydetoxControl {
     let applicationSupportURL = FileManager.default.urls(
       for: .applicationSupportDirectory, in: .userDomainMask
     ).first
-    print("applicationSupportURL \(applicationSupportURL)")
+    print("applicationSupportURL \(String(describing:applicationSupportURL))")
 
     var proxyPacPath = FileManager.default.urls(
       for: .applicationSupportDirectory, in: .userDomainMask
