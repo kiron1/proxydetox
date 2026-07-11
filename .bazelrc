@@ -1,3 +1,5 @@
+build --incompatible_default_to_explicit_init_py
+
 build --flag_alias=features=//:features
 
 build --verbose_failures
