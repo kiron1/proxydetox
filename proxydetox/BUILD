@@ -103,3 +103,8 @@ macos_command_line_application(
         ":proxydetoxlib_main",
     ],
 )
+
+exports_files(
+    ["Cargo.toml"],
+    visibility = ["//visibility:public"],
+)
