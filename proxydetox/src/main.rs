@@ -142,6 +142,7 @@ async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
         }
     };
     tracing::debug!(%auth, "authorization");
+    let my_ip = effective_my_ip_address(config.my_ip_address, my_ip_address());
 
     let context = proxydetoxlib::Context::builder()
         .pac_file(config.pac_file.clone())
@@ -154,9 +155,7 @@ async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
         .client_tcp_keepalive(config.client_tcp_keepalive.clone())
         .build();
 
-    if let Some(my_ip) = config.my_ip_address {
-        context.set_my_ip_address(my_ip).await?;
-    }
+    context.set_my_ip_address(my_ip).await?;
 
     let listeners = match &config.activate_socket {
         Some(name) => socket::activate_socket(name)?
@@ -194,11 +193,11 @@ async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
         tokio::select! {
             _ = reload_trigger() => {
                 context.load_pac_file(&config.pac_file).await?;
-                context.set_my_ip_address(my_ip_address()).await?;
+                context.set_my_ip_address(my_ip).await?;
             },
             _ = direct_mode_trigger() => {
                 context.load_pac_file(&None).await?;
-                context.set_my_ip_address(my_ip_address()).await?;
+                context.set_my_ip_address(my_ip).await?;
             },
             _ = shutdown_trigger() => {
                 tracing::info!("shutdown requested");
@@ -297,4 +296,29 @@ fn my_ip_address() -> IpAddr {
         .and_then(|i| i.ipv4.first().map(|i| i.addr))
         .unwrap_or_else(|| std::net::Ipv4Addr::new(127, 0, 0, 1));
     IpAddr::from(ipv4)
+}
+
+fn effective_my_ip_address(configured: Option<IpAddr>, detected: IpAddr) -> IpAddr {
+    configured.unwrap_or(detected)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::effective_my_ip_address;
+    use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+
+    #[test]
+    fn configured_my_ip_address_wins() {
+        let configured = IpAddr::V4(Ipv4Addr::new(192, 0, 2, 10));
+        let detected = IpAddr::V6(Ipv6Addr::LOCALHOST);
+
+        assert_eq!(effective_my_ip_address(Some(configured), detected), configured);
+    }
+
+    #[test]
+    fn detected_my_ip_address_is_used_without_override() {
+        let detected = IpAddr::V4(Ipv4Addr::new(192, 0, 2, 10));
+
+        assert_eq!(effective_my_ip_address(None, detected), detected);
+    }
 }
