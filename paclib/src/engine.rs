@@ -94,8 +94,7 @@ impl Engine {
     pub fn set_pac_script(&mut self, pac_script: Option<&str>) -> Result<(), PacScriptError> {
         let mut js = Self::mkjs(self.my_ip_addr.clone());
         let pac_script = pac_script.unwrap_or(crate::DEFAULT_PAC_SCRIPT);
-        js
-            .eval(Source::from_bytes(pac_script))
+        js.eval(Source::from_bytes(pac_script))
             .map_err(|e| PacScriptError::InternalError(e.to_string()))?;
         self.js = js;
         Ok(())
@@ -231,8 +230,8 @@ fn my_ip_address(
 mod tests {
     use super::Engine;
     use super::Uri;
-    use crate::Proxy;
     use crate::Proxies;
+    use crate::Proxy;
     use crate::ProxyOrDirect;
 
     #[test]
@@ -264,9 +263,10 @@ mod tests {
         )?;
         let uri = "http://localhost/".parse::<Uri>()?;
 
-        assert!(eval
-            .set_pac_script(Some("function FindProxyForURL(url, host) {"))
-            .is_err());
+        assert!(
+            eval.set_pac_script(Some("function FindProxyForURL(url, host) {"))
+                .is_err()
+        );
         assert_eq!(
             eval.find_proxy(&uri)?,
             Proxies::new(vec![ProxyOrDirect::Proxy(Proxy::Http(
