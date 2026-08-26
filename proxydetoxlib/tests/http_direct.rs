@@ -2,8 +2,8 @@ mod environment;
 
 use crate::environment::{Environment, httpd, read_to_string};
 use http::{Request, Response, header::PROXY_AUTHORIZATION};
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn http_get_request() {
