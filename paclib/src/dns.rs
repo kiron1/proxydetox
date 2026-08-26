@@ -80,7 +80,7 @@ impl Class for DnsCache {
 pub(crate) fn resolve(host: &str) -> Option<String> {
     use std::net::ToSocketAddrs;
 
-    select_address((host, 0u16).to_socket_addrs().ok()?.into_iter())
+    select_address((host, 0u16).to_socket_addrs().ok()?)
 }
 
 fn select_address(addresses: impl Iterator<Item = SocketAddr>) -> Option<String> {
