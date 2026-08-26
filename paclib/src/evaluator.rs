@@ -30,7 +30,7 @@ impl Evaluator {
 
         let worker = thread::Builder::new()
             .name("pac-eval-worker".into())
-            .spawn(move || Self::run(receiver, None))
+            .spawn(move || Self::run(receiver, None, None))
             .expect("create thread");
 
         Self {
@@ -42,22 +42,46 @@ impl Evaluator {
     pub fn with_pac_script(pac_script: &str) -> Result<Self, PacScriptError> {
         let pac_script = pac_script.to_owned();
         let (sender, receiver) = mpsc::channel::<Action>();
+        let (initialized_sender, initialized_receiver) = mpsc::sync_channel(1);
 
         let worker = thread::Builder::new()
             .name("pac-eval-worker".into())
-            .spawn(move || Self::run(receiver, Some(pac_script)))
+            .spawn(move || {
+                Self::run(
+                    receiver,
+                    Some(pac_script),
+                    Some(initialized_sender),
+                )
+            })
             .expect("create thread");
 
-        let new = Self {
+        initialized_receiver
+            .recv()
+            .map_err(|_| {
+                PacScriptError::InternalError(
+                    "PAC evaluator worker stopped during initialization".into(),
+                )
+            })??;
+
+        Ok(Self {
             _worker: Arc::new(worker),
             sender: Mutex::new(Some(sender)),
-        };
-        Ok(new)
+        })
     }
 
-    fn run(receiver: mpsc::Receiver<Action>, pac_script: Option<String>) {
+    fn run(
+        receiver: mpsc::Receiver<Action>,
+        pac_script: Option<String>,
+        initialized_sender: Option<mpsc::SyncSender<SetPacScriptResult>>,
+    ) {
         let mut engine = Engine::new();
-        engine.set_pac_script(pac_script.as_deref()).ok();
+        if let Some(initialized_sender) = initialized_sender {
+            let result = engine.set_pac_script(pac_script.as_deref());
+            let failed = result.is_err();
+            if initialized_sender.send(result).is_err() || failed {
+                return;
+            }
+        }
 
         while let Ok(action) = receiver.recv() {
             match action {
@@ -124,5 +148,46 @@ impl Drop for Evaluator {
         let mut sender = self.sender.lock().unwrap();
         let _ = sender.take();
         // self.worker.join();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Evaluator;
+    use crate::{PacScriptError, Proxies, ProxyOrDirect};
+
+    #[test]
+    fn with_pac_script_reports_syntax_errors() {
+        let result = Evaluator::with_pac_script("function FindProxyForURL(url, host) {");
+
+        assert!(matches!(
+            result,
+            Err(PacScriptError::InternalError(_))
+        ));
+    }
+
+    #[test]
+    fn with_pac_script_reports_missing_entry_function() {
+        let result = Evaluator::with_pac_script(
+            "function FindProxyForUrl(url, host) { return \"DIRECT\"; }",
+        );
+
+        assert!(matches!(
+            result,
+            Err(PacScriptError::FindProxyForURLMissing)
+        ));
+    }
+
+    #[tokio::test]
+    async fn new_keeps_the_default_pac_function() {
+        let evaluator = Evaluator::new();
+
+        assert_eq!(
+            evaluator
+                .find_proxy("http://localhost/".parse().unwrap())
+                .await
+                .unwrap(),
+            Proxies::new(vec![ProxyOrDirect::Direct])
+        );
     }
 }

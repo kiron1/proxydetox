@@ -27,6 +27,8 @@ pub enum CreateEvaluatorError {
 pub enum PacScriptError {
     #[error("internal error: {0}")]
     InternalError(String),
+    #[error("FindProxyForURL function missing in PAC script")]
+    FindProxyForURLMissing,
     #[error("I/O error: {0}")]
     Io(
         #[from]
