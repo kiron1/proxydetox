@@ -82,7 +82,7 @@ impl Builder {
         self
     }
 
-    pub fn build(self) -> Arc<Context> {
+    pub async fn build(self) -> std::io::Result<Arc<Context>> {
         let auth = self.auth.unwrap_or(AuthenticatorFactory::None);
         let eval = if let Some(pac) = self.pac_script {
             Evaluator::with_pac_script(&pac).unwrap_or_default()
@@ -90,17 +90,8 @@ impl Builder {
             Evaluator::new()
         };
         let tls_config = self.tls_config.unwrap_or_else(default_tls_config);
+        let pac_file = self.pac_file;
         let (accesslog_tx, mut accesslog_rx) = broadcast::channel(16);
-        tokio::spawn(async move {
-            loop {
-                let entry = accesslog_rx.recv().await;
-                if let Err(cause) = entry
-                    && cause == broadcast::error::RecvError::Closed
-                {
-                    break;
-                }
-            }
-        });
         let context = Context {
             eval,
             auth,
@@ -115,18 +106,22 @@ impl Builder {
         };
         let context = Arc::new(context);
 
-        if self.pac_file.is_some() {
-            tokio::spawn({
-                let context = context.clone();
-                async move {
-                    if let Err(cause) = context.load_pac_file(&self.pac_file).await {
-                        tracing::error!(%cause, pac_file = ?&self.pac_file, "failed to load PAC from URI");
-                    }
-                }
-            });
+        if pac_file.is_some() {
+            context.load_pac_file(&pac_file).await?;
         }
 
-        context
+        tokio::spawn(async move {
+            loop {
+                let entry = accesslog_rx.recv().await;
+                if let Err(cause) = entry
+                    && cause == broadcast::error::RecvError::Closed
+                {
+                    break;
+                }
+            }
+        });
+
+        Ok(context)
     }
 }
 
@@ -141,4 +136,71 @@ fn default_tls_config() -> Arc<rustls::ClientConfig> {
         .with_no_client_auth();
 
     Arc::new(config)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Builder;
+    use detox_net::PathOrUri;
+    use paclib::{Proxy, ProxyOrDirect, Proxies};
+    use std::fs;
+    use std::sync::Once;
+
+    static INIT: Once = Once::new();
+
+    fn init_crypto_provider() {
+        INIT.call_once(|| {
+            rustls::crypto::CryptoProvider::install_default(
+                rustls::crypto::aws_lc_rs::default_provider(),
+            )
+            .expect("CryptoProvider::install_default");
+        });
+    }
+
+    #[tokio::test]
+    async fn build_waits_for_pac_file() -> Result<(), Box<dyn std::error::Error>> {
+        init_crypto_provider();
+        let path = std::env::temp_dir().join(format!(
+            "proxydetox-pac-{}-{}.pac",
+            std::process::id(),
+            "build_waits_for_pac_file"
+        ));
+        fs::write(
+            &path,
+            "function FindProxyForURL(url, host) { return \"PROXY 127.0.0.1:3128\"; }",
+        )?;
+
+        let context = Builder::default()
+            .pac_file(Some(PathOrUri::from(path.clone())))
+            .build()
+            .await?;
+        let proxies = context
+            .eval
+            .find_proxy("http://example.org/".parse()?)
+            .await?;
+
+        fs::remove_file(path)?;
+        assert_eq!(
+            proxies,
+            Proxies::new(vec![ProxyOrDirect::Proxy(Proxy::Http(
+                "127.0.0.1:3128".parse()?,
+            ))])
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn build_reports_pac_file_failure() {
+        init_crypto_provider();
+        let path = std::env::temp_dir().join(format!(
+            "proxydetox-pac-{}-missing.pac",
+            std::process::id()
+        ));
+        let result = Builder::default()
+            .pac_file(Some(PathOrUri::from(path)))
+            .build()
+            .await;
+
+        assert!(result.is_err());
+    }
 }
