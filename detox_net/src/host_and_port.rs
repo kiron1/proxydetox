@@ -65,7 +65,11 @@ impl HostAndPort {
 
 impl Display for HostAndPort {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.0)?;
+        if self.0.parse::<std::net::Ipv6Addr>().is_ok() {
+            write!(f, "[{}]", self.0)?;
+        } else {
+            f.write_str(&self.0)?;
+        }
         f.write_char(':')?;
         write!(f, "{}", self.1)
     }
@@ -75,11 +79,31 @@ impl std::str::FromStr for HostAndPort {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut host_port = s.split(':');
-        match (host_port.next(), host_port.next()) {
-            (Some(host), Some(port)) => Ok(HostAndPort(host.trim().to_owned(), port.parse()?)),
-            _ => Err(Self::Err::InvalidFormat(s.to_string())),
+        let s = s.trim();
+        let (host, port) = if let Some(rest) = s.strip_prefix('[') {
+            let end = rest
+                .find(']')
+                .ok_or_else(|| Error::InvalidFormat(s.to_owned()))?;
+            let host = &rest[..end];
+            let port = rest
+                .get(end + 1..)
+                .and_then(|rest| rest.strip_prefix(':'))
+                .ok_or(Error::NoPort)?;
+            (host, port)
+        } else {
+            let (host, port) = s.rsplit_once(':').ok_or(Error::NoPort)?;
+            if host.contains(':') || host.contains(['[', ']']) {
+                return Err(Error::InvalidFormat(s.to_owned()));
+            }
+            (host, port)
+        };
+        if host.is_empty() {
+            return Err(Error::NoHost);
         }
+        if host.chars().any(char::is_whitespace) {
+            return Err(Error::InvalidFormat(s.to_owned()));
+        }
+        Ok(HostAndPort(host.to_owned(), port.parse()?))
     }
 }
 
@@ -102,6 +126,7 @@ impl TryFrom<HostAndPort> for Uri {
 #[cfg(test)]
 mod tests {
     use super::HostAndPort;
+    use http::Uri;
 
     #[test]
     fn host_and_port_test() -> Result<(), Box<dyn std::error::Error>> {
@@ -128,6 +153,29 @@ mod tests {
             HostAndPort::try_from_uri(&uri5)?.to_string(),
             "example.org:443"
         );
+        let ipv6 = "[::1]:3128".parse::<HostAndPort>()?;
+        assert_eq!(ipv6.host(), "::1");
+        assert_eq!(ipv6.to_string(), "[::1]:3128");
+        let uri6: Uri = ipv6.try_into()?;
+        assert_eq!(uri6.authority().unwrap().as_str(), "[::1]:3128");
+
+        for invalid in [
+            "example.org",
+            "example.org:",
+            "example.org:3128:garbage",
+            "example.org:3128:80",
+            "example.org:65536",
+            ":3128",
+            "[::1]",
+            "[::1]:",
+            "[::1]:3128:garbage",
+            "::1:3128",
+        ] {
+            assert!(
+                invalid.parse::<HostAndPort>().is_err(),
+                "accepted invalid endpoint {invalid}"
+            );
+        }
 
         Ok(())
     }
