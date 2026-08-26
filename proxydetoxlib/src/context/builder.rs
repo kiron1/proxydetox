@@ -142,7 +142,7 @@ fn default_tls_config() -> Arc<rustls::ClientConfig> {
 mod tests {
     use super::Builder;
     use detox_net::PathOrUri;
-    use paclib::{Proxy, ProxyOrDirect, Proxies};
+    use paclib::{Proxies, Proxy, ProxyOrDirect};
     use std::fs;
     use std::sync::Once;
 
@@ -192,10 +192,8 @@ mod tests {
     #[tokio::test]
     async fn build_reports_pac_file_failure() {
         init_crypto_provider();
-        let path = std::env::temp_dir().join(format!(
-            "proxydetox-pac-{}-missing.pac",
-            std::process::id()
-        ));
+        let path =
+            std::env::temp_dir().join(format!("proxydetox-pac-{}-missing.pac", std::process::id()));
         let result = Builder::default()
             .pac_file(Some(PathOrUri::from(path)))
             .build()
