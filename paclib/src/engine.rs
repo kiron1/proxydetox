@@ -234,9 +234,9 @@ fn my_ip_address(
 mod tests {
     use super::Engine;
     use super::Uri;
+    use crate::FindProxyError;
     use crate::Proxies;
     use crate::ProxyOrDirect;
-    use crate::FindProxyError;
 
     #[test]
     fn test_find_proxy() -> Result<(), Box<dyn std::error::Error>> {
