@@ -1,4 +1,4 @@
-use std::{collections::HashMap, time::UNIX_EPOCH};
+use std::{collections::HashMap, net::SocketAddr, time::UNIX_EPOCH};
 
 use boa_engine::{JsData, class::Class};
 use boa_gc::{Finalize, Trace};
@@ -80,10 +80,41 @@ impl Class for DnsCache {
 pub(crate) fn resolve(host: &str) -> Option<String> {
     use std::net::ToSocketAddrs;
 
-    (host, 0u16)
-        .to_socket_addrs()
-        .ok()
-        .and_then(|mut a| a.next())
-        .map(|a| a.ip())
-        .map(|ip| ip.to_string())
+    select_address((host, 0u16).to_socket_addrs().ok()?.into_iter())
+}
+
+fn select_address(addresses: impl Iterator<Item = SocketAddr>) -> Option<String> {
+    let mut ipv6 = None;
+    for address in addresses {
+        match address.ip() {
+            std::net::IpAddr::V4(ip) => return Some(ip.to_string()),
+            std::net::IpAddr::V6(ip) => {
+                ipv6.get_or_insert_with(|| ip.to_string());
+            }
+        }
+    }
+    ipv6
+}
+
+#[cfg(test)]
+mod tests {
+    use super::select_address;
+    use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
+
+    #[test]
+    fn select_address_prefers_ipv4() {
+        let addresses = [
+            SocketAddr::new(IpAddr::V6(Ipv6Addr::LOCALHOST), 0),
+            SocketAddr::new(IpAddr::V4(Ipv4Addr::new(192, 0, 2, 1)), 0),
+        ];
+
+        assert_eq!(select_address(addresses.into_iter()), Some("192.0.2.1".into()));
+    }
+
+    #[test]
+    fn select_address_falls_back_to_ipv6() {
+        let addresses = [SocketAddr::new(IpAddr::V6(Ipv6Addr::LOCALHOST), 0)];
+
+        assert_eq!(select_address(addresses.into_iter()), Some("::1".into()));
+    }
 }
