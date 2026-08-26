@@ -108,7 +108,10 @@ mod tests {
             SocketAddr::new(IpAddr::V4(Ipv4Addr::new(192, 0, 2, 1)), 0),
         ];
 
-        assert_eq!(select_address(addresses.into_iter()), Some("192.0.2.1".into()));
+        assert_eq!(
+            select_address(addresses.into_iter()),
+            Some("192.0.2.1".into())
+        );
     }
 
     #[test]
