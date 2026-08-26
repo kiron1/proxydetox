@@ -2,6 +2,8 @@ mod environment;
 
 use crate::environment::{Environment, httpd, read_to_string};
 use http::{Request, Response, header::PROXY_AUTHORIZATION};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn http_get_request() {
@@ -58,8 +60,11 @@ async fn pac_script_error() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn pac_script_invalid_result() {
-    let http1 = httpd::Server::new(|_r| {
-        {
+    let requests = Arc::new(AtomicUsize::new(0));
+    let http1 = httpd::Server::new({
+        let requests = requests.clone();
+        move |_r| {
+            requests.fetch_add(1, Ordering::Relaxed);
             Response::builder()
                 .body(crate::environment::full(String::from("Hello World!")))
                 .unwrap()
@@ -79,7 +84,8 @@ async fn pac_script_invalid_result() {
 
     let resp = env.send(req).await;
 
-    assert_eq!(resp.status(), http::StatusCode::OK);
+    assert_eq!(resp.status(), http::StatusCode::BAD_GATEWAY);
+    assert_eq!(requests.load(Ordering::Relaxed), 0);
 
     tokio::join!(env.shutdown(), http1.shutdown());
 }
