@@ -46,22 +46,14 @@ impl Evaluator {
 
         let worker = thread::Builder::new()
             .name("pac-eval-worker".into())
-            .spawn(move || {
-                Self::run(
-                    receiver,
-                    Some(pac_script),
-                    Some(initialized_sender),
-                )
-            })
+            .spawn(move || Self::run(receiver, Some(pac_script), Some(initialized_sender)))
             .expect("create thread");
 
-        initialized_receiver
-            .recv()
-            .map_err(|_| {
-                PacScriptError::InternalError(
-                    "PAC evaluator worker stopped during initialization".into(),
-                )
-            })??;
+        initialized_receiver.recv().map_err(|_| {
+            PacScriptError::InternalError(
+                "PAC evaluator worker stopped during initialization".into(),
+            )
+        })??;
 
         Ok(Self {
             _worker: Arc::new(worker),
@@ -160,10 +152,7 @@ mod tests {
     fn with_pac_script_reports_syntax_errors() {
         let result = Evaluator::with_pac_script("function FindProxyForURL(url, host) {");
 
-        assert!(matches!(
-            result,
-            Err(PacScriptError::InternalError(_))
-        ));
+        assert!(matches!(result, Err(PacScriptError::InternalError(_))));
     }
 
     #[test]

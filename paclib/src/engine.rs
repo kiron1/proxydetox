@@ -97,8 +97,7 @@ impl Engine {
         let install_default_pac = pac_script.is_none();
         let mut js = Self::mkjs(self.my_ip_addr.clone(), install_default_pac);
         let pac_script = pac_script.unwrap_or(crate::DEFAULT_PAC_SCRIPT);
-        js
-            .eval(Source::from_bytes(pac_script))
+        js.eval(Source::from_bytes(pac_script))
             .map_err(|e| PacScriptError::InternalError(e.to_string()))?;
         if !install_default_pac {
             let find_proxy_fn = js
