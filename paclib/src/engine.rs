@@ -92,11 +92,11 @@ impl Engine {
     }
 
     pub fn set_pac_script(&mut self, pac_script: Option<&str>) -> Result<(), PacScriptError> {
-        self.js = Self::mkjs(self.my_ip_addr.clone());
+        let mut js = Self::mkjs(self.my_ip_addr.clone());
         let pac_script = pac_script.unwrap_or(crate::DEFAULT_PAC_SCRIPT);
-        self.js
-            .eval(Source::from_bytes(pac_script))
+        js.eval(Source::from_bytes(pac_script))
             .map_err(|e| PacScriptError::InternalError(e.to_string()))?;
+        self.js = js;
         Ok(())
     }
 
@@ -231,6 +231,7 @@ mod tests {
     use super::Engine;
     use super::Uri;
     use crate::Proxies;
+    use crate::Proxy;
     use crate::ProxyOrDirect;
 
     #[test]
@@ -251,6 +252,43 @@ mod tests {
         assert_eq!(
             eval.find_proxy(&"http://localhost/".parse::<Uri>().unwrap())?,
             Proxies::new(vec![ProxyOrDirect::Direct])
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn failed_script_update_retains_previous_route() -> Result<(), Box<dyn std::error::Error>> {
+        let mut eval = Engine::with_pac_script(
+            "function FindProxyForURL(url, host) { return \"PROXY 127.0.0.1:3128\"; }",
+        )?;
+        let uri = "http://localhost/".parse::<Uri>()?;
+
+        assert!(
+            eval.set_pac_script(Some("function FindProxyForURL(url, host) {"))
+                .is_err()
+        );
+        assert_eq!(
+            eval.find_proxy(&uri)?,
+            Proxies::new(vec![ProxyOrDirect::Proxy(Proxy::Http(
+                "127.0.0.1:3128".parse()?,
+            ))])
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn script_update_retains_my_ip_address() -> Result<(), Box<dyn std::error::Error>> {
+        let mut eval = Engine::new();
+        eval.set_my_ip_address("192.0.2.1".parse()?)?;
+        eval.set_pac_script(Some(
+            "function FindProxyForURL(url, host) { return myIpAddress() === \"192.0.2.1\" ? \"PROXY 127.0.0.1:3128\" : \"DIRECT\"; }",
+        ))?;
+
+        assert_eq!(
+            eval.find_proxy(&"http://localhost/".parse::<Uri>()?)?,
+            Proxies::new(vec![ProxyOrDirect::Proxy(Proxy::Http(
+                "127.0.0.1:3128".parse()?,
+            ))])
         );
         Ok(())
     }
