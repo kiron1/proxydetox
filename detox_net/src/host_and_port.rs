@@ -80,22 +80,15 @@ impl std::str::FromStr for HostAndPort {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let s = s.trim();
-        let (host, port) = if let Some(rest) = s.strip_prefix('[') {
-            let end = rest
-                .find(']')
-                .ok_or_else(|| Error::InvalidFormat(s.to_owned()))?;
-            let host = &rest[..end];
-            let port = rest
-                .get(end + 1..)
-                .and_then(|rest| rest.strip_prefix(':'))
-                .ok_or(Error::NoPort)?;
-            (host, port)
+        let (host, port) = s.rsplit_once(':').ok_or(Error::NoPort)?;
+        let host = if let Some(host) = host.strip_prefix('[') {
+            host.strip_suffix(']')
+                .ok_or_else(|| Error::InvalidFormat(s.to_owned()))?
         } else {
-            let (host, port) = s.rsplit_once(':').ok_or(Error::NoPort)?;
             if host.contains(':') || host.contains(['[', ']']) {
                 return Err(Error::InvalidFormat(s.to_owned()));
             }
-            (host, port)
+            host
         };
         if host.is_empty() {
             return Err(Error::NoHost);
@@ -178,5 +171,63 @@ mod tests {
         }
 
         Ok(())
+    }
+
+    #[test]
+    fn parses_ipv4_addresses() -> Result<(), Box<dyn std::error::Error>> {
+        for (input, expected_host, expected_port) in [
+            ("0.0.0.0:0", "0.0.0.0", 0),
+            ("127.0.0.1:80", "127.0.0.1", 80),
+            ("192.168.1.42:3128", "192.168.1.42", 3128),
+            ("255.255.255.255:65535", "255.255.255.255", 65535),
+        ] {
+            let endpoint = input.parse::<HostAndPort>()?;
+            assert_eq!(endpoint.host(), expected_host);
+            assert_eq!(endpoint.port(), expected_port);
+            assert_eq!(endpoint.to_string(), input);
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn parses_ipv6_addresses() -> Result<(), Box<dyn std::error::Error>> {
+        for (input, expected_host, expected_port) in [
+            ("[::]:0", "::", 0),
+            ("[::1]:80", "::1", 80),
+            ("[2001:db8::1]:443", "2001:db8::1", 443),
+            ("[::ffff:192.0.2.128]:3128", "::ffff:192.0.2.128", 3128),
+            (
+                "[ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]:65535",
+                "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
+                65535,
+            ),
+        ] {
+            let endpoint = input.parse::<HostAndPort>()?;
+            assert_eq!(endpoint.host(), expected_host);
+            assert_eq!(endpoint.port(), expected_port);
+            assert_eq!(endpoint.to_string(), input);
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn rejects_invalid_ip_endpoints() {
+        for invalid in [
+            "10.0.0.1",
+            "10.0.0.1:65536",
+            "10.0.0.1:8080:1",
+            "[2001:db8::1]",
+            "[2001:db8::1]:65536",
+            "[2001:db8::1]:8080:1",
+            "2001:db8::1:8080",
+            "[2001:db8::1",
+        ] {
+            assert!(
+                invalid.parse::<HostAndPort>().is_err(),
+                "accepted invalid endpoint {invalid}"
+            );
+        }
     }
 }
