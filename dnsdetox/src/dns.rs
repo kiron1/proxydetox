@@ -71,7 +71,7 @@ impl Stream for RequestStream {
     ) -> std::task::Poll<Option<Self::Item>> {
         let Self {
             socket,
-            ref mut data,
+            data,
         } = self.get_mut();
         let mut data = Pin::new(data);
         let mut buffer = ReadBuf::new(&mut data);
