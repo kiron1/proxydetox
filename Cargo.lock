@@ -1718,6 +1718,8 @@ name = "proxydetox"
 version = "0.13.0"
 dependencies = [
  "clap",
+ "core-foundation 0.10.1",
+ "core-foundation-sys",
  "default-net",
  "detox_auth",
  "detox_net",

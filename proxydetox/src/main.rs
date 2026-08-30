@@ -3,6 +3,7 @@
     windows_subsystem = "windows"
 )]
 
+mod network;
 mod options;
 
 use detox_auth::AuthenticatorFactory;
@@ -185,6 +186,8 @@ async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
 
     let listeners = stream::select_all(listeners);
     let (server, control) = Server::new(listeners, context.clone());
+    let mut network_notifications = network::NetworkNotifications::new();
+    let mut internal_network_available = true;
 
     tracing::info!(listening=?addrs, pac_file=?config.pac_file, "starting");
 
@@ -199,6 +202,21 @@ async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
             _ = direct_mode_trigger() => {
                 context.load_pac_file(&None).await?;
                 context.set_my_ip_address(my_ip_address()).await?;
+            },
+            Some(state) = network_notifications.recv() => {
+                match state {
+                    network::NetworkState::Available if !internal_network_available => {
+                        internal_network_available = true;
+                        context.load_pac_file(&config.pac_file).await?;
+                        context.set_my_ip_address(my_ip_address()).await?;
+                    }
+                    network::NetworkState::NotAvailable if internal_network_available => {
+                        internal_network_available = false;
+                        context.load_pac_file(&None).await?;
+                        context.set_my_ip_address(my_ip_address()).await?;
+                    }
+                    _ => {}
+                }
             },
             _ = shutdown_trigger() => {
                 tracing::info!("shutdown requested");
