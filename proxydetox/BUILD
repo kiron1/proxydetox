@@ -6,6 +6,7 @@ rust_binary(
     name = "proxydetox",
     srcs = [
         "src/main.rs",
+        "src/network.rs",
         "src/options.rs",
     ],
     aliases = aliases(),
@@ -31,6 +32,7 @@ rust_test(
     size = "small",
     srcs = [
         "src/main.rs",
+        "src/network.rs",
         "src/options.rs",
     ],
     aliases = aliases(),
@@ -56,6 +58,7 @@ rust_static_library(
     name = "proxydetoxlib_main",
     srcs = [
         "src/main.rs",
+        "src/network.rs",
         "src/options.rs",
     ],
     aliases = aliases(),

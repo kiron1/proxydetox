@@ -1,26 +1,29 @@
 #!/usr/bin/env sh
 
+label=cc.colorto.proxydetox
+agentplist=/Library/LaunchAgents/${label}.plist
+
 case "${1:-status}" in
 status)
-  launchctl print "gui/$(id -u)/cc.colorto.proxydetox"
+  launchctl print "gui/$(id -u)/${label}"
   if pid=$(pgrep -xid, proxydetox); then
     ps -x -ouser,pid,%cpu,%mem,stat,start,time,command -p "${pid}"
   fi
   ;;
 start)
-  launchctl kickstart -p "gui/$(id -u)/cc.colorto.proxydetox"
+  launchctl kickstart -p "gui/$(id -u)/${label}"
   ;;
 restart)
-  launchctl kickstart -kp "gui/$(id -u)/cc.colorto.proxydetox"
+  launchctl kickstart -kp "gui/$(id -u)/${label}"
   ;;
 stop)
-  launchctl kill TERM "gui/$(id -u)/cc.colorto.proxydetox"
+  launchctl kill TERM "gui/$(id -u)/${label}"
   ;;
 enable)
-  launchctl bootstrap "gui/$(id -u)" "/Library/LaunchAgents/cc.colorto.proxydetox.plist"
+  launchctl bootstrap "gui/$(id -u)" "${agentplist}"
   ;;
 disable)
-  launchctl bootout "gui/$(id -u)/cc.colorto.proxydetox"
+  launchctl bootout "gui/$(id -u)/${label}"
   ;;
 *)
   printf 'fatal error: invalid argument `%s'\''\n' "${1}" >&2

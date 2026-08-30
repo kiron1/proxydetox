@@ -35,6 +35,5 @@ class InternalNetworkController {
   func gotInternalNetworkNotAvailable(notification: Notification) {
     // self.logger.info("internal network not available")
     proxydetox.isInternalNetworkAvailable = false
-
   }
 }

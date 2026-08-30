@@ -6,6 +6,7 @@
 - [Configuration](configuration.md)
 - [Usage](usage.md)
   - [macOS users](macos.md)
+    - [Automatic macOS network switching](macos_network_switching.md)
   - [Windows users](windows.md)
 
 ---

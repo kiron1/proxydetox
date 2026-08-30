@@ -21,6 +21,7 @@ mdbook(
         "introduction.md",
         "launchctl.sh",
         "macos.md",
+        "macos_network_switching.md",
         "service.md",
         "transparent_proxy.md",
         "usage.md",
