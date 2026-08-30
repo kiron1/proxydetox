@@ -152,7 +152,8 @@ async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
         .parallel_connect(config.parallel_connect)
         .direct_fallback(config.direct_fallback)
         .client_tcp_keepalive(config.client_tcp_keepalive.clone())
-        .build();
+        .build()
+        .await?;
 
     if let Some(my_ip) = config.my_ip_address {
         context.set_my_ip_address(my_ip).await?;
