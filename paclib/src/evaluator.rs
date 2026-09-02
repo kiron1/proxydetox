@@ -20,7 +20,7 @@ type SetMyIpAddressResult = Result<(), Infallible>;
 
 enum Action {
     FindProxy(Uri, oneshot::Sender<FindProxyResult>),
-    SetPacScript(Option<String>, oneshot::Sender<SetPacScriptResult>),
+    SetPacScripts(Vec<String>, oneshot::Sender<SetPacScriptResult>),
     SetMyIpAddress(IpAddr, oneshot::Sender<SetMyIpAddressResult>),
 }
 
@@ -30,7 +30,7 @@ impl Evaluator {
 
         let worker = thread::Builder::new()
             .name("pac-eval-worker".into())
-            .spawn(move || Self::run(receiver, None))
+            .spawn(move || Self::run(receiver, Vec::new()))
             .expect("create thread");
 
         Self {
@@ -40,12 +40,16 @@ impl Evaluator {
     }
 
     pub fn with_pac_script(pac_script: &str) -> Result<Self, PacScriptError> {
-        let pac_script = pac_script.to_owned();
+        Self::with_pac_scripts(vec![pac_script.to_owned()])
+    }
+
+    pub fn with_pac_scripts(pac_scripts: Vec<String>) -> Result<Self, PacScriptError> {
         let (sender, receiver) = mpsc::channel::<Action>();
 
+        let initial_scripts = pac_scripts.clone();
         let worker = thread::Builder::new()
             .name("pac-eval-worker".into())
-            .spawn(move || Self::run(receiver, Some(pac_script)))
+            .spawn(move || Self::run(receiver, initial_scripts))
             .expect("create thread");
 
         let new = Self {
@@ -55,26 +59,49 @@ impl Evaluator {
         Ok(new)
     }
 
-    fn run(receiver: mpsc::Receiver<Action>, pac_script: Option<String>) {
-        let mut engine = Engine::new();
-        engine.set_pac_script(pac_script.as_deref()).ok();
+    fn run(receiver: mpsc::Receiver<Action>, pac_scripts: Vec<String>) {
+        let mut engines = Self::engines(pac_scripts).unwrap_or_default();
 
         while let Ok(action) = receiver.recv() {
             match action {
                 Action::FindProxy(ref uri, result) => {
-                    let r = engine.find_proxy(uri);
+                    let r = engines
+                        .iter_mut()
+                        .map(|engine| engine.find_proxy(uri))
+                        .find(|result| {
+                            result
+                                .as_ref()
+                                .map(|proxies| {
+                                    proxies
+                                        .iter()
+                                        .any(|proxy| !matches!(proxy, crate::ProxyOrDirect::Direct))
+                                })
+                                .unwrap_or(true)
+                        })
+                        .unwrap_or_else(|| Ok(crate::Proxies::direct()));
                     result.send(r).ok();
                 }
-                Action::SetPacScript(ref script, result) => {
-                    let r = engine.set_pac_script(script.as_deref());
+                Action::SetPacScripts(scripts, result) => {
+                    let r = Self::engines(scripts).map(|new| {
+                        engines = new;
+                    });
                     result.send(r).ok();
                 }
                 Action::SetMyIpAddress(addr, result) => {
-                    let r = engine.set_my_ip_address(addr);
+                    let r = engines
+                        .iter_mut()
+                        .try_for_each(|engine| engine.set_my_ip_address(addr));
                     result.send(r).ok();
                 }
             }
         }
+    }
+
+    fn engines(scripts: Vec<String>) -> Result<Vec<Engine>, PacScriptError> {
+        scripts
+            .into_iter()
+            .map(|script| Engine::with_pac_script(&script))
+            .collect()
     }
 
     pub async fn find_proxy(&self, uri: Uri) -> FindProxyResult {
@@ -89,12 +116,16 @@ impl Evaluator {
     }
 
     pub async fn set_pac_script(&self, pac_script: Option<String>) -> SetPacScriptResult {
+        self.set_pac_scripts(pac_script.into_iter().collect()).await
+    }
+
+    pub async fn set_pac_scripts(&self, pac_scripts: Vec<String>) -> SetPacScriptResult {
         let (tx, rx) = oneshot::channel::<SetPacScriptResult>();
         {
             let sender = self.sender.lock().unwrap();
             if let Some(ref sender) = *sender {
                 sender
-                    .send(Action::SetPacScript(pac_script, tx))
+                    .send(Action::SetPacScripts(pac_scripts, tx))
                     .expect("send");
             }
         }
@@ -124,5 +155,30 @@ impl Drop for Evaluator {
         let mut sender = self.sender.lock().unwrap();
         let _ = sender.take();
         // self.worker.join();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Evaluator;
+    use crate::{Proxy, ProxyOrDirect};
+
+    #[tokio::test]
+    async fn uses_first_pac_file_returning_a_proxy() {
+        let evaluator = Evaluator::with_pac_scripts(vec![
+            "function FindProxyForURL(url, host) { return \"DIRECT\"; }".into(),
+            "function FindProxyForURL(url, host) { return \"PROXY proxy.example:8080\"; }".into(),
+        ])
+        .unwrap();
+
+        assert_eq!(
+            evaluator
+                .find_proxy("http://example.org/".parse().unwrap())
+                .await
+                .unwrap(),
+            crate::Proxies::new(vec![ProxyOrDirect::Proxy(Proxy::Http(
+                "proxy.example:8080".parse().unwrap()
+            ))])
+        );
     }
 }
