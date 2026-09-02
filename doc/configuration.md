@@ -80,8 +80,10 @@ clear text on disk and the password is transferred unencrypted.
 ## Proxy Auto-Configuration (PAC) file
 
 A copy of the PAC file `proxy.pac` must be places in on of directories searched
-by Proxydetox or specified via the `--pac-file` option. The PAC file can be also
-a HTTP URL. The content will then be downloaded from the given location.
+by Proxydetox or specified via the `--pac-file` option. The option may be
+specified more than once; files are evaluated in the order given and the first
+file returning a proxy is used. PAC files can be local paths (including
+symlinks) or HTTP URLs. HTTP files are downloaded from the given location.
 
 The PAC file is usually
 maintained by the network administrators. The path (usually some http location
@@ -96,6 +98,10 @@ proxydetox --pac-file http://example.org/proxy.pac
 
 ```sh
 proxydetox --pac-file /tmp/test.pac
+```
+
+```sh
+proxydetox --pac-file /tmp/corporate.pac --pac-file https://example.org/proxy.pac
 ```
 
 ## Configuration options
