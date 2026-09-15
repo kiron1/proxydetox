@@ -30,7 +30,7 @@ pub struct Options {
     pub attach_console: bool,
     pub log_level: LevelFilter,
     pub log_filepath: Option<PathBuf>,
-    pub pac_file: Option<PathOrUri>,
+    pub pac_files: Vec<PathOrUri>,
     pub my_ip_address: Option<IpAddr>,
     pub authorization: Authorization,
     pub connect_timeout: Duration,
@@ -211,7 +211,7 @@ impl Options {
                         "PAC file to be used to decide which upstream proxy to forward the request (local file path, http://, or https:// URI are accepted)",
                     )
                     .value_parser(is_file_or_http_uri)
-                    .action(clap::ArgAction::Set),
+                    .action(clap::ArgAction::Append),
             )
             .arg(
                 Arg::new("my_ip_address")
@@ -388,10 +388,10 @@ impl From<ArgMatches> for Options {
             attach_console: m.get_flag("attach_console"),
             log_level,
             log_filepath: m.get_one("log_filepath").cloned(),
-            pac_file: m
-                .get_one::<PathOrUri>("pac_file")
-                .cloned()
-                .or_else(|| which_pac_file().map(PathOrUri::Path)),
+            pac_files: m
+                .get_many::<PathOrUri>("pac_file")
+                .map(|files| files.cloned().collect())
+                .unwrap_or_else(|| which_pac_file().into_iter().map(PathOrUri::Path).collect()),
             my_ip_address: m.get_one::<IpAddr>("my_ip_address").cloned(),
             authorization,
             proxytunnel: m.get_flag("proxytunnel"),
@@ -535,8 +535,8 @@ mod tests {
             pac_file.clone().into(),
         ]);
         assert_eq!(
-            args.pac_file,
-            Some(PathOrUri::Path(PathBuf::from(&pac_file)))
+            args.pac_files,
+            vec![PathOrUri::Path(PathBuf::from(&pac_file))]
         );
     }
 
@@ -548,7 +548,27 @@ mod tests {
             "--pac-file".into(),
             proxy_pac.clone().into(),
         ]);
-        assert_eq!(args.pac_file, proxy_pac.parse().ok());
+        assert_eq!(args.pac_files, vec![proxy_pac.parse().unwrap()]);
+    }
+
+    #[test]
+    fn test_multiple_pac_files() {
+        let first = example_pac();
+        let second = "http://example.org/proxy.pac";
+        let args = Options::parse_args(&[
+            "proxydetox".into(),
+            "--pac-file".into(),
+            first.clone().into(),
+            "--pac-file".into(),
+            second.into(),
+        ]);
+        assert_eq!(
+            args.pac_files,
+            vec![
+                PathOrUri::Path(PathBuf::from(first)),
+                second.parse().unwrap()
+            ]
+        );
     }
 
     #[test]
