@@ -42,7 +42,7 @@ detox_auth = { path = "detox_auth" }
 detox_futures = { path = "detox_futures" }
 detox_hyper = { path = "detox_hyper" }
 detox_net = { path = "detox_net" }
-dirs = "6.0"
+dirs = "7.0"
 futures-util = { version = "0.3", features = [ "alloc" ], default-features = false }
 gc = { version = "0.5", features = ["derive"] }
 glob = "0.3"
