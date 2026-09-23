@@ -18,7 +18,7 @@ on:
 jobs:
   version:
     name: Current version
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       version: ${{ steps.version.outputs.version }}
       rev: ${{ steps.rev.outputs.rev }}
@@ -106,7 +106,7 @@ jobs:
 
   bazel_check:
     name: Bazel check
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     needs: version
 
@@ -150,7 +150,7 @@ jobs:
 
   bazel_www:
     name: Bazel www
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     needs:
       - bazel_check
@@ -339,7 +339,7 @@ jobs:
 
   mkrelease:
     name: Create Release
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     needs:
       - bazel_build
@@ -381,7 +381,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
 
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
@@ -403,7 +403,7 @@ jobs:
       - cargo_test
       - mkrelease
       - version
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - run: jq --exit-status 'all(.result == "success")' <<< '${{ toJson(needs) }}'
       - name: Done
