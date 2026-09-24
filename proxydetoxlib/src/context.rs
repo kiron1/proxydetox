@@ -86,9 +86,10 @@ impl Context {
     }
 
     #[instrument(skip(self))]
-    pub async fn load_pac_file(&self, uri: &Option<PathOrUri>) -> std::io::Result<()> {
+    pub async fn load_pac_files(&self, uris: &[PathOrUri]) -> std::io::Result<()> {
         tracing::info!("update PAC script");
-        let pac = if let Some(uri) = uri {
+        let mut scripts = Vec::with_capacity(uris.len());
+        for uri in uris {
             let pac = match uri {
                 PathOrUri::Path(p) => read_to_string(p)?,
                 PathOrUri::Uri(u) => detox_hyper::http_file(u.clone(), self.tls_config.clone())
@@ -96,14 +97,16 @@ impl Context {
                     .await
                     .map_err(std::io::Error::other)??,
             };
-            Some(pac)
-        } else {
-            None
-        };
+            scripts.push(pac);
+        }
         self.eval
-            .set_pac_script(pac)
+            .set_pac_scripts(scripts)
             .await
             .map_err(std::io::Error::other)
+    }
+
+    pub async fn load_pac_file(&self, uri: &Option<PathOrUri>) -> std::io::Result<()> {
+        self.load_pac_files(uri.as_slice()).await
     }
 
     #[instrument(skip(self))]
