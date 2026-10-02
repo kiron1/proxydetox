@@ -61,6 +61,12 @@ lazy_static! {
 pub enum Error {
     #[error("invalid URI")]
     InvalidUri,
+    #[error("PAC evaluation error: {0}")]
+    PacEvaluation(
+        #[from]
+        #[source]
+        paclib::FindProxyError,
+    ),
     #[error("invalid host: {0}")]
     InvalidHost(
         #[source]
@@ -175,7 +181,7 @@ impl Inner {
                 .build()
                 .expect("URI")
         };
-        let proxies = self.context.find_proxy(uri.clone()).await;
+        let proxies = self.context.find_proxy(uri.clone()).await?;
         let conn = proxies.clone().into_iter().map({
             let cx = self.context.clone();
             let method = req.method();
