@@ -40,7 +40,7 @@ function isInNet(ipaddr, pattern, maskstr) {
     }
     if (!isValidIpAddress(ipaddr)) {
         ipaddr = dnsResolve(ipaddr);
-        if (ipaddr == null) {
+        if (ipaddr == null || !isValidIpAddress(ipaddr)) {
             return false;
         }
     }
