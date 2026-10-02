@@ -65,7 +65,11 @@ impl HostAndPort {
 
 impl Display for HostAndPort {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.0)?;
+        if self.0.parse::<std::net::Ipv6Addr>().is_ok() {
+            write!(f, "[{}]", self.0)?;
+        } else {
+            f.write_str(&self.0)?;
+        }
         f.write_char(':')?;
         write!(f, "{}", self.1)
     }
@@ -75,11 +79,24 @@ impl std::str::FromStr for HostAndPort {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut host_port = s.split(':');
-        match (host_port.next(), host_port.next()) {
-            (Some(host), Some(port)) => Ok(HostAndPort(host.trim().to_owned(), port.parse()?)),
-            _ => Err(Self::Err::InvalidFormat(s.to_string())),
+        let s = s.trim();
+        let (host, port) = s.rsplit_once(':').ok_or(Error::NoPort)?;
+        let host = if let Some(host) = host.strip_prefix('[') {
+            host.strip_suffix(']')
+                .ok_or_else(|| Error::InvalidFormat(s.to_owned()))?
+        } else {
+            if host.contains(':') || host.contains(['[', ']']) {
+                return Err(Error::InvalidFormat(s.to_owned()));
+            }
+            host
+        };
+        if host.is_empty() {
+            return Err(Error::NoHost);
         }
+        if host.chars().any(char::is_whitespace) {
+            return Err(Error::InvalidFormat(s.to_owned()));
+        }
+        Ok(HostAndPort(host.to_owned(), port.parse()?))
     }
 }
 
@@ -102,6 +119,7 @@ impl TryFrom<HostAndPort> for Uri {
 #[cfg(test)]
 mod tests {
     use super::HostAndPort;
+    use http::Uri;
 
     #[test]
     fn host_and_port_test() -> Result<(), Box<dyn std::error::Error>> {
@@ -128,7 +146,88 @@ mod tests {
             HostAndPort::try_from_uri(&uri5)?.to_string(),
             "example.org:443"
         );
+        let ipv6 = "[::1]:3128".parse::<HostAndPort>()?;
+        assert_eq!(ipv6.host(), "::1");
+        assert_eq!(ipv6.to_string(), "[::1]:3128");
+        let uri6: Uri = ipv6.try_into()?;
+        assert_eq!(uri6.authority().unwrap().as_str(), "[::1]:3128");
+
+        for invalid in [
+            "example.org",
+            "example.org:",
+            "example.org:3128:garbage",
+            "example.org:3128:80",
+            "example.org:65536",
+            ":3128",
+            "[::1]",
+            "[::1]:",
+            "[::1]:3128:garbage",
+            "::1:3128",
+        ] {
+            assert!(
+                invalid.parse::<HostAndPort>().is_err(),
+                "accepted invalid endpoint {invalid}"
+            );
+        }
 
         Ok(())
+    }
+
+    #[test]
+    fn parses_ipv4_addresses() -> Result<(), Box<dyn std::error::Error>> {
+        for (input, expected_host, expected_port) in [
+            ("0.0.0.0:0", "0.0.0.0", 0),
+            ("127.0.0.1:80", "127.0.0.1", 80),
+            ("192.168.1.42:3128", "192.168.1.42", 3128),
+            ("255.255.255.255:65535", "255.255.255.255", 65535),
+        ] {
+            let endpoint = input.parse::<HostAndPort>()?;
+            assert_eq!(endpoint.host(), expected_host);
+            assert_eq!(endpoint.port(), expected_port);
+            assert_eq!(endpoint.to_string(), input);
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn parses_ipv6_addresses() -> Result<(), Box<dyn std::error::Error>> {
+        for (input, expected_host, expected_port) in [
+            ("[::]:0", "::", 0),
+            ("[::1]:80", "::1", 80),
+            ("[2001:db8::1]:443", "2001:db8::1", 443),
+            ("[::ffff:192.0.2.128]:3128", "::ffff:192.0.2.128", 3128),
+            (
+                "[ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]:65535",
+                "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
+                65535,
+            ),
+        ] {
+            let endpoint = input.parse::<HostAndPort>()?;
+            assert_eq!(endpoint.host(), expected_host);
+            assert_eq!(endpoint.port(), expected_port);
+            assert_eq!(endpoint.to_string(), input);
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn rejects_invalid_ip_endpoints() {
+        for invalid in [
+            "10.0.0.1",
+            "10.0.0.1:65536",
+            "10.0.0.1:8080:1",
+            "[2001:db8::1]",
+            "[2001:db8::1]:65536",
+            "[2001:db8::1]:8080:1",
+            "2001:db8::1:8080",
+            "[2001:db8::1",
+        ] {
+            assert!(
+                invalid.parse::<HostAndPort>().is_err(),
+                "accepted invalid endpoint {invalid}"
+            );
+        }
     }
 }

@@ -151,16 +151,19 @@ impl std::str::FromStr for ProxyOrDirect {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let s = s.trim();
-        if let Some(host_port) = s.strip_prefix("HTTPS") {
-            Ok(Self::Proxy(Proxy::Https(host_port.parse()?)))
-        } else if let Some(host_port) = s.strip_prefix("PROXY") {
-            Ok(Self::Proxy(Proxy::Http(host_port.parse()?)))
-        } else if let Some(host_port) = s.strip_prefix("HTTP") {
-            Ok(Self::Proxy(Proxy::Http(host_port.parse()?)))
-        } else if s == "DIRECT" {
+        if s == "DIRECT" {
             Ok(Self::Direct)
         } else {
-            Err(Error::UnknowDirective(s.to_owned()))
+            let Some((directive, host_port)) = s.split_once(char::is_whitespace) else {
+                return Err(Error::UnknowDirective(s.to_owned()));
+            };
+            let host_port = host_port.trim();
+            match directive {
+                "HTTPS" => Ok(Self::Proxy(Proxy::Https(host_port.parse()?))),
+                "PROXY" => Ok(Self::Proxy(Proxy::Http(host_port.parse()?))),
+                "HTTP" => Ok(Self::Proxy(Proxy::Http(host_port.parse()?))),
+                _ => Err(Error::UnknowDirective(directive.to_owned())),
+            }
         }
     }
 }
@@ -191,6 +194,28 @@ mod tests {
             ProxyOrDirect::Proxy(Proxy::Https("127.0.0.1:3128".parse()?))
         );
         assert!("PROXY 127.0.0.1:abc".parse::<ProxyOrDirect>().is_err());
+        for invalid in [
+            "PROXYexample.org:3128",
+            "HTTPexample.org:3128",
+            "HTTPSexample.org:3128",
+            "PROXY",
+            "PROXY example.org",
+            "PROXY example.org:3128:garbage",
+            "PROXY example.org:65536",
+        ] {
+            assert!(
+                invalid.parse::<ProxyOrDirect>().is_err(),
+                "accepted invalid proxy directive {invalid}"
+            );
+        }
+        assert_eq!(
+            "PROXY [::1]:3128".parse::<ProxyOrDirect>()?,
+            ProxyOrDirect::Proxy(Proxy::Http("[::1]:3128".parse()?))
+        );
+        assert_eq!(
+            "PROXY [::1]:3128".parse::<ProxyOrDirect>()?.to_string(),
+            "HTTP [::1]:3128"
+        );
         Ok(())
     }
 
