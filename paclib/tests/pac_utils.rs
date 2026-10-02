@@ -76,6 +76,86 @@ fn test_sh_exp_match() {
         "bad.local",
     );
 }
+
+#[test]
+fn test_weekday_range_reversed_bounds() {
+    let pac_script = r#"
+        function FindProxyForURL(url, host) {
+            var weekdays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+            var current = new Date().getDay();
+            for (var first = 1; first < weekdays.length; first++) {
+                for (var second = 0; second < first; second++) {
+                    var expected = current == first || current == second;
+                    if (weekdayRange(weekdays[first], weekdays[second]) != expected) {
+                        return "PROXY example.org:3128";
+                    }
+                }
+            }
+            return "DIRECT";
+        }
+    "#;
+    let mut eval = Engine::with_pac_script(pac_script).unwrap();
+
+    assert_eq!(
+        ProxyOrDirect::Direct,
+        eval.find_proxy(&"http://localhost/".parse::<Uri>().unwrap())
+            .unwrap()
+            .first()
+    );
+}
+
+#[test]
+fn test_time_range_reversed_bounds() {
+    let pac_script = r#"
+        function FindProxyForURL(url, host) {
+            var current = new Date().getHours();
+            var first = current == 23 ? 23 : current + 1;
+            var second = current == 23 ? 22 : current;
+            var expected = current == first || current == second;
+            return timeRange(first, second) == expected
+                ? "DIRECT"
+                : "PROXY example.org:3128";
+        }
+    "#;
+    let mut eval = Engine::with_pac_script(pac_script).unwrap();
+
+    assert_eq!(
+        ProxyOrDirect::Direct,
+        eval.find_proxy(&"http://localhost/".parse::<Uri>().unwrap())
+            .unwrap()
+            .first()
+    );
+}
+
+#[test]
+fn test_date_range_exact_day_and_month() {
+    let pac_script = r#"
+        function FindProxyForURL(url, host) {
+            var months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+                "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+            var current = new Date();
+            for (var month = 0; month < months.length; month++) {
+                for (var day = 1; day <= 31; day++) {
+                    var expected = current.getMonth() == month &&
+                        current.getDate() == day;
+                    if (dateRange(day, months[month]) != expected) {
+                        return "PROXY example.org:3128";
+                    }
+                }
+            }
+            return "DIRECT";
+        }
+    "#;
+    let mut eval = Engine::with_pac_script(pac_script).unwrap();
+
+    assert_eq!(
+        ProxyOrDirect::Direct,
+        eval.find_proxy(&"http://localhost/".parse::<Uri>().unwrap())
+            .unwrap()
+            .first()
+    );
+}
+
 #[test]
 fn test_my_ip_address() {
     let pac_script = r#"
