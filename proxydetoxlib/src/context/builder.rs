@@ -8,7 +8,7 @@ use tokio::sync::broadcast;
 
 #[derive(Debug, Default)]
 pub struct Builder {
-    pac_file: Option<PathOrUri>,
+    pac_files: Vec<PathOrUri>,
     pac_script: Option<String>,
     auth: Option<AuthenticatorFactory>,
     proxytunnel: bool,
@@ -24,7 +24,13 @@ impl Builder {
     /// PAC script URI to be loaded and used for evaluation
     /// If `None`, FindProxy will evaluate to DIRECT
     pub fn pac_file(mut self, uri: Option<PathOrUri>) -> Self {
-        self.pac_file = uri;
+        self.pac_files = uri.into_iter().collect();
+        self
+    }
+
+    /// PAC script URIs to be loaded and used for evaluation, in order.
+    pub fn pac_files(mut self, uris: Vec<PathOrUri>) -> Self {
+        self.pac_files = uris;
         self
     }
 
@@ -115,12 +121,13 @@ impl Builder {
         };
         let context = Arc::new(context);
 
-        if self.pac_file.is_some() {
+        if !self.pac_files.is_empty() {
             tokio::spawn({
                 let context = context.clone();
+                let pac_files = self.pac_files;
                 async move {
-                    if let Err(cause) = context.load_pac_file(&self.pac_file).await {
-                        tracing::error!(%cause, pac_file = ?&self.pac_file, "failed to load PAC from URI");
+                    if let Err(cause) = context.load_pac_files(&pac_files).await {
+                        tracing::error!(%cause, pac_files = ?pac_files, "failed to load PAC files");
                     }
                 }
             });
