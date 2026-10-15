@@ -193,12 +193,24 @@ async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
     let joiner = loop {
         tokio::select! {
             _ = reload_trigger() => {
-                context.load_pac_file(&config.pac_file).await?;
-                context.set_my_ip_address(my_ip_address()).await?;
+                match context.load_pac_file(&config.pac_file).await {
+                    Ok(()) => {
+                        context.set_my_ip_address(my_ip_address()).await?;
+                    }
+                    Err(cause) => {
+                        tracing::error!(%cause, pac_file=?config.pac_file, "failed to reload PAC");
+                    }
+                }
             },
             _ = direct_mode_trigger() => {
-                context.load_pac_file(&None).await?;
-                context.set_my_ip_address(my_ip_address()).await?;
+                match context.load_pac_file(&None).await {
+                    Ok(()) => {
+                        context.set_my_ip_address(my_ip_address()).await?;
+                    }
+                    Err(cause) => {
+                        tracing::error!(%cause, "failed to switch to direct mode");
+                    }
+                }
             },
             _ = shutdown_trigger() => {
                 tracing::info!("shutdown requested");
