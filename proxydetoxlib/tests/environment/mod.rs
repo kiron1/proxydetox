@@ -150,7 +150,9 @@ impl Builder {
             )
             .authenticator_factory(auth)
             .proxytunnel(self.proxytunnel)
-            .build();
+            .build()
+            .await
+            .expect("build context");
 
         let listener = TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], 0)))
             .await
