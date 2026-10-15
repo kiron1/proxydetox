@@ -70,19 +70,18 @@ impl Context {
         Default::default()
     }
 
-    pub(super) async fn find_proxy(&self, uri: Uri) -> paclib::Proxies {
-        let mut proxies = self
-            .eval
-            .find_proxy(uri.clone())
-            .await
-            .unwrap_or_else(|cause| {
-                tracing::error!(%cause, %uri, "failed to find_proxy");
-                paclib::Proxies::direct()
-            });
+    pub(super) async fn find_proxy(
+        &self,
+        uri: Uri,
+    ) -> Result<paclib::Proxies, paclib::FindProxyError> {
+        let mut proxies = self.eval.find_proxy(uri.clone()).await.map_err(|cause| {
+            tracing::error!(%cause, %uri, "failed to find_proxy");
+            cause
+        })?;
         if self.direct_fallback && !proxies.iter().any(|p| *p == ProxyOrDirect::Direct) {
             proxies.push(ProxyOrDirect::Direct);
         }
-        proxies
+        Ok(proxies)
     }
 
     #[instrument(skip(self))]
