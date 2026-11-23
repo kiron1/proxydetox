@@ -45,6 +45,7 @@ jobs:
         build:
           - macos
           - ubuntu-24.04
+          - ubuntu-26.04
           # - windows
         include:
           - build: macos
@@ -52,6 +53,9 @@ jobs:
             buildflags: --features=negotiate
           - build: ubuntu-24.04
             os: ubuntu-24.04
+            buildflags: --features=negotiate
+          - build: ubuntu-26.04
+            os: ubuntu-26.04
             buildflags: --features=negotiate
           # - build: windows
           #   os: windows-latest
@@ -198,6 +202,7 @@ jobs:
         build:
           - macos-aarch64
           - ubuntu-24.04
+          - ubuntu-26.04
           # - windows
         include:
           - build: macos-aarch64
@@ -208,6 +213,10 @@ jobs:
             os: ubuntu-24.04
             buildflags: --features=negotiate
             pkgfile: proxydetox-${{ needs.version.outputs.version }}-noble_amd64.deb
+          - build: ubuntu-26.04
+            os: ubuntu-26.04
+            buildflags: --features=negotiate
+            pkgfile: proxydetox-${{ needs.version.outputs.version }}-resolute_amd64.deb
           # - build: windows
           #   os: windows-latest
           #   buildflags: --features=negotiate
