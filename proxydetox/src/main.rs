@@ -144,7 +144,7 @@ async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
     tracing::debug!(%auth, "authorization");
 
     let context = proxydetoxlib::Context::builder()
-        .pac_file(config.pac_file.clone())
+        .pac_files(config.pac_files.clone())
         .authenticator_factory(Some(auth))
         .proxytunnel(config.proxytunnel)
         .connect_timeout(config.connect_timeout)
@@ -186,14 +186,14 @@ async fn run(config: Arc<Options>) -> Result<(), proxydetoxlib::Error> {
     let listeners = stream::select_all(listeners);
     let (server, control) = Server::new(listeners, context.clone());
 
-    tracing::info!(listening=?addrs, pac_file=?config.pac_file, "starting");
+    tracing::info!(listening=?addrs, pac_files=?config.pac_files, "starting");
 
     let server = tokio::spawn(async move { server.run().await });
     tokio::pin!(server);
     let joiner = loop {
         tokio::select! {
             _ = reload_trigger() => {
-                context.load_pac_file(&config.pac_file).await?;
+                context.load_pac_files(&config.pac_files).await?;
                 context.set_my_ip_address(my_ip_address()).await?;
             },
             _ = direct_mode_trigger() => {
