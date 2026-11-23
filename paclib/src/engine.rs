@@ -14,6 +14,8 @@ use crate::{FindProxyError, PacScriptError};
 use crate::{Proxies, domain};
 
 const PAC_UTILS: &str = include_str!("pac_utils.js");
+/// Maximum number of iterations allowed for a single PAC loop.
+const PAC_LOOP_ITERATION_LIMIT: u64 = 1_000_000;
 
 pub struct Engine {
     js: Context,
@@ -23,6 +25,8 @@ pub struct Engine {
 impl Engine {
     fn mkjs(my_ip_addr: Arc<Mutex<IpAddr>>) -> Context {
         let mut js = Context::default();
+        js.runtime_limits_mut()
+            .set_loop_iteration_limit(PAC_LOOP_ITERATION_LIMIT);
 
         js.register_global_class::<DnsCache>().unwrap();
         js.register_global_class::<domain::Table>().unwrap();
@@ -230,6 +234,7 @@ fn my_ip_address(
 mod tests {
     use super::Engine;
     use super::Uri;
+    use crate::FindProxyError;
     use crate::Proxies;
     use crate::ProxyOrDirect;
 
@@ -250,6 +255,24 @@ mod tests {
         )?;
         assert_eq!(
             eval.find_proxy(&"http://localhost/".parse::<Uri>().unwrap())?,
+            Proxies::new(vec![ProxyOrDirect::Direct])
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn infinite_loop_is_limited_and_engine_recovers() -> Result<(), Box<dyn std::error::Error>> {
+        let mut eval = Engine::with_pac_script(
+            "var first = true; function FindProxyForURL(url, host) { if (first) { first = false; while (true) {} } return \"DIRECT\"; }",
+        )?;
+        let uri = "http://localhost/".parse::<Uri>()?;
+
+        assert!(matches!(
+            eval.find_proxy(&uri),
+            Err(FindProxyError::InternalError(_))
+        ));
+        assert_eq!(
+            eval.find_proxy(&uri)?,
             Proxies::new(vec![ProxyOrDirect::Direct])
         );
         Ok(())
