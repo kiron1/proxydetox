@@ -91,7 +91,7 @@ function weekdayRange() {
     var wd2 = (argc == 2) ? getDay(arguments[1]) : wd1;
     return (wd1 == -1 || wd2 == -1) ? false
         : (wd1 <= wd2) ? (wd1 <= wday && wday <= wd2)
-            : (wd2 >= wday || wday >= wd1);
+            : (wday == wd1 || wday == wd2);
 }
 
 function dateRange() {
@@ -110,6 +110,37 @@ function dateRange() {
 
     if (isGMT) {
         argc--;
+    }
+    if (argc == 2) {
+        var first = parseInt(arguments[0]);
+        var second = parseInt(arguments[1]);
+        if ((first < 32 && isNaN(second)) ||
+            (isNaN(first) && second < 32)) {
+            var day = first < 32 ? first : second;
+            var month = getMonth(first < 32 ? arguments[1] : arguments[0]);
+            return month >= 0 && day >= 1 && day < 32 &&
+                (isGMT ? date.getUTCDate() : date.getDate()) == day &&
+                (isGMT ? date.getUTCMonth() : date.getMonth()) == month;
+        }
+    } else if (argc == 3) {
+        var day = -1;
+        var month = -1;
+        var year = -1;
+        for (var i = 0; i < argc; i++) {
+            var value = parseInt(arguments[i]);
+            if (isNaN(value)) {
+                month = getMonth(arguments[i]);
+            } else if (value < 32) {
+                day = value;
+            } else {
+                year = value;
+            }
+        }
+        if (day >= 1 && day < 32 && month >= 0 && year > 31) {
+            return (isGMT ? date.getUTCDate() : date.getDate()) == day &&
+                (isGMT ? date.getUTCMonth() : date.getMonth()) == month &&
+                (isGMT ? date.getUTCFullYear() : date.getFullYear()) == year;
+        }
     }
     // function will work even without explict handling of this case
     if (argc == 1) {
@@ -191,7 +222,9 @@ function timeRange() {
     if (argc == 1) {
         return (hour == arguments[0]);
     } else if (argc == 2) {
-        return ((arguments[0] <= hour) && (hour <= arguments[1]));
+        return (arguments[0] <= arguments[1])
+            ? ((arguments[0] <= hour) && (hour <= arguments[1]))
+            : (hour == arguments[0] || hour == arguments[1]);
     } else {
         switch (argc) {
             case 6:
